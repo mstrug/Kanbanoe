@@ -29,7 +29,7 @@ public:
 	void mouseDrag(const MouseEvent& event) override;
 	void mouseUp(const MouseEvent& event) override;
 
-
+	String name;
 private:
 
 	ComponentDragger iDragger;
@@ -38,3 +38,5 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanCardComponent)
 };
+
+const String KanbanCardComponentDragDescription = "KanbanCard";

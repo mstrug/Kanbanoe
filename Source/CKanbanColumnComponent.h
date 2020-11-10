@@ -26,6 +26,8 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+	void removeCard(CKanbanCardComponent* aCard);
+
 public: // from DragAndDropTarget
 
 	bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override;
@@ -38,7 +40,13 @@ public: // from DragAndDropTarget
 
 private:
 
+	void addCard(CKanbanCardComponent* aCardComponent);
+
+private:
+
 	bool iDragTargetActive;
+
+	FlexBox iLayout;
 
 	OwnedArray< CKanbanColumnCardPlaceholderComponent > iPlaceholders;
 

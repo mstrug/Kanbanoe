@@ -11,6 +11,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "CKanbanCardComponent.h"
 
 using namespace juce;
 //==============================================================================
@@ -25,6 +26,10 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 	void childrenChanged() override;
+
+	void attachCard(CKanbanCardComponent* aCardComponent);
+
+	void attachCard(const SourceDetails & dragSourceDetails);
 
 public: // from DragAndDropTarget
 

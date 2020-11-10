@@ -65,6 +65,23 @@ void CKanbanColumnCardPlaceholderComponent::childrenChanged()
 	}
 }
 
+void CKanbanColumnCardPlaceholderComponent::attachCard(CKanbanCardComponent * aCardComponent)
+{
+	aCardComponent->getParentComponent()->removeChildComponent(aCardComponent);
+	addAndMakeVisible(aCardComponent);
+	aCardComponent->setTopLeftPosition(0, 0);
+
+	setSize(aCardComponent->getWidth(), aCardComponent->getHeight());
+}
+
+void CKanbanColumnCardPlaceholderComponent::attachCard(const SourceDetails & dragSourceDetails)
+{
+	if (dragSourceDetails.description == KanbanCardComponentDragDescription)
+	{
+		attachCard(static_cast<CKanbanCardComponent*>(dragSourceDetails.sourceComponent.get()));
+	}
+}
+
 bool CKanbanColumnCardPlaceholderComponent::isInterestedInDragSource(const SourceDetails & dragSourceDetails)
 {
 	return (getNumChildComponents() == 0);
@@ -84,11 +101,13 @@ void CKanbanColumnCardPlaceholderComponent::itemDragExit(const SourceDetails & d
 
 void CKanbanColumnCardPlaceholderComponent::itemDropped(const SourceDetails & dragSourceDetails)
 {
-	dragSourceDetails.sourceComponent->getParentComponent()->removeChildComponent(dragSourceDetails.sourceComponent);
+	/*dragSourceDetails.sourceComponent->getParentComponent()->removeChildComponent(dragSourceDetails.sourceComponent);
 	addAndMakeVisible(dragSourceDetails.sourceComponent);
 	dragSourceDetails.sourceComponent->setTopLeftPosition(0, 0);
 
 	setSize(dragSourceDetails.sourceComponent->getWidth(), dragSourceDetails.sourceComponent->getHeight());
+	*/
+	attachCard(dragSourceDetails);
 
 	iDragTargetActive = false;
 	repaint();

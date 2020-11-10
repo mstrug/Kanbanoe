@@ -12,6 +12,7 @@
 #include "CKanbanCardComponent.h"
 #include "Cconfiguration.h"
 
+
 //==============================================================================
 CKanbanCardComponent::CKanbanCardComponent() : iIsDragging(false)
 {
@@ -42,7 +43,7 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 
     g.setColour (juce::Colours::white);
     g.setFont (14.0f);
-    g.drawText ("CKanbanCardComponent", getLocalBounds(),
+    g.drawText (name.length() == 0 ? "CKanbanCardComponent" : name, getLocalBounds(),
                 juce::Justification::centred, true);   // draw some placeholder text
 }
 
@@ -58,7 +59,7 @@ void CKanbanCardComponent::mouseDown(const MouseEvent& event)
 	//iDragger.startDraggingComponent(this, event);
 	if (auto* dragContainer = DragAndDropContainer::findParentDragContainerFor(this))
 	{
-		dragContainer->startDragging("KanbanCard", this);
+		dragContainer->startDragging(KanbanCardComponentDragDescription, this);
 		iIsDragging = true;
 		repaint();
 	}
