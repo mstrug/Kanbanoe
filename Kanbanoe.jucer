@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="ChuN3K" name="Kanbanoe" projectType="guiapp" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
+  <MAINGROUP id="eFGWQm" name="Kanbanoe">
+    <GROUP id="{DCD7CA3B-5F03-F757-21DF-FE39914D5902}" name="Source">
+      <FILE id="pB05Cm" name="CKanbanColumnContentComponent.cpp" compile="1"
+            resource="0" file="Source/CKanbanColumnContentComponent.cpp"/>
+      <FILE id="Z2KYpt" name="CKanbanColumnContentComponent.h" compile="0"
+            resource="0" file="Source/CKanbanColumnContentComponent.h"/>
+      <FILE id="dzSunv" name="CConfiguration.cpp" compile="1" resource="0"
+            file="Source/CConfiguration.cpp"/>
+      <FILE id="jns91l" name="CConfiguration.h" compile="0" resource="0"
+            file="Source/CConfiguration.h"/>
+      <FILE id="hTUjfZ" name="CKanbanColumnCardPlaceholderComponent.cpp"
+            compile="1" resource="0" file="Source/CKanbanColumnCardPlaceholderComponent.cpp"/>
+      <FILE id="wlPGxY" name="CKanbanColumnCardPlaceholderComponent.h" compile="0"
+            resource="0" file="Source/CKanbanColumnCardPlaceholderComponent.h"/>
+      <FILE id="VjJLVg" name="CKanbanColumnComponent.cpp" compile="1" resource="0"
+            file="Source/CKanbanColumnComponent.cpp"/>
+      <FILE id="cI6blX" name="CKanbanColumnComponent.h" compile="0" resource="0"
+            file="Source/CKanbanColumnComponent.h"/>
+      <FILE id="EZpZC9" name="CKanbanCardComponent.h" compile="0" resource="0"
+            file="Source/CKanbanCardComponent.h"/>
+      <FILE id="jAw9Iy" name="CKanbanCardComponent.cpp" compile="1" resource="0"
+            file="Source/CKanbanCardComponent.cpp"/>
+      <FILE id="cfl85o" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="aIdT0e" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
+      <FILE id="ZGlZFD" name="MainComponent.cpp" compile="1" resource="0"
+            file="Source/MainComponent.cpp"/>
+    </GROUP>
+  </MAINGROUP>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
+  <EXPORTFORMATS>
+    <VS2015 targetFolder="Builds/VisualStudio2015" extraCompilerFlags="/bigobj&#10;">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="Kanbanoe"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="Kanbanoe"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_core" path="D:/programy/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="D:/programy/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="D:/programy/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="D:/programy/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="D:/programy/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="D:/programy/JUCE/modules"/>
+      </MODULEPATHS>
+    </VS2015>
+  </EXPORTFORMATS>
+  <MODULES>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <LIVE_SETTINGS>
+    <WINDOWS buildEnabled="0"/>
+  </LIVE_SETTINGS>
+</JUCERPROJECT>
