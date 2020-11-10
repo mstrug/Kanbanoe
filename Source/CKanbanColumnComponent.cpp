@@ -13,7 +13,7 @@
 #include "CConfiguration.h"
 
 //==============================================================================
-CKanbanColumnComponent::CKanbanColumnComponent() : iDragTargetActive(false)
+CKanbanColumnComponent::CKanbanColumnComponent() : iDragTargetActive(false), iDragTargetPlaceholderActive(false), iPlaceholderIndex(-1)
 {
 	
 	//iPlaceholders.add(new CKanbanColumnCardPlaceholderComponent());
@@ -35,21 +35,33 @@ void CKanbanColumnComponent::paint (juce::Graphics& g)
 {
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
 	
-	if (iDragTargetActive)
+	int ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
+	if (!iDragTargetPlaceholderActive && iDragTargetActive)
 	{
 		g.setColour(Colours::red);
-		int ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
 		g.drawRect(getLocalBounds(), ps);
 	}
-	else
+	
+	if ( !iDragTargetActive || iDragTargetPlaceholderActive )
 	{
 		g.setColour(juce::Colours::grey);
 		g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
 	}
 
+
     g.setColour (juce::Colours::white);
     g.setFont (14.0f);
     //g.drawText ("CKanbanColumnComponent", getLocalBounds(), juce::Justification::centred, true);   // draw some placeholder text
+}
+
+void CKanbanColumnComponent::paintOverChildren(Graphics & g)
+{
+	int ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
+	if (iDragTargetPlaceholderActive)
+	{
+		g.setColour(Colours::red);
+		g.drawRect(iPlaceholderActiveRect, ps);
+	}
 }
 
 void CKanbanColumnComponent::resized()
@@ -80,13 +92,54 @@ bool CKanbanColumnComponent::isInterestedInDragSource(const SourceDetails & drag
 
 void CKanbanColumnComponent::itemDragEnter(const SourceDetails & dragSourceDetails)
 {
+	iPlaceholderIndex = -1;
 	iDragTargetActive = true;
 	repaint();
+}
+
+void CKanbanColumnComponent::itemDragMove(const SourceDetails & dragSourceDetails)
+{
+	bool tmp = iDragTargetPlaceholderActive;
+	iDragTargetPlaceholderActive = false;
+	int j = 0;
+	for (auto& i : iLayout.items)
+	{
+		if (i.currentBounds.contains(dragSourceDetails.localPosition.toFloat()))
+		{
+			iDragTargetPlaceholderActive = true;
+
+			iPlaceholderActiveRect = i.currentBounds.toNearestInt();
+			if (dragSourceDetails.localPosition.y < i.currentBounds.getY() + i.currentBounds.getHeight() / 4)
+			{
+				iPlaceholderActiveRect.setBottom(iPlaceholderActiveRect.getTopLeft().y);
+				iPlaceholderIndex = j;
+			}
+			else if (dragSourceDetails.localPosition.y > i.currentBounds.getY() + 3 * i.currentBounds.getHeight() / 4 )
+			{
+				iPlaceholderActiveRect.setTop(iPlaceholderActiveRect.getBottomLeft().y);
+				iPlaceholderIndex = j + 1;
+			}
+			else
+			{
+				iPlaceholderIndex = -1;
+				iDragTargetPlaceholderActive = false;
+			}
+
+			//iPlaceholderActiveRect = i.currentBounds.toNearestInt();
+			iPlaceholderActiveRect.expand(2, 2);
+
+			break;
+		}
+		j++;
+	}
+
+	if (tmp != iDragTargetPlaceholderActive || iDragTargetPlaceholderActive) repaint();
 }
 
 void CKanbanColumnComponent::itemDragExit(const SourceDetails & dragSourceDetails)
 {
 	iDragTargetActive = false;
+	iDragTargetPlaceholderActive = false;
 	repaint();
 }
 
@@ -102,8 +155,8 @@ void CKanbanColumnComponent::itemDropped(const SourceDetails & dragSourceDetails
 	if (dragSourceDetails.description == KanbanCardComponentDragDescription)
 	{
 		auto card = static_cast<CKanbanCardComponent*>(dragSourceDetails.sourceComponent.get());
-		auto col = static_cast<CKanbanColumnComponent*>(card->getParentComponent());
-		col->removeCard(card);
+		auto col = dynamic_cast<CKanbanColumnComponent*>(card->getParentComponent());
+		if ( col ) col->removeCard(card);
 	//	addCard(static_cast<CKanbanCardComponent*>(dragSourceDetails.sourceComponent.get()));
 	}
 
@@ -114,13 +167,13 @@ void CKanbanColumnComponent::itemDropped(const SourceDetails & dragSourceDetails
 	FlexItem fi(w, h);
 	fi.associatedComponent = dragSourceDetails.sourceComponent.get();
 
-	if (dragSourceDetails.localPosition.x < 50)
+	if (iPlaceholderIndex == -1)
 	{
-		iLayout.items.insert(0, fi);
+		iLayout.items.add(fi);
 	}
 	else
 	{
-		iLayout.items.add(fi);
+		iLayout.items.insert(iPlaceholderIndex, fi);
 	}
 
 	//auto& flexItem = iLayout.items.getReference(iLayout.items.size() - 1);
@@ -129,6 +182,8 @@ void CKanbanColumnComponent::itemDropped(const SourceDetails & dragSourceDetails
 	resized();
 
 	iDragTargetActive = false;
+	iDragTargetPlaceholderActive = false;
+
 	repaint();
 }
 
