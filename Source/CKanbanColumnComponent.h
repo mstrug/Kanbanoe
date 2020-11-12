@@ -61,5 +61,7 @@ private:
 
 	OwnedArray< CKanbanColumnCardPlaceholderComponent > iPlaceholders;
 
+	Label iTitle;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanColumnComponent)
 };

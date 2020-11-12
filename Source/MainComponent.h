@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "CKanbanCardComponent.h"
 #include "CKanbanColumnComponent.h"
+#include "CKanbanBoard.h"
 
 using namespace juce;
 //==============================================================================
@@ -30,12 +31,11 @@ private:
     //==============================================================================
     // Your private member variables go here...
 
+	OwnedArray<CKanbanCardComponent> iKanbanCards;
+
 	std::unique_ptr<MenuBarComponent> iMenuBar;
-
-	OwnedArray< CKanbanCardComponent > iKanbanCards;
-	OwnedArray< CKanbanColumnComponent > iKanbanColumns;
-
-	CKanbanColumnCardPlaceholderComponent *iA;
+	
+	CKanbanBoard *iKanbanBoard;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

@@ -15,7 +15,9 @@
 //==============================================================================
 CKanbanColumnComponent::CKanbanColumnComponent() : iDragTargetActive(false), iDragTargetPlaceholderActive(false), iPlaceholderIndex(-1), iDraggedCardIndex(-1)
 {
-	
+	iTitle.setText("Column Name", NotificationType::dontSendNotification);
+	addAndMakeVisible(iTitle);
+
 	//iPlaceholders.add(new CKanbanColumnCardPlaceholderComponent());
 	//addAndMakeVisible(iPlaceholders[0]);
 
@@ -49,6 +51,9 @@ void CKanbanColumnComponent::paint (juce::Graphics& g)
 		g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
 	}*/
 
+	g.setColour(juce::Colours::grey);
+	g.drawLine(0, iTitle.getBottom(), getWidth(), iTitle.getBottom(),1);
+
 	if (iDragTargetActive)
 	{
 		g.setColour(Colours::red);
@@ -60,15 +65,11 @@ void CKanbanColumnComponent::paint (juce::Graphics& g)
 		g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
 	}
 
-
     g.setColour (juce::Colours::white);
     g.setFont (14.0f);
     //g.drawText ("CKanbanColumnComponent", getLocalBounds(), juce::Justification::centred, true);   // draw some placeholder text
-}
 
-void CKanbanColumnComponent::paintOverChildren(Graphics & g)
-{
-	int ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
+	//int ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
 	if (iDragTargetPlaceholderActive)
 	{
 		g.setColour(Colours::red);
@@ -76,9 +77,24 @@ void CKanbanColumnComponent::paintOverChildren(Graphics & g)
 	}
 }
 
+void CKanbanColumnComponent::paintOverChildren(Graphics & g)
+{
+
+}
+
 void CKanbanColumnComponent::resized()
 {
-	iLayout.performLayout(getLocalBounds().reduced(5));
+//	Rectangle<int> r(getLocalBounds().reduced(5));
+//	iTitle.setBounds(r.removeFromTop(25));
+
+	Rectangle<int> r(getLocalBounds());
+	iTitle.setBounds(r.removeFromTop(25));
+
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
+	r.removeFromTop(m / 2);
+
+	//iLayout.performLayout(r.reduced(m));
+	iLayout.performLayout(r);
 //	iLayout.performLayout(getLocalBounds().reduced(10).toFloat());
 	//if (iPlaceholders.size() > 0) iPlaceholders[0]->setBounds(5, 20, 100, 60);
 
@@ -122,46 +138,44 @@ void CKanbanColumnComponent::itemDragEnter(const SourceDetails & dragSourceDetai
 
 void CKanbanColumnComponent::itemDragMove(const SourceDetails & dragSourceDetails)
 {
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
+
 	bool tmp = iDragTargetPlaceholderActive;
 	iDragTargetPlaceholderActive = false;
 	int j = 0;
 	for (auto& i : iLayout.items)
 	{
-		if (i.currentBounds.contains(dragSourceDetails.localPosition.toFloat()))
+		if (i.currentBounds.expanded(i.margin.left, i.margin.top).contains(dragSourceDetails.localPosition.toFloat()) ||
+			iLayout.items.size() == j + 1 ) // last item
 		{
 			iDragTargetPlaceholderActive = true;
 
 			iPlaceholderActiveRect = i.currentBounds.toNearestInt();
-			if (dragSourceDetails.localPosition.y < i.currentBounds.getY() + i.currentBounds.getHeight() / 4 )
+			if (dragSourceDetails.localPosition.y < i.currentBounds.getY() + i.currentBounds.getHeight() / 4 &&
+				dragSourceDetails.localPosition.y > i.currentBounds.getY() - i.currentBounds.getHeight() / 4)
 			{
 				iPlaceholderActiveRect.setBottom(iPlaceholderActiveRect.getTopLeft().y);
+				iPlaceholderActiveRect -= Point<int>(0, m/2);
 				iPlaceholderIndex = j;
-				//std::cout << "j1: " << j << std::endl;
-				// printf("j1: %\n", j);
-				Logger::outputDebugString("j1: " + String(iPlaceholderIndex) + "  k: " + String(iDraggedCardIndex));
 			}
-			else if (dragSourceDetails.localPosition.y > i.currentBounds.getY() + 3 * i.currentBounds.getHeight() / 4 )
+			else if (dragSourceDetails.localPosition.y > i.currentBounds.getY() + 3 * i.currentBounds.getHeight() / 4 &&
+				     dragSourceDetails.localPosition.y > i.currentBounds.getY() + 5 * i.currentBounds.getHeight() / 4)
 			{
 				iPlaceholderActiveRect.setTop(iPlaceholderActiveRect.getBottomLeft().y);
+				iPlaceholderActiveRect += Point<int>(0, m/2);
 				iPlaceholderIndex = j + 1;
-				//std::cout << "j2: " << j << std::endl;
-				//printf("j2: %\n", j);
-				Logger::outputDebugString("j2: " + String(iPlaceholderIndex) + "  k: " + String(iDraggedCardIndex));
 			}
 			else
 			{
 				iPlaceholderIndex = -1;
 				iDragTargetPlaceholderActive = false;
-				//std::cout << "j3: " << j << std::endl;
-				//printf("j3: %\n", j);
-				Logger::outputDebugString("j3: " + String(iPlaceholderIndex) + "  k: " + String(iDraggedCardIndex));
 			}
 
 			if ( (iDraggedCardIndex != -1 ) && ( iDraggedCardIndex == iPlaceholderIndex || iDraggedCardIndex + 1 == iPlaceholderIndex) )
 			{
 				iPlaceholderIndex = -1;
 				iDragTargetPlaceholderActive = false;
-				Logger::outputDebugString("j4: " + String(iPlaceholderIndex) + "  k: " + String(iDraggedCardIndex));
+//				Logger::outputDebugString("j4: " + String(iPlaceholderIndex) + "  k: " + String(iDraggedCardIndex));
 			}
 
 			//iPlaceholderActiveRect = i.currentBounds.toNearestInt();
@@ -220,9 +234,11 @@ void CKanbanColumnComponent::itemDropped(const SourceDetails & dragSourceDetails
 
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 
 	FlexItem fi(w, h);
 	fi.associatedComponent = dragSourceDetails.sourceComponent.get();
+	fi.margin = m / 2;
 
 	if (iPlaceholderIndex == -1 && iDraggedCardIndex != -1) iPlaceholderIndex = iDraggedCardIndex;
 		

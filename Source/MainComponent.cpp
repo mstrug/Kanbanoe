@@ -11,23 +11,15 @@ MainComponent::MainComponent()
 	iMenuBar.reset(new MenuBarComponent(this));
 	addAndMakeVisible(iMenuBar.get());
 
-	iKanbanColumns.add(new CKanbanColumnComponent());
-	addAndMakeVisible(iKanbanColumns[0]);
-	iKanbanColumns.add(new CKanbanColumnComponent());
-	addAndMakeVisible(iKanbanColumns[1]);
-
-	iKanbanCards.add(new CKanbanCardComponent());
-	addAndMakeVisible(iKanbanCards[0]);
-
-	iA = new CKanbanColumnCardPlaceholderComponent();
-	addAndMakeVisible(iA);
+	iKanbanBoard = new CKanbanBoard();
+	addAndMakeVisible(iKanbanBoard);
 
 	setSize(600, 400);
 }
 
 MainComponent::~MainComponent()
 {
-	delete iA;
+	delete iKanbanBoard;
 
 	CConfiguration::getInstance().Destroy();
 }
@@ -38,9 +30,9 @@ void MainComponent::paint (juce::Graphics& g)
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
-    g.setFont (juce::Font (16.0f));
-    g.setColour (juce::Colours::white);
-    g.drawText ("Hello World!", getLocalBounds(), juce::Justification::centred, true);
+    //g.setFont (juce::Font (16.0f));
+    //g.setColour (juce::Colours::white);
+    //g.drawText ("Hello World!", getLocalBounds(), juce::Justification::centred, true);
 }
 
 void MainComponent::resized()
@@ -50,14 +42,19 @@ void MainComponent::resized()
     // update their positions.
 
 	auto b = getLocalBounds();
+	auto b1 = b.removeFromTop(LookAndFeel::getDefaultLookAndFeel().getDefaultMenuBarHeight());
+	iMenuBar->setBounds( b1 );
 
-	iMenuBar->setBounds( b.removeFromTop(LookAndFeel::getDefaultLookAndFeel().getDefaultMenuBarHeight()));
+	iKanbanBoard->setBounds(b);
 
+
+/*	int w = CConfiguration::getIntValue("KanbanCardWidth");
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 
 	if (iKanbanCards.size() > 0) iKanbanCards[0]->setBounds(20, 20, 100, 60);
-	iKanbanColumns[0]->setBounds(200, 40, 110, 300);
-	iKanbanColumns[1]->setBounds(200+110+10, 40, 110, 300);
-	iA->setBounds(30, 200, 110, 70);
+	iKanbanColumns[0]->setBounds(200, 40, w + m, 400);
+	iKanbanColumns[1]->setBounds(500, 40, w + m, 400);
+	iA->setBounds(30, 200, 110, 70);*/
 }
 
 StringArray MainComponent::getMenuBarNames()

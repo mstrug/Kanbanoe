@@ -37,9 +37,11 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
     */
 
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 
     g.setColour (juce::Colours::grey);
-    g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
+//	g.drawRect(getLocalBounds().reduced(m/2), 1);   // draw an outline around the component
+	g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
 
     g.setColour (juce::Colours::white);
     g.setFont (14.0f);
