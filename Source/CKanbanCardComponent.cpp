@@ -14,7 +14,7 @@
 
 
 //==============================================================================
-CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnComponent* aOwner) : iIsDragging(false), iFlexItem(nullptr), iOwner(aOwner)
+CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iFlexItem(nullptr), iOwner(aOwner)
 {
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -81,12 +81,12 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 	}
 }
 
-CKanbanColumnComponent* CKanbanCardComponent::getOwner()
+CKanbanColumnContentComponent* CKanbanCardComponent::getOwner()
 {
 	return iOwner;
 }
 
-void CKanbanCardComponent::setOwner(CKanbanColumnComponent* aOwner)
+void CKanbanCardComponent::setOwner(CKanbanColumnContentComponent* aOwner)
 {
 	iOwner = aOwner;
 }

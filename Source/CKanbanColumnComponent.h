@@ -17,11 +17,11 @@ using namespace juce;
 //==============================================================================
 /*
 */
-class CKanbanColumnComponent  : public juce::Component, public DragAndDropTarget//, public ScrollBar::Listener
+class CKanbanColumnContentComponent : public juce::Component, public DragAndDropTarget//, public ScrollBar::Listener
 {
 public:
-    CKanbanColumnComponent();
-    ~CKanbanColumnComponent() override;
+	CKanbanColumnContentComponent();
+    ~CKanbanColumnContentComponent() override;
 
     void paint (juce::Graphics&) override;
 	void paintOverChildren(Graphics& g) override;
@@ -65,12 +65,35 @@ private:
 
 	OwnedArray< CKanbanColumnCardPlaceholderComponent > iPlaceholders;
 
-	Label iTitle;
 
-	Viewport iViewport;
-	Component iViewportLayout;
 
 	ScrollBar iScrollBar;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanColumnComponent)
+	friend class CKanbanColumnComponent;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanColumnContentComponent)
 };
+
+
+
+
+class CKanbanColumnComponent : public juce::Component
+{
+public:
+	CKanbanColumnComponent();
+	~CKanbanColumnComponent() override;
+
+	void paint(juce::Graphics&) override;
+	void resized() override;
+
+private:
+
+	Label iTitle;
+
+	Viewport iViewport;
+	CKanbanColumnContentComponent iViewportLayout;
+
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CKanbanColumnComponent)
+};
+
+

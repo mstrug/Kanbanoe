@@ -17,12 +17,12 @@
 */
 using namespace juce;
 
-class CKanbanColumnComponent;
+class CKanbanColumnContentComponent;
 
 class CKanbanCardComponent  : public juce::Component
 {
 public:
-    CKanbanCardComponent(CKanbanColumnComponent* aOwner);
+    CKanbanCardComponent(CKanbanColumnContentComponent* aOwner);
     ~CKanbanCardComponent() override;
 
     void paint (juce::Graphics&) override;
@@ -31,8 +31,8 @@ public:
 	void mouseDrag(const MouseEvent& event) override;
 	void mouseUp(const MouseEvent& event) override;
 
-	CKanbanColumnComponent* getOwner();
-	void setOwner(CKanbanColumnComponent* aOwner);
+	CKanbanColumnContentComponent* getOwner();
+	void setOwner(CKanbanColumnContentComponent* aOwner);
 
 	String name;
 	FlexItem* iFlexItem;
@@ -42,7 +42,7 @@ private:
 
 	bool iIsDragging;
 
-	CKanbanColumnComponent* iOwner;
+	CKanbanColumnContentComponent* iOwner;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanCardComponent)
 };
