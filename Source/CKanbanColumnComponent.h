@@ -17,7 +17,7 @@ using namespace juce;
 //==============================================================================
 /*
 */
-class CKanbanColumnComponent  : public juce::Component, public DragAndDropTarget
+class CKanbanColumnComponent  : public juce::Component, public DragAndDropTarget, public ScrollBar::Listener
 {
 public:
     CKanbanColumnComponent();
@@ -41,6 +41,10 @@ public: // from DragAndDropTarget
 
 	void itemDropped(const SourceDetails& dragSourceDetails) override;
 
+public: // from ScrollBar::Listener
+
+	void scrollBarMoved(ScrollBar *scrollBarThatHasMoved, double newRangeStart) override;
+
 private:
 
 	void addCard(CKanbanCardComponent* aCardComponent);
@@ -62,6 +66,11 @@ private:
 	OwnedArray< CKanbanColumnCardPlaceholderComponent > iPlaceholders;
 
 	Label iTitle;
+
+	Viewport iViewport;
+	Component iViewportLayout;
+
+	ScrollBar iScrollBar;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanColumnComponent)
 };

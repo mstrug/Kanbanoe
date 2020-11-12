@@ -13,13 +13,23 @@
 #include "CConfiguration.h"
 
 //==============================================================================
-CKanbanColumnComponent::CKanbanColumnComponent() : iDragTargetActive(false), iDragTargetPlaceholderActive(false), iPlaceholderIndex(-1), iDraggedCardIndex(-1)
+CKanbanColumnComponent::CKanbanColumnComponent() : iDragTargetActive(false), iDragTargetPlaceholderActive(false), iPlaceholderIndex(-1), iDraggedCardIndex(-1), iScrollBar(true)
 {
 	iTitle.setText("Column Name", NotificationType::dontSendNotification);
 	addAndMakeVisible(iTitle);
 
+	//addAndMakeVisible(iViewport);
+	//iViewport.setViewedComponent(&iViewportLayout);
+
 	//iPlaceholders.add(new CKanbanColumnCardPlaceholderComponent());
 	//addAndMakeVisible(iPlaceholders[0]);
+
+	addAndMakeVisible(iScrollBar);
+	iScrollBar.setRangeLimits(0, 800);
+	iScrollBar.setCurrentRange(20, 100);
+	iScrollBar.setAutoHide(false);
+	iScrollBar.setVisible(true);
+	iScrollBar.addListener(this);
 
 	iLayout.alignContent = FlexBox::AlignContent::center;
 	iLayout.alignItems = FlexBox::AlignItems::flexStart;
@@ -90,14 +100,24 @@ void CKanbanColumnComponent::resized()
 	Rectangle<int> r(getLocalBounds());
 	iTitle.setBounds(r.removeFromTop(25));
 
+	Rectangle<int> r2(r);
+	r2.setLeft(r2.getWidth() - 8);
+	r2.setWidth(r2.getWidth() - 1);
+	iScrollBar.setBounds(r2);
+
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 	r.removeFromTop(m / 2);
 
-	//iLayout.performLayout(r.reduced(m));
-	iLayout.performLayout(r);
-//	iLayout.performLayout(getLocalBounds().reduced(10).toFloat());
-	//if (iPlaceholders.size() > 0) iPlaceholders[0]->setBounds(5, 20, 100, 60);
+/*	iViewport.setBounds(r);
+	int h = CConfiguration::getIntValue("KanbanCardHeight");
+	iViewportLayout.setBounds(0, 0, r.getWidth(), iLayout.items.size() * (h+m));
 
+	iLayout.performLayout(iViewportLayout.getBoundsInParent());
+	*/
+	r.setTop(iScrollBar.getCurrentRangeStart());
+	iLayout.performLayout(r);
+
+	//iScrollBar.setRangeLimits()
 }
 
 void CKanbanColumnComponent::removeCard(CKanbanCardComponent * aCard)
@@ -159,7 +179,7 @@ void CKanbanColumnComponent::itemDragMove(const SourceDetails & dragSourceDetail
 				iPlaceholderIndex = j;
 			}
 			else if (dragSourceDetails.localPosition.y > i.currentBounds.getY() + 3 * i.currentBounds.getHeight() / 4 &&
-				     dragSourceDetails.localPosition.y > i.currentBounds.getY() + 5 * i.currentBounds.getHeight() / 4)
+				     dragSourceDetails.localPosition.y < i.currentBounds.getY() + 5 * i.currentBounds.getHeight() / 4)
 			{
 				iPlaceholderActiveRect.setTop(iPlaceholderActiveRect.getBottomLeft().y);
 				iPlaceholderActiveRect += Point<int>(0, m/2);
@@ -250,7 +270,7 @@ void CKanbanColumnComponent::itemDropped(const SourceDetails & dragSourceDetails
 	{
 		iLayout.items.insert(iPlaceholderIndex, fi);
 	}
-
+	iScrollBar.setRangeLimits(0, iLayout.items.size() * (h+m));
 
 	//auto& flexItem = iLayout.items.getReference(iLayout.items.size() - 1);
 
@@ -272,4 +292,13 @@ void CKanbanColumnComponent::addCard(CKanbanCardComponent * aCardComponent)
 	addAndMakeVisible(pc);
 }
 
+void CKanbanColumnComponent::scrollBarMoved(ScrollBar *scrollBarThatHasMoved, double newRangeStart)
+{
+	Rectangle<int> r(getLocalBounds());
+	r.removeFromTop(25);
+	r.setTop(-iScrollBar.getCurrentRangeStart());
+	iLayout.performLayout(r);
+
+	repaint();
+}
 
