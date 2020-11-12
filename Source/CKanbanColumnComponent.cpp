@@ -13,7 +13,7 @@
 #include "CConfiguration.h"
 
 //==============================================================================
-CKanbanColumnComponent::CKanbanColumnComponent() : iDragTargetActive(false), iDragTargetPlaceholderActive(false), iPlaceholderIndex(-1)
+CKanbanColumnComponent::CKanbanColumnComponent() : iDragTargetActive(false), iDragTargetPlaceholderActive(false), iPlaceholderIndex(-1), iDraggedCardIndex(-1)
 {
 	
 	//iPlaceholders.add(new CKanbanColumnCardPlaceholderComponent());
@@ -36,13 +36,25 @@ void CKanbanColumnComponent::paint (juce::Graphics& g)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
 	
 	int ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
-	if (!iDragTargetPlaceholderActive && iDragTargetActive)
+
+/*	if (!iDragTargetPlaceholderActive && iDragTargetActive)
 	{
 		g.setColour(Colours::red);
 		g.drawRect(getLocalBounds(), ps);
 	}
 	
 	if ( !iDragTargetActive || iDragTargetPlaceholderActive )
+	{
+		g.setColour(juce::Colours::grey);
+		g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
+	}*/
+
+	if (iDragTargetActive)
+	{
+		g.setColour(Colours::red);
+		g.drawRect(getLocalBounds(), ps);
+	}
+	else
 	{
 		g.setColour(juce::Colours::grey);
 		g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
@@ -87,6 +99,17 @@ void CKanbanColumnComponent::removeCard(CKanbanCardComponent * aCard)
 
 bool CKanbanColumnComponent::isInterestedInDragSource(const SourceDetails & dragSourceDetails)
 {
+	int j = 0;
+	iDraggedCardIndex = -1;
+	for (auto& i : iLayout.items)
+	{
+		if (i.associatedComponent == dragSourceDetails.sourceComponent.get())
+		{
+			iDraggedCardIndex = j;
+			break;
+		}
+		j++;
+	}
 	return true;
 }
 
@@ -109,20 +132,36 @@ void CKanbanColumnComponent::itemDragMove(const SourceDetails & dragSourceDetail
 			iDragTargetPlaceholderActive = true;
 
 			iPlaceholderActiveRect = i.currentBounds.toNearestInt();
-			if (dragSourceDetails.localPosition.y < i.currentBounds.getY() + i.currentBounds.getHeight() / 4)
+			if (dragSourceDetails.localPosition.y < i.currentBounds.getY() + i.currentBounds.getHeight() / 4 )
 			{
 				iPlaceholderActiveRect.setBottom(iPlaceholderActiveRect.getTopLeft().y);
 				iPlaceholderIndex = j;
+				//std::cout << "j1: " << j << std::endl;
+				// printf("j1: %\n", j);
+				Logger::outputDebugString("j1: " + String(iPlaceholderIndex) + "  k: " + String(iDraggedCardIndex));
 			}
 			else if (dragSourceDetails.localPosition.y > i.currentBounds.getY() + 3 * i.currentBounds.getHeight() / 4 )
 			{
 				iPlaceholderActiveRect.setTop(iPlaceholderActiveRect.getBottomLeft().y);
 				iPlaceholderIndex = j + 1;
+				//std::cout << "j2: " << j << std::endl;
+				//printf("j2: %\n", j);
+				Logger::outputDebugString("j2: " + String(iPlaceholderIndex) + "  k: " + String(iDraggedCardIndex));
 			}
 			else
 			{
 				iPlaceholderIndex = -1;
 				iDragTargetPlaceholderActive = false;
+				//std::cout << "j3: " << j << std::endl;
+				//printf("j3: %\n", j);
+				Logger::outputDebugString("j3: " + String(iPlaceholderIndex) + "  k: " + String(iDraggedCardIndex));
+			}
+
+			if ( (iDraggedCardIndex != -1 ) && ( iDraggedCardIndex == iPlaceholderIndex || iDraggedCardIndex + 1 == iPlaceholderIndex) )
+			{
+				iPlaceholderIndex = -1;
+				iDragTargetPlaceholderActive = false;
+				Logger::outputDebugString("j4: " + String(iPlaceholderIndex) + "  k: " + String(iDraggedCardIndex));
 			}
 
 			//iPlaceholderActiveRect = i.currentBounds.toNearestInt();
@@ -152,11 +191,29 @@ void CKanbanColumnComponent::itemDropped(const SourceDetails & dragSourceDetails
 	setSize(dragSourceDetails.sourceComponent->getWidth(), dragSourceDetails.sourceComponent->getHeight());
 	*/
 
+	CKanbanCardComponent* card = nullptr;
+	CKanbanColumnComponent* col = nullptr;
 	if (dragSourceDetails.description == KanbanCardComponentDragDescription)
 	{
-		auto card = static_cast<CKanbanCardComponent*>(dragSourceDetails.sourceComponent.get());
-		auto col = dynamic_cast<CKanbanColumnComponent*>(card->getParentComponent());
-		if ( col ) col->removeCard(card);
+		card = static_cast<CKanbanCardComponent*>(dragSourceDetails.sourceComponent.get());
+		col = dynamic_cast<CKanbanColumnComponent*>(card->getParentComponent());
+
+		/*if (iPlaceholderIndex == -1 && card->getParentComponent() == this )
+		{
+			iDragTargetActive = false;
+			iDragTargetPlaceholderActive = false;
+			iDraggedCardIndex = -1;
+
+			repaint();
+			return;
+		}*/
+
+		if (col)
+		{
+			col->removeCard(card);
+			if (iDraggedCardIndex != -1 && iPlaceholderIndex > iDraggedCardIndex) iPlaceholderIndex--;
+		}
+
 	//	addCard(static_cast<CKanbanCardComponent*>(dragSourceDetails.sourceComponent.get()));
 	}
 
@@ -167,6 +224,8 @@ void CKanbanColumnComponent::itemDropped(const SourceDetails & dragSourceDetails
 	FlexItem fi(w, h);
 	fi.associatedComponent = dragSourceDetails.sourceComponent.get();
 
+	if (iPlaceholderIndex == -1 && iDraggedCardIndex != -1) iPlaceholderIndex = iDraggedCardIndex;
+		
 	if (iPlaceholderIndex == -1)
 	{
 		iLayout.items.add(fi);
@@ -176,6 +235,7 @@ void CKanbanColumnComponent::itemDropped(const SourceDetails & dragSourceDetails
 		iLayout.items.insert(iPlaceholderIndex, fi);
 	}
 
+
 	//auto& flexItem = iLayout.items.getReference(iLayout.items.size() - 1);
 
 	addAndMakeVisible(dragSourceDetails.sourceComponent);
@@ -183,6 +243,7 @@ void CKanbanColumnComponent::itemDropped(const SourceDetails & dragSourceDetails
 
 	iDragTargetActive = false;
 	iDragTargetPlaceholderActive = false;
+	iDraggedCardIndex = -1;
 
 	repaint();
 }

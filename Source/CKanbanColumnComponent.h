@@ -53,6 +53,8 @@ private:
 
 	int iPlaceholderIndex;
 
+	int iDraggedCardIndex;
+
 	Rectangle< int > iPlaceholderActiveRect;
 
 	FlexBox iLayout;

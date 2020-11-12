@@ -30,6 +30,7 @@ public:
 	void mouseUp(const MouseEvent& event) override;
 
 	String name;
+	FlexItem* iFlexItem;
 private:
 
 	ComponentDragger iDragger;

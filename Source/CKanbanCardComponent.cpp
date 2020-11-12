@@ -14,7 +14,7 @@
 
 
 //==============================================================================
-CKanbanCardComponent::CKanbanCardComponent() : iIsDragging(false)
+CKanbanCardComponent::CKanbanCardComponent() : iIsDragging(false), iFlexItem(nullptr)
 {
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
