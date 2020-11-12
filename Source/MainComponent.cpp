@@ -97,7 +97,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 		if (menuItemID == 0x0101)
 		{
 			static int t = 0;
-			auto c = new CKanbanCardComponent();
+			auto c = new CKanbanCardComponent(nullptr);
 			c->setTopLeftPosition(10, 20);
 			c->name = "Card " + String(t++);
 			iKanbanCards.add(c);

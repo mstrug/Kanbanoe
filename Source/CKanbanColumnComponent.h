@@ -17,7 +17,7 @@ using namespace juce;
 //==============================================================================
 /*
 */
-class CKanbanColumnComponent  : public juce::Component, public DragAndDropTarget, public ScrollBar::Listener
+class CKanbanColumnComponent  : public juce::Component, public DragAndDropTarget//, public ScrollBar::Listener
 {
 public:
     CKanbanColumnComponent();
@@ -43,7 +43,7 @@ public: // from DragAndDropTarget
 
 public: // from ScrollBar::Listener
 
-	void scrollBarMoved(ScrollBar *scrollBarThatHasMoved, double newRangeStart) override;
+	void scrollBarMoved1(ScrollBar *scrollBarThatHasMoved, double newRangeStart) ;
 
 private:
 
