@@ -10,18 +10,24 @@
 
 #include <JuceHeader.h>
 #include "CKanbanCardComponent.h"
+#include "CKanbanColumnContentComponent.h"
+#include "CKanbanColumnComponent.h"
 #include "Cconfiguration.h"
 #include "CKanbanCardPropertiesComponent.h"
 
 
 //==============================================================================
-CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iFlexItem(nullptr), iOwner(aOwner)
+CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner)
 {
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
 
-	//iEditButton.setButtonText("Edit");
-	//addAndMakeVisible(iEditButton);
+	//iColorBar = juce::Colours::coral;// gold);
+	iColorBar.fromRGBA(0, 0, 0, 0);
+
+	iLabel.setText("test", NotificationType::dontSendNotification);
+	addAndMakeVisible(iLabel);
+	iLabel.addMouseListener(this,true);
 
 	setSize(w, h);
 }
@@ -32,59 +38,44 @@ CKanbanCardComponent::~CKanbanCardComponent()
 
 void CKanbanCardComponent::paint (juce::Graphics& g)
 {
-	if (iIsDragging) return;
-    /* This demo code just fills the component's background and
-       draws some placeholder text to get you started.
+	if (iIsDragging)
+	{
+		//g.fillAll(juce::Colours::darkred);
+		g.setColour(juce::Colours::darkgrey);
+		g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
+	}
+	else
+	{
+		g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
 
-       You should replace everything in this method with your own
-       drawing code..
-    */
+		g.setColour (juce::Colours::grey);
+		g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
 
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
-	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
-
-    g.setColour (juce::Colours::grey);
-//	g.drawRect(getLocalBounds().reduced(m/2), 1);   // draw an outline around the component
-	g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
-
-    g.setColour (juce::Colours::white);
-    g.setFont (14.0f);
-    g.drawText (name.length() == 0 ? "CKanbanCardComponent" : name, getLocalBounds(),
-                juce::Justification::centred, true);   // draw some placeholder text
+		g.setColour(iColorBar);
+		g.fillRect(4,4,2,getHeight()-8);
+	}
 }
 
 void CKanbanCardComponent::resized()
 {
-    // This method is where you should set the bounds of any child
-    // components that your component contains..
-
-	//iEditButton.setBounds(getBounds().removeFromRight(30));
+	Rectangle<int> r(getBounds());
+	r.removeFromLeft(10);
+	iLabel.setBounds(r);
 }
 
 void CKanbanCardComponent::mouseDown(const MouseEvent& event)
 {
-	/*if (event.mods.isLeftButtonDown())
-	{
-		//iDragger.startDraggingComponent(this, event);
-		if (auto* dragContainer = DragAndDropContainer::findParentDragContainerFor(this))
-		{
-			dragContainer->startDragging(KanbanCardComponentDragDescription, this);
-			iIsDragging = true;
-			repaint();
-		}
-	}*/
 }
 
 void CKanbanCardComponent::mouseDrag(const MouseEvent& event)
 {
-	//iDragger.dragComponent(this, event, nullptr);
 	if ( !iIsDragging && event.mods.isLeftButtonDown())
 	{
-		//iDragger.startDraggingComponent(this, event);
 		if (auto* dragContainer = DragAndDropContainer::findParentDragContainerFor(this))
 		{
 			dragContainer->startDragging(KanbanCardComponentDragDescription, this);
 			iIsDragging = true;
+			setChildrenVisibility(iIsDragging);
 			repaint();
 		}
 	}
@@ -95,6 +86,7 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 	if (iIsDragging)
 	{
 		iIsDragging = false;
+		setChildrenVisibility(iIsDragging);
 		repaint();
 	}
 	else if (event.mods.isLeftButtonDown())
@@ -130,6 +122,43 @@ void CKanbanCardComponent::setOwner(CKanbanColumnContentComponent* aOwner)
 	iOwner = aOwner;
 }
 
+void CKanbanCardComponent::setText(const String& aString)
+{
+	iLabel.setText(aString, NotificationType::dontSendNotification);	
+}
+
+String CKanbanCardComponent::getText()
+{
+	return iLabel.getText();
+}
+
+void CKanbanCardComponent::setColour(Colour aColor)
+{
+	iColorBar = aColor;
+}
+
+Colour CKanbanCardComponent::getColour()
+{
+	return iColorBar;
+}
+
+void CKanbanCardComponent::setNotes(const String& aString)
+{
+	iNotes = aString;
+}
+
+String CKanbanCardComponent::getNotes()
+{
+	return iNotes;
+}
+
+String CKanbanCardComponent::toJson()
+{
+	String ret("{ \"text\":\"" + iLabel.getText() + "\", \"notes\":\"" + iNotes + "\", \"colour\":\"" + iColorBar.toString() + "\", \"columnId\":" + String(iOwner->getOwner().getColumnId()) + " }");
+	return ret;
+}
+
+
 void CKanbanCardComponent::showProperties()
 {
 	auto comp = std::make_unique<CKanbanCardPropertiesComponent>(*this);
@@ -137,5 +166,9 @@ void CKanbanCardComponent::showProperties()
 	box->setAlwaysOnTop(true);
 }
 
+void CKanbanCardComponent::setChildrenVisibility(bool aHidden)
+{
+	iLabel.setVisible(!aHidden);
+}
 
 

@@ -25,12 +25,20 @@ public:
 	CKanbanBoardComponent();
     ~CKanbanBoardComponent() override;
 
+	static CKanbanBoardComponent* fromJson(var& aFile, String& aReturnErrorMessage);
+
+	void createDefaultBoard();
+
     void paint (juce::Graphics&) override;
     void resized() override;
 
 	CKanbanCardComponent* createCard();
 
+	bool saveFile(File& aFile, String& aReturnErrorMessage);
+
 private:
+
+	Grid iGrid;
 
 	OwnedArray< CKanbanCardComponent > iKanbanCards;
 

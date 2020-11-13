@@ -23,7 +23,7 @@ class CKanbanBoardComponent;
 class CKanbanColumnComponent : public juce::Component, public ScrollBar::Listener
 {
 public:
-	CKanbanColumnComponent(CKanbanBoardComponent& aOwner);
+	CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner);
 	~CKanbanColumnComponent() override;
 
 	void paint(juce::Graphics&) override;
@@ -35,6 +35,9 @@ public:
 	void contentUpdated();
 	CKanbanBoardComponent& kanbanBoard();
 
+	String getTitle();
+	int getColumnId();
+
 public: // from ScrollBar::Listener
 
 	void scrollBarMoved(ScrollBar* scrollBarThatHasMoved, double newRangeStart) override;
@@ -42,6 +45,8 @@ public: // from ScrollBar::Listener
 private:
 
 	CKanbanBoardComponent& iOwner;
+
+	int iColumnId;
 
 	bool iIsFrameActive;
 

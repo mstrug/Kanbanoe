@@ -115,6 +115,11 @@ void CKanbanColumnContentComponent::setMinimumHeight(int aHeight)
 	iMinimumHeight = aHeight;
 }
 
+CKanbanColumnComponent& CKanbanColumnContentComponent::getOwner()
+{
+	return iOwner;
+}
+
 bool CKanbanColumnContentComponent::isInterestedInDragSource(const SourceDetails & dragSourceDetails)
 {
 	int j = 0;

@@ -34,13 +34,23 @@ public:
 
 	CKanbanColumnContentComponent* getOwner();
 	void setOwner(CKanbanColumnContentComponent* aOwner);
+	
+	void setText(const String& aString);
+	String getText();
 
-	String name;
-	FlexItem* iFlexItem;
+	void setColour(Colour aColor);
+	Colour getColour();
+
+	void setNotes(const String& aString);
+	String getNotes();
+
+	String toJson();
 
 private:
 
 	void showProperties();
+
+	void setChildrenVisibility(bool aHidden);
 
 
 private:
@@ -49,7 +59,11 @@ private:
 
 	bool iIsDragging;
 
-	TextButton iEditButton;
+	Label iLabel;
+
+	Colour iColorBar;
+
+	String iNotes;
 
 	CKanbanColumnContentComponent* iOwner;
 

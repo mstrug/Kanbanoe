@@ -24,7 +24,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	addAndMakeVisible(iTextName);
 	iTextName.setBounds(10, 10, w, 24);
 	iTextName.setSelectAllWhenFocused(true);
-	iTextName.setText(aOwner.name);
+	iTextName.setText(aOwner.getText());
 	iTextName.onTextChange = [this]
 	{
 		this->changesApply();
@@ -45,12 +45,12 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	iTextEditor.setMultiLine(true);
 	iTextEditor.setReturnKeyStartsNewLine(true);
 	iTextEditor.setScrollbarsShown(true);	
-	//iTextEditor.setText(vp[p].toString());
+	iTextEditor.setText( aOwner.getNotes() );
 	addAndMakeVisible(iTextEditor);
 	iTextEditor.setBounds(10 + 50 + 10, yofs, w - 50 - 10, 24 + 24 * 2);
-	iTextEditor.onTextChange = [this]
+	iTextEditor.onTextChange = [this, &aOwner]
 	{
-		// todo
+		aOwner.setNotes(this->iTextEditor.getText());
 	};
 	iTextEditor.onReturnKey = [this]
 	{
@@ -89,7 +89,7 @@ void CKanbanCardPropertiesComponent::changesApply()
 	iBar->setColour(this->iColours->getSelectedColourIdx());
 	iBar->repaint();*/
 
-	iOwner.name = iTextName.getText();
+	iOwner.setText(iTextName.getText());
 	iOwner.repaint();
 }
 

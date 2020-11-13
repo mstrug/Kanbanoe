@@ -14,12 +14,12 @@
 
 
 
-CKanbanColumnComponent::CKanbanColumnComponent(CKanbanBoardComponent& aOwner) : iOwner(aOwner), iIsFrameActive(false), iViewportLayout(*this), iScrollBar(true)
+CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iIsFrameActive(false), iViewportLayout(*this), iScrollBar(true)
 {
 	iViewportLayout.addMouseListener(this, false);
 	addAndMakeVisible(iViewportLayout);
 
-	iTitle.setText("Column Name", NotificationType::dontSendNotification);
+	iTitle.setText(aTitle, NotificationType::dontSendNotification);
 	iTitle.addMouseListener(this,true);
 	addAndMakeVisible(iTitle);
 
@@ -115,6 +115,16 @@ void CKanbanColumnComponent::contentUpdated()
 CKanbanBoardComponent& CKanbanColumnComponent::kanbanBoard()
 {
 	return iOwner;
+}
+
+String CKanbanColumnComponent::getTitle()
+{
+	return iTitle.getText();
+}
+
+int CKanbanColumnComponent::getColumnId()
+{
+	return iColumnId;
 }
 
 void CKanbanColumnComponent::scrollBarMoved(ScrollBar * scrollBarThatHasMoved, double newRangeStart)

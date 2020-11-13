@@ -23,9 +23,14 @@ public:
     void resized() override;
 
 private: // from MenuBarModel
+	
 	StringArray getMenuBarNames() override;
 	PopupMenu getMenuForIndex(int topLevelMenuIndex, const String& menuName) override;
 	void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
+
+private: 
+
+	void MainComponent::openFile(File& aFn);
 
 private:
     //==============================================================================
@@ -36,6 +41,10 @@ private:
 	std::unique_ptr<MenuBarComponent> iMenuBar;
 	
 	CKanbanBoardComponent *iKanbanBoard;
+
+	std::unique_ptr<FileChooser> iFileDialog;
+	
+	File iOpenedFile;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

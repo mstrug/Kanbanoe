@@ -34,6 +34,7 @@ public:
 	void addCard();
 	void updateSize();
 	void setMinimumHeight(int aHeight);
+	CKanbanColumnComponent& getOwner();
 
 public: // from DragAndDropTarget
 
