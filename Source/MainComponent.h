@@ -35,7 +35,7 @@ private:
 
 	std::unique_ptr<MenuBarComponent> iMenuBar;
 	
-	CKanbanBoard *iKanbanBoard;
+	CKanbanBoardComponent *iKanbanBoard;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

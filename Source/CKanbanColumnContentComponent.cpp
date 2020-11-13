@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include "CKanbanColumnContentComponent.h"
 #include "CKanbanColumnComponent.h"
+#include "CKanbanBoard.h"
 #include "CConfiguration.h"
 
 //==============================================================================
@@ -68,24 +69,10 @@ void CKanbanColumnContentComponent::paintOverChildren(Graphics & g)
 
 void CKanbanColumnContentComponent::resized()
 {
-	//	Rectangle<int> r(getLocalBounds().reduced(5));
-	//	iTitle.setBounds(r.removeFromTop(25));
-
-
-
-	//iLayout.performLayout(iViewportLayout.getBoundsInParent());
-
-	//r.setTop(iScrollBar.getCurrentRangeStart());
-
-
-	//updateSize();
-
 	Rectangle<int> r(0, -iScrollPos, getWidth(), getHeight());
 	iLayout.performLayout(r);
 	updateSize();
 	iOwner.contentUpdated();
-
-	//iScrollBar.setRangeLimits()
 }
 
 void CKanbanColumnContentComponent::removeCard(CKanbanCardComponent * aCard)
@@ -95,12 +82,19 @@ void CKanbanColumnContentComponent::removeCard(CKanbanCardComponent * aCard)
 		if (i.associatedComponent == aCard)
 		{
 			iLayout.items.remove(&i);
-			//updateSize();
-			//iOwner.contentUpdated();
-			//resized();
 			break;
 		}
 	}
+}
+
+void CKanbanColumnContentComponent::addCard()
+{
+	Logger::outputDebugString("add card");
+	iPlaceholderIndex = -1;
+
+	auto c = iOwner.kanbanBoard().createCard();
+	DragAndDropTarget::SourceDetails s(KanbanCardComponentDragDescription, c, Point<int>());
+	itemDropped(s);
 }
 
 void CKanbanColumnContentComponent::updateSize()
@@ -111,7 +105,6 @@ void CKanbanColumnContentComponent::updateSize()
 	if (hh < iMinimumHeight)
 	{
 		hh = iMinimumHeight;
-		//iViewport.setViewPosition(0, 0);
 	}
 
 	setSize(getWidth(), hh);
@@ -173,7 +166,7 @@ void CKanbanColumnContentComponent::itemDragMove(const SourceDetails & dragSourc
 				iPlaceholderIndex = j;
 			}
 			else if (p.y > i.currentBounds.getY() + 3 * i.currentBounds.getHeight() / 4 &&
-				p.y < i.currentBounds.getY() + 5 * i.currentBounds.getHeight() / 4)
+				( p.y < i.currentBounds.getY() + 5 * i.currentBounds.getHeight() / 4 || iLayout.items.size() == j + 1)) // last item
 			{
 				iPlaceholderActiveRect.setTop(iPlaceholderActiveRect.getBottomLeft().y);
 				iPlaceholderActiveRect += Point<int>(0, m / 2);
@@ -231,15 +224,15 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 			col->removeCard(card);
 			if (col != this)
 			{
-				col->updateSize();
-				col->iOwner.contentUpdated();
+				col->resized();
+				//col->updateSize();
+				//col->iOwner.contentUpdated();
 			}
 			if (iDraggedCardIndex != -1 && iPlaceholderIndex > iDraggedCardIndex) iPlaceholderIndex--;
 		}
 		card->setOwner(this);
 
 	}
-
 
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -263,7 +256,6 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 	//auto& flexItem = iLayout.items.getReference(iLayout.items.size() - 1);
 
 	addAndMakeVisible(dragSourceDetails.sourceComponent);
-	//updateSize();
 	resized();
 
 	iDragTargetActive = false;
@@ -272,7 +264,5 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 	iDraggedCardIndex = -1;
 
 	repaint();
-	
-	//iOwner.contentUpdated();
 }
 

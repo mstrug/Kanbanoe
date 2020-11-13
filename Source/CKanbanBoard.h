@@ -19,14 +19,16 @@ using namespace juce;
 //==============================================================================
 /*
 */
-class CKanbanBoard  : public juce::Component
+class CKanbanBoardComponent  : public juce::Component
 {
 public:
-    CKanbanBoard();
-    ~CKanbanBoard() override;
+	CKanbanBoardComponent();
+    ~CKanbanBoardComponent() override;
 
     void paint (juce::Graphics&) override;
     void resized() override;
+
+	CKanbanCardComponent* createCard();
 
 private:
 
@@ -34,5 +36,5 @@ private:
 
 	OwnedArray< CKanbanColumnComponent > iKanbanColumns;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanBoard)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanBoardComponent)
 };

@@ -11,7 +11,7 @@ MainComponent::MainComponent()
 	iMenuBar.reset(new MenuBarComponent(this));
 	addAndMakeVisible(iMenuBar.get());
 
-	iKanbanBoard = new CKanbanBoard();
+	iKanbanBoard = new CKanbanBoardComponent();
 	addAndMakeVisible(iKanbanBoard);
 
 	setSize(600, 400);

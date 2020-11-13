@@ -13,27 +13,27 @@
 #include "CConfiguration.h"
 
 //==============================================================================
-CKanbanBoard::CKanbanBoard()
+CKanbanBoardComponent::CKanbanBoardComponent()
 {
-	iKanbanColumns.add(new CKanbanColumnComponent());
+	iKanbanColumns.add(new CKanbanColumnComponent(*this));
 	addAndMakeVisible(iKanbanColumns[0]);
-	iKanbanColumns.add(new CKanbanColumnComponent());
+	iKanbanColumns.add(new CKanbanColumnComponent(*this));
 	addAndMakeVisible(iKanbanColumns[1]);
-	iKanbanColumns.add(new CKanbanColumnComponent());
+	iKanbanColumns.add(new CKanbanColumnComponent(*this));
 	addAndMakeVisible(iKanbanColumns[2]);
-	iKanbanColumns.add(new CKanbanColumnComponent());
+	iKanbanColumns.add(new CKanbanColumnComponent(*this));
 	addAndMakeVisible(iKanbanColumns[3]);
-	iKanbanColumns.add(new CKanbanColumnComponent());
+	iKanbanColumns.add(new CKanbanColumnComponent(*this));
 	addAndMakeVisible(iKanbanColumns[4]);
 
 
 }
 
-CKanbanBoard::~CKanbanBoard()
+CKanbanBoardComponent::~CKanbanBoardComponent()
 {
 }
 
-void CKanbanBoard::paint (juce::Graphics& g)
+void CKanbanBoardComponent::paint (juce::Graphics& g)
 {
     /* This demo code just fills the component's background and
        draws some placeholder text to get you started.
@@ -49,7 +49,7 @@ void CKanbanBoard::paint (juce::Graphics& g)
 
 }
 
-void CKanbanBoard::resized()
+void CKanbanBoardComponent::resized()
 {
 	Grid grid;
 
@@ -92,3 +92,13 @@ void CKanbanBoard::resized()
 	grid.performLayout(r);
 	
 }
+
+CKanbanCardComponent* CKanbanBoardComponent::createCard()
+{
+	auto c = new CKanbanCardComponent(nullptr);
+	iKanbanCards.add(c);
+	c->name = "Empty card " + String(iKanbanCards.size());
+	return c;
+}
+
+

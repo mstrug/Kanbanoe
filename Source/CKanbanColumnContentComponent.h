@@ -31,6 +31,7 @@ public:
 	void resized() override;
 
 	void removeCard(CKanbanCardComponent* aCard);
+	void addCard();
 	void updateSize();
 	void setMinimumHeight(int aHeight);
 

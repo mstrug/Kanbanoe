@@ -14,11 +14,13 @@
 
 
 
-CKanbanColumnComponent::CKanbanColumnComponent() : iIsFrameActive(false), iViewportLayout(*this), iScrollBar(true)
+CKanbanColumnComponent::CKanbanColumnComponent(CKanbanBoardComponent& aOwner) : iOwner(aOwner), iIsFrameActive(false), iViewportLayout(*this), iScrollBar(true)
 {
+	iViewportLayout.addMouseListener(this, false);
 	addAndMakeVisible(iViewportLayout);
 
 	iTitle.setText("Column Name", NotificationType::dontSendNotification);
+	iTitle.addMouseListener(this,true);
 	addAndMakeVisible(iTitle);
 
 	iScrollBar.addListener(this);
@@ -35,25 +37,25 @@ void CKanbanColumnComponent::paint(juce::Graphics& g)
 {
 	g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));   // clear the background
 
+
+}
+
+void CKanbanColumnComponent::paintOverChildren(Graphics & g)
+{
 	g.setColour(juce::Colours::grey);
 	g.drawLine(0, iTitle.getBottom(), getWidth(), iTitle.getBottom(), 1);
 
+	int ps = 1;
 	if (iIsFrameActive)
 	{
+		ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
 		g.setColour(juce::Colours::red);
 	}
 	else
 	{
 		g.setColour(juce::Colours::grey);
 	}
-	int ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
 	g.drawRect(getLocalBounds(), ps);   // draw an outline around the component
-
-}
-
-void CKanbanColumnComponent::paintOverChildren(Graphics & g)
-{
-
 }
 
 void CKanbanColumnComponent::resized()
@@ -69,12 +71,25 @@ void CKanbanColumnComponent::resized()
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 	r.removeFromTop(m / 2);
 
-	iViewportLayout.setBounds(r);
 	iViewportLayout.setMinimumHeight(r.getHeight());
-	//iScrollBar.setCurrentRange(0, r.getHeight()); // iViewportLayout.iMinimumHeight);
-	iViewportLayout.updateSize();
+	iViewportLayout.setBounds(r);
+	//iViewportLayout.updateSize();
 	Logger::outputDebugString("CminH: " + String(iViewportLayout.iMinimumHeight));
 	Logger::outputDebugString("CH: " + String(iViewportLayout.getHeight()));
+}
+
+void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
+{
+	if (event.mods.isRightButtonDown())
+	{
+		PopupMenu menu;
+		menu.addItem("Add card", [&]() 
+		{ 
+			this->iViewportLayout.addCard();
+		});
+		menu.addItem(1,"Archive column");
+		menu.show();
+	}
 }
 
 void CKanbanColumnComponent::setActiveFrame(bool aActive)
@@ -97,10 +112,14 @@ void CKanbanColumnComponent::contentUpdated()
 	iScrollBar.setCurrentRange(iScrollBar.getCurrentRangeStart(), iViewportLayout.iMinimumHeight);
 }
 
+CKanbanBoardComponent& CKanbanColumnComponent::kanbanBoard()
+{
+	return iOwner;
+}
+
 void CKanbanColumnComponent::scrollBarMoved(ScrollBar * scrollBarThatHasMoved, double newRangeStart)
 {
 	Logger::outputDebugString("sc: " + String(newRangeStart));
-//	iViewportLayout.setTopLeftPosition(0, -newRangeStart);
 	iViewportLayout.iScrollPos = newRangeStart;
 	iViewportLayout.resized();
 }
