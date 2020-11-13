@@ -87,12 +87,13 @@ void CKanbanColumnContentComponent::removeCard(CKanbanCardComponent * aCard)
 	}
 }
 
-void CKanbanColumnContentComponent::addCard()
+void CKanbanColumnContentComponent::addCard(CKanbanCardComponent* aCard )
 {
 	Logger::outputDebugString("add card");
 	iPlaceholderIndex = -1;
 
-	auto c = iOwner.kanbanBoard().createCard();
+	CKanbanCardComponent* c = aCard;
+	if ( !c ) c = iOwner.kanbanBoard().createCard();
 	DragAndDropTarget::SourceDetails s(KanbanCardComponentDragDescription, c, Point<int>());
 	itemDropped(s);
 }

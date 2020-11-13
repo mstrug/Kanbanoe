@@ -106,7 +106,161 @@ CKanbanCardComponent* CKanbanBoardComponent::createCard()
 
 CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aReturnErrorMessage)
 {
-	return nullptr;
+	auto obj = aFile.getDynamicObject();
+
+	CKanbanBoardComponent* ret = new CKanbanBoardComponent();
+	if (!ret)
+	{
+		aReturnErrorMessage = "Out of memory";
+		return nullptr;
+	}
+	int w = CConfiguration::getIntValue("KanbanCardWidth");
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
+	Grid::Px wpx(w + 2 * m);
+	ret->iGrid.rowGap = Grid::Px(m);
+	ret->iGrid.columnGap = Grid::Px(m);
+	ret->iGrid.autoFlow = Grid::AutoFlow::column;
+
+	var version = obj->getProperty("version");
+	if (version.isString())
+	{
+		if (version.toString() != "0.1")
+		{
+			aReturnErrorMessage = "Not supported file version";
+			delete ret;
+			return nullptr;
+		}
+	}
+	else
+	{
+		aReturnErrorMessage = "Not supported file type [version]";
+		delete ret;
+		return nullptr;
+	}
+
+	var columns = obj->getProperty("columns");
+	if (columns.isArray())
+	{
+		auto ar = columns.getArray();
+		for (auto& i : *ar)
+		{
+			auto obj2 = i.getDynamicObject();
+			var title = obj2->getProperty("title");
+			var id = obj2->getProperty("id");
+			if (title.isString() && id.isInt())
+			{
+				ret->iKanbanColumns.add(new CKanbanColumnComponent(id, title, *ret));
+				ret->addAndMakeVisible(ret->iKanbanColumns.getLast());
+			}
+			else
+			{
+				aReturnErrorMessage = "Not supported file type [columns array]";
+				delete ret;
+				return nullptr;
+			}
+		}
+	}
+	else
+	{
+		aReturnErrorMessage = "Not supported file type [columns]";
+		delete ret;
+		return nullptr;
+	}
+
+	var board = obj->getProperty("board");
+	if (board.isObject())
+	{
+		auto obj2 = board.getDynamicObject();
+		var rows = obj2->getProperty("rows");
+		var cols = obj2->getProperty("columns");
+		var def = obj2->getProperty("def");
+		if (rows.isInt() && cols.isInt() && def.isArray())
+		{
+			for (int i = 0; i < (int)cols; i++) ret->iGrid.templateColumns.add(Grid::TrackInfo(wpx));
+			for (int i = 0; i < (int)rows; i++) ret->iGrid.templateRows.add(Grid::TrackInfo(50_fr));
+
+			auto ar = def.getArray();
+			for (auto& i : *ar)
+			{
+				auto obj3 = i.getDynamicObject();
+				var idx = obj3->getProperty("idx");
+				var columnId = obj3->getProperty("columnId");
+				var columnStart = obj3->getProperty("columnStart");
+				var columnEnd = obj3->getProperty("columnEnd");
+				var rowStart = obj3->getProperty("rowStart");
+				var rowEnd = obj3->getProperty("rowEnd");
+				if (idx.isInt() && columnId.isInt() && columnStart.isInt() && columnEnd.isInt() && rowStart.isInt() && rowEnd.isInt() && (int)idx < ret->iKanbanColumns.size())
+				{
+					int iidx = idx;
+					GridItem gi(ret->iKanbanColumns[iidx]);
+					gi.setArea((int)rowStart, (int)columnStart, (int)rowEnd, (int)columnEnd);
+					ret->iGrid.items.add(gi);
+				}
+				else
+				{
+					aReturnErrorMessage = "Not supported file type [board def array]";
+					delete ret;
+					return nullptr;
+				}
+			}
+		}
+		else
+		{
+			aReturnErrorMessage = "Not supported file type [rows,columns,def]";
+			delete ret;
+			return nullptr;
+		}
+	}
+	else
+	{
+		aReturnErrorMessage = "Not supported file type [board]";
+		delete ret;
+		return nullptr;
+	}
+
+	var cards = obj->getProperty("cards");
+	if (cards.isArray())
+	{
+		auto ar = cards.getArray();
+		for (auto& i : *ar)
+		{
+			auto obj2 = i.getDynamicObject();
+			var text = obj2->getProperty("text");
+			var notes = obj2->getProperty("notes");
+			var colour = obj2->getProperty("colour");
+			var columnId = obj2->getProperty("columnId");
+			if (text.isString() && notes.isString() && colour.isString() && columnId.isInt() )
+			{
+				CKanbanCardComponent* card = ret->createCard();
+				card->setText(text);
+				card->setNotes(notes);
+				String s = colour;
+				card->setColour(Colour::fromString(s));
+				for (auto j : ret->iKanbanColumns)
+				{
+					if (j->getColumnId() == (int)columnId)
+					{
+						j->addCard(card);
+						break;
+					}
+				}
+			}
+			else
+			{
+				aReturnErrorMessage = "Not supported file type [cards]";
+				delete ret;
+				return nullptr;
+			}
+		}
+	}
+	else
+	{
+		aReturnErrorMessage = "Not supported file type [cards array]";
+		delete ret;
+		return nullptr;
+	}
+
+	return ret;
 }
 
 bool CKanbanBoardComponent::saveFile(File& aFile, String& aReturnErrorMessage)

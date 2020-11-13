@@ -16,6 +16,7 @@
 using namespace juce;
 
 class CKanbanBoardComponent;
+class CKanbanCardComponent;
 
 //==============================================================================
 /*
@@ -34,6 +35,7 @@ public:
 	void setActiveFrame(bool aActive);
 	void contentUpdated();
 	CKanbanBoardComponent& kanbanBoard();
+	void addCard(CKanbanCardComponent* aCard);
 
 	String getTitle();
 	int getColumnId();

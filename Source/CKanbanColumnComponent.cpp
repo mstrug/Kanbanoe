@@ -117,6 +117,11 @@ CKanbanBoardComponent& CKanbanColumnComponent::kanbanBoard()
 	return iOwner;
 }
 
+void CKanbanColumnComponent::addCard(CKanbanCardComponent* aCard)
+{
+	iViewportLayout.addCard(aCard);
+}
+
 String CKanbanColumnComponent::getTitle()
 {
 	return iTitle.getText();

@@ -31,7 +31,7 @@ public:
 	void resized() override;
 
 	void removeCard(CKanbanCardComponent* aCard);
-	void addCard();
+	void addCard(CKanbanCardComponent* aCard=nullptr);
 	void updateSize();
 	void setMinimumHeight(int aHeight);
 	CKanbanColumnComponent& getOwner();

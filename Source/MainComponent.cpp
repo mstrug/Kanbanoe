@@ -176,6 +176,8 @@ void MainComponent::openFile(File& aFn)
 			delete iKanbanBoard;
 			iKanbanBoard = newboard;
 			addAndMakeVisible(newboard);
+			resized();
+
 			//iOpenedFile = aFn;
 
 			//Config::getInstance()->setOpenRecent(aFn.getFullPathName());
