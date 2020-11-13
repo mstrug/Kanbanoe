@@ -11,19 +11,64 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "CKanbanCardComponent.h"
+
+using namespace juce;
+
+class CKanbanColumnComponent;
 
 //==============================================================================
 /*
 */
-class CKanbanColumnContentComponent  : public juce::Component
+class CKanbanColumnContentComponent : public juce::Component, public DragAndDropTarget
 {
 public:
-    CKanbanColumnContentComponent();
-    ~CKanbanColumnContentComponent() override;
+	CKanbanColumnContentComponent(CKanbanColumnComponent& aOwner);
+	~CKanbanColumnContentComponent() override;
 
-    void paint (juce::Graphics&) override;
-    void resized() override;
+	void paint(juce::Graphics&) override;
+	void paintOverChildren(Graphics& g) override;
+	void resized() override;
 
+	void removeCard(CKanbanCardComponent* aCard);
+	void updateSize();
+	void setMinimumHeight(int aHeight);
+
+public: // from DragAndDropTarget
+
+	bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override;
+
+	void itemDragEnter(const SourceDetails& dragSourceDetails) override;
+
+	void itemDragMove(const SourceDetails& dragSourceDetails) override;
+
+	void itemDragExit(const SourceDetails& dragSourceDetails) override;
+
+	void itemDropped(const SourceDetails& dragSourceDetails) override;
+	
 private:
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanColumnContentComponent)
+
+	CKanbanColumnComponent& iOwner;
+
+	bool iDragTargetActive;
+
+	bool iDragTargetPlaceholderActive;
+
+	int iPlaceholderIndex;
+
+	int iDraggedCardIndex;
+
+	Rectangle< int > iPlaceholderActiveRect;
+
+	FlexBox iLayout;
+	
+	int iMinimumHeight;
+
+	int iScrollPos;
+
+	friend class CKanbanColumnComponent;
+
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CKanbanColumnContentComponent)
 };
+
+
