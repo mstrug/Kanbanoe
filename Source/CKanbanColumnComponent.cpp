@@ -28,7 +28,7 @@ CKanbanColumnContentComponent::~CKanbanColumnContentComponent()
 
 void CKanbanColumnContentComponent::paint (juce::Graphics& g)
 {
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
+    //g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
 	
 	int ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
 
@@ -43,7 +43,7 @@ void CKanbanColumnContentComponent::paint (juce::Graphics& g)
 	else
 	{
 		g.setColour(juce::Colours::grey);
-		g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
+		//g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
 	}
 
     g.setColour (juce::Colours::white);
@@ -269,6 +269,11 @@ void CKanbanColumnComponent::paint(juce::Graphics& g)
 	g.setColour(juce::Colours::grey);
 	g.drawLine(0, iTitle.getBottom(), getWidth(), iTitle.getBottom(), 1);
 	g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
+}
+
+void CKanbanColumnComponent::paintOverChildren(Graphics & g)
+{
+
 }
 
 void CKanbanColumnComponent::resized()

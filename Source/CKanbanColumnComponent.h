@@ -84,6 +84,7 @@ public:
 	~CKanbanColumnComponent() override;
 
 	void paint(juce::Graphics&) override;
+	void paintOverChildren(Graphics & g) override;
 	void resized() override;
 
 private:
