@@ -34,6 +34,9 @@ public:
 
 	CKanbanColumnContentComponent* getOwner();
 	void setOwner(CKanbanColumnContentComponent* aOwner);
+
+	void openPropertiesWindow();
+	void setupFromJson(const String& aLabel, const String& aNotes, const String& aColour);
 	
 	void setText(const String& aString);
 	String getText();

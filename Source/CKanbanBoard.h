@@ -17,7 +17,7 @@
 using namespace juce;
 
 //==============================================================================
-/*
+/*http://davidbau.com/colors/
 */
 class CKanbanBoardComponent  : public juce::Component
 {

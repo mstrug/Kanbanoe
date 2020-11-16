@@ -15,6 +15,18 @@ MainComponent::MainComponent()
 	iKanbanBoard->createDefaultBoard();
 	addAndMakeVisible(iKanbanBoard);
 
+	juce::Time t = juce::Time::getCurrentTime();
+	int d = t.getDayOfYear();
+	int e = t.getDayOfWeek();
+	juce::Time t2 = t.fromISO8601(String(t.getYear()) + "0101");
+	int f = t2.getDayOfWeek();
+	int wk = ((d + 6) / 7);
+	if (e < f) wk++;
+
+	iStatuBar.setJustificationType(Justification::centredRight);
+	iStatuBar.setText( String(t.getYear()) + " wk" + String(wk), NotificationType::dontSendNotification );
+	addAndMakeVisible(iStatuBar);
+
 	setSize(600, 400);
 }
 
@@ -45,6 +57,9 @@ void MainComponent::resized()
 	auto b = getLocalBounds();
 	auto b1 = b.removeFromTop(LookAndFeel::getDefaultLookAndFeel().getDefaultMenuBarHeight());
 	iMenuBar->setBounds( b1 );
+
+	auto b2 = b.removeFromBottom(LookAndFeel::getDefaultLookAndFeel().getDefaultMenuBarHeight());
+	iStatuBar.setBounds(b2);
 
 	iKanbanBoard->setBounds(b);
 
@@ -109,6 +124,21 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 				openFile(f);
 			}
 		}
+		else if (menuItemID == 0x0003)
+		{  // save
+			if (iOpenedFile.getFullPathName().isEmpty())
+			{
+				Logger::outputDebugString("File not opened!");
+			}
+			else
+			{
+				String errorMessage;
+				if (!iKanbanBoard->saveFile(iOpenedFile, errorMessage))
+				{
+					AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", errorMessage, "Close");
+				}
+			}
+		}
 		else if (menuItemID == 0x0004)
 		{
 			// save as
@@ -125,6 +155,10 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 				if (!iKanbanBoard->saveFile(f, errorMessage))
 				{
 					AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", errorMessage, "Close");
+				}
+				else
+				{
+					iOpenedFile = f;
 				}
 			}
 		}
@@ -178,7 +212,7 @@ void MainComponent::openFile(File& aFn)
 			addAndMakeVisible(newboard);
 			resized();
 
-			//iOpenedFile = aFn;
+			iOpenedFile = aFn;
 
 			//Config::getInstance()->setOpenRecent(aFn.getFullPathName());
 		}

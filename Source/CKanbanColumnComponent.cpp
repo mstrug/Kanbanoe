@@ -23,8 +23,14 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 	iTitle.addMouseListener(this,true);
 	addAndMakeVisible(iTitle);
 
+	iAddCardButton.setButtonText("+");
+	addAndMakeVisible(iAddCardButton);
+
+	int h = CConfiguration::getIntValue("KanbanCardHeight");
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 	iScrollBar.addListener(this);
 	iScrollBar.setAlwaysOnTop(true);
+	iScrollBar.setSingleStepSize( (h + m + m ) / 4);
 	addAndMakeVisible(iScrollBar);
 }
 
@@ -61,7 +67,10 @@ void CKanbanColumnComponent::paintOverChildren(Graphics & g)
 void CKanbanColumnComponent::resized()
 {
 	Rectangle<int> r(getLocalBounds());
-	iTitle.setBounds(r.removeFromTop(25));
+	Rectangle<int> r1(r.removeFromTop(25));
+	//Rectangle<int> r1b = r1.removeFromRight(25);
+	iTitle.setBounds(r1);
+	//iAddCardButton.setBounds(r1b);
 
 	Rectangle<int> r2(r);
 	r2.setLeft(r2.getWidth() - 8);
@@ -85,10 +94,21 @@ void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 		PopupMenu menu;
 		menu.addItem("Add card", [&]() 
 		{ 
-			this->iViewportLayout.addCard();
+			this->iViewportLayout.createNewCard();
 		});
 		menu.addItem(1,"Archive column");
 		menu.show();
+	}
+}
+
+void CKanbanColumnComponent::mouseWheelMove(const MouseEvent & event, const MouseWheelDetails & details)
+{
+	static juce::int64 ms = 0;
+	if (iScrollBar.isVisible() && ms < event.eventTime.toMilliseconds() )
+	{		
+		ms = event.eventTime.toMilliseconds();
+		auto e = event.getEventRelativeTo(&iScrollBar);
+		iScrollBar.mouseWheelMove(e, details);
 	}
 }
 
@@ -103,8 +123,8 @@ void CKanbanColumnComponent::setActiveFrame(bool aActive)
 
 void CKanbanColumnComponent::contentUpdated()
 {
-	Logger::outputDebugString("minH: " + String(iViewportLayout.iMinimumHeight));
-	Logger::outputDebugString("H: " + String(iViewportLayout.getHeight()));
+	//Logger::outputDebugString("minH: " + String(iViewportLayout.iMinimumHeight));
+	//Logger::outputDebugString("H: " + String(iViewportLayout.getHeight()));
 
 	iScrollBar.setRangeLimits(0, iViewportLayout.getHeight());
 
@@ -120,6 +140,11 @@ CKanbanBoardComponent& CKanbanColumnComponent::kanbanBoard()
 void CKanbanColumnComponent::addCard(CKanbanCardComponent* aCard)
 {
 	iViewportLayout.addCard(aCard);
+}
+
+void CKanbanColumnComponent::scrollToBottom()
+{
+	iScrollBar.scrollToBottom(NotificationType::sendNotificationSync);
 }
 
 String CKanbanColumnComponent::getTitle()

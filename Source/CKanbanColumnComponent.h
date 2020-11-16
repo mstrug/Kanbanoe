@@ -31,11 +31,13 @@ public:
 	void paintOverChildren(Graphics & g) override;
 	void resized() override;
 	void mouseUp(const MouseEvent& event) override;
+	void mouseWheelMove(const MouseEvent & event, const MouseWheelDetails & details) override;
 
 	void setActiveFrame(bool aActive);
 	void contentUpdated();
 	CKanbanBoardComponent& kanbanBoard();
 	void addCard(CKanbanCardComponent* aCard);
+	void scrollToBottom();
 
 	String getTitle();
 	int getColumnId();
@@ -55,6 +57,8 @@ private:
 	Label iTitle;
 
 	ScrollBar iScrollBar;
+
+	TextButton iAddCardButton;
 
 	CKanbanColumnContentComponent iViewportLayout;
 

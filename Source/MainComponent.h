@@ -36,6 +36,8 @@ private:
     //==============================================================================
     // Your private member variables go here...
 
+	Label iStatuBar;
+
 	OwnedArray<CKanbanCardComponent> iKanbanCards;
 
 	std::unique_ptr<MenuBarComponent> iMenuBar;

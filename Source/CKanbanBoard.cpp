@@ -231,11 +231,12 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 			var columnId = obj2->getProperty("columnId");
 			if (text.isString() && notes.isString() && colour.isString() && columnId.isInt() )
 			{
-				CKanbanCardComponent* card = ret->createCard();
-				card->setText(text);
-				card->setNotes(notes);
 				String s = colour;
-				card->setColour(Colour::fromString(s));
+				CKanbanCardComponent* card = ret->createCard();
+				card->setupFromJson(text, notes, s);
+				//card->setText(text);
+				//card->setNotes(notes);				
+				//card->setColour(Colour::fromString(s));
 				for (auto j : ret->iKanbanColumns)
 				{
 					if (j->getColumnId() == (int)columnId)

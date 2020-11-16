@@ -122,6 +122,18 @@ void CKanbanCardComponent::setOwner(CKanbanColumnContentComponent* aOwner)
 	iOwner = aOwner;
 }
 
+void CKanbanCardComponent::openPropertiesWindow()
+{
+	showProperties();
+}
+
+void CKanbanCardComponent::setupFromJson(const String& aLabel, const String& aNotes, const String& aColour)
+{
+	iLabel.setText(URL::removeEscapeChars(aLabel), NotificationType::dontSendNotification);
+	iColorBar = Colour::fromString(URL::removeEscapeChars(aColour));
+	iNotes = URL::removeEscapeChars(aNotes);
+}
+
 void CKanbanCardComponent::setText(const String& aString)
 {
 	iLabel.setText(aString, NotificationType::dontSendNotification);	
@@ -154,7 +166,11 @@ String CKanbanCardComponent::getNotes()
 
 String CKanbanCardComponent::toJson()
 {
-	String ret("{ \"text\":\"" + iLabel.getText() + "\", \"notes\":\"" + iNotes + "\", \"colour\":\"" + iColorBar.toString() + "\", \"columnId\":" + String(iOwner->getOwner().getColumnId()) + " }");
+	String l = URL::addEscapeChars(iLabel.getText().toUTF8(), false);
+	String n = URL::addEscapeChars(iNotes.toUTF8(), false);
+	String c = URL::addEscapeChars(iColorBar.toString().toUTF8(), false);
+	//String::fromUTF8(URL::removeEscapedChars(url));
+	String ret("{ \"text\":\"" + l + "\", \"notes\":\"" + n + "\", \"colour\":\"" + c + "\", \"columnId\":" + String(iOwner->getOwner().getColumnId()) + " }");
 	return ret;
 }
 
