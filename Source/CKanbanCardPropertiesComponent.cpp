@@ -11,6 +11,8 @@
 #include <JuceHeader.h>
 #include "CKanbanCardPropertiesComponent.h"
 #include "CKanbanCardComponent.h"
+#include "CConfiguration.h"
+#include "ColourPalette.h"
 
 
 //==============================================================================
@@ -19,6 +21,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	setViewportIgnoreDragFlag(true);
 
 	int w = 300;
+	int wm = 20;
 
 	//iBar->getProperties().set("name", "test");
 	addAndMakeVisible(iTextName);
@@ -59,8 +62,16 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 		this->getParentComponent()->exitModalState(0);
 	};
 
-	
-	setSize(w+20, yofs + 24+48 +12);
+	yofs = iTextEditor.getBottom() + 12;
+
+	iColours.reset(new ColoursComponent( 6, 1, CConfiguration::getColourPalette(), 0 ));
+	addAndMakeVisible(*iColours);
+	iColours->setTopLeftPosition( w + wm - iColours->getWidth() - 10, yofs);
+	iColours->setListener(this);
+
+	yofs = iColours->getBottom() + 12;
+
+	setSize(w + wm, yofs);
 }
 
 CKanbanCardPropertiesComponent::~CKanbanCardPropertiesComponent()
@@ -81,6 +92,11 @@ void CKanbanCardPropertiesComponent::mouseDown(const MouseEvent& event)
 
 void CKanbanCardPropertiesComponent::mouseUp(const MouseEvent& event)
 {
+}
+
+void CKanbanCardPropertiesComponent::ColorChanged(int aSelectedColorIdx)
+{
+	iOwner.setColour(CConfiguration::getColourPalette().getColor(aSelectedColorIdx));
 }
 
 void CKanbanCardPropertiesComponent::changesApply()

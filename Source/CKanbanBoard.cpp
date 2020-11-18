@@ -300,11 +300,21 @@ bool CKanbanBoardComponent::saveFile(File& aFile, String& aReturnErrorMessage)
 		f << "\n],\n\n\"cards\":\n[\n";
 
 		j = 0;
-		for (auto i : iKanbanCards)
+		for (auto k : iKanbanColumns)
 		{
-			if (j > 0) f << ",\n";
-			f << i->toJson();
-			j++;
+			auto& cld = k->cardsLayout().getLayout().items;
+			for (auto p : cld)
+			{
+				for (auto i : iKanbanCards)
+				{
+					if (i == p.associatedComponent)
+					{
+						if (j > 0) f << ",\n";
+						f << i->toJson();
+						j++;
+					}
+				}
+			}
 		}
 
 		f << "\n]\n}\n";

@@ -36,6 +36,7 @@ public:
 	void updateSize();
 	void setMinimumHeight(int aHeight);
 	CKanbanColumnComponent& getOwner();
+	const FlexBox& getLayout();
 
 public: // from DragAndDropTarget
 

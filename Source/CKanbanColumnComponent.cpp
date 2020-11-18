@@ -137,6 +137,11 @@ CKanbanBoardComponent& CKanbanColumnComponent::kanbanBoard()
 	return iOwner;
 }
 
+CKanbanColumnContentComponent& CKanbanColumnComponent::cardsLayout()
+{
+	return iViewportLayout;
+}
+
 void CKanbanColumnComponent::addCard(CKanbanCardComponent* aCard)
 {
 	iViewportLayout.addCard(aCard);

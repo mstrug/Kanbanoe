@@ -11,8 +11,13 @@ MainComponent::MainComponent()
 	iMenuBar.reset(new MenuBarComponent(this));
 	addAndMakeVisible(iMenuBar.get());
 
+	addAndMakeVisible(iMdiPanel);
+	iMdiPanel.setLayoutMode(MultiDocumentPanel::MaximisedWindowsWithTabs);
+	//iMdiPanel.setBackgroundColour(Colours::transparentBlack);
+
 	iKanbanBoard = new CKanbanBoardComponent();
 	iKanbanBoard->createDefaultBoard();
+	iKanbanBoard->setName("board1");
 	addAndMakeVisible(iKanbanBoard);
 
 	juce::Time t = juce::Time::getCurrentTime();
@@ -28,6 +33,9 @@ MainComponent::MainComponent()
 	addAndMakeVisible(iStatuBar);
 
 	setSize(600, 400);
+
+
+	iMdiPanel.addDocument(iKanbanBoard, Colours::lightblue.withAlpha(0.6f), false);
 }
 
 MainComponent::~MainComponent()
@@ -61,7 +69,8 @@ void MainComponent::resized()
 	auto b2 = b.removeFromBottom(LookAndFeel::getDefaultLookAndFeel().getDefaultMenuBarHeight());
 	iStatuBar.setBounds(b2);
 
-	iKanbanBoard->setBounds(b);
+	iMdiPanel.setBounds(b);
+	//iKanbanBoard->setBounds(b);
 
 
 /*	int w = CConfiguration::getIntValue("KanbanCardWidth");

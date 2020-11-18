@@ -36,6 +36,7 @@ public:
 	void setActiveFrame(bool aActive);
 	void contentUpdated();
 	CKanbanBoardComponent& kanbanBoard();
+	CKanbanColumnContentComponent& cardsLayout();
 	void addCard(CKanbanCardComponent* aCard);
 	void scrollToBottom();
 

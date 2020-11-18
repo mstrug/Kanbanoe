@@ -128,6 +128,11 @@ CKanbanColumnComponent& CKanbanColumnContentComponent::getOwner()
 	return iOwner;
 }
 
+const FlexBox& CKanbanColumnContentComponent::getLayout()
+{
+	return iLayout;
+}
+
 bool CKanbanColumnContentComponent::isInterestedInDragSource(const SourceDetails & dragSourceDetails)
 {
 	int j = 0;

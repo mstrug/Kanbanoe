@@ -11,7 +11,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-
+#include "ColoursComponent.h"
 
 using namespace juce;
 //==============================================================================
@@ -20,7 +20,7 @@ using namespace juce;
 
 class CKanbanCardComponent;
 
-class CKanbanCardPropertiesComponent : public juce::Component
+class CKanbanCardPropertiesComponent : public juce::Component, public ColoursComponentListener
 {
 public:
 	CKanbanCardPropertiesComponent(CKanbanCardComponent& aOwner);
@@ -31,6 +31,10 @@ public:
 	void mouseDown(const MouseEvent& event) override;
 	void mouseUp(const MouseEvent& event) override;
 	
+public: // ColoursComponentListener
+
+	void ColorChanged(int aSelectedColorIdx);
+
 private:
 
 	void changesApply();
@@ -45,5 +49,7 @@ private:
 	
 	TextEditor iTextEditor;
 		
+	std::unique_ptr<ColoursComponent> iColours;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanCardPropertiesComponent)
 };

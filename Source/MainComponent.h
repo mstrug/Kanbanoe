@@ -30,13 +30,25 @@ private: // from MenuBarModel
 
 private: 
 
-	void MainComponent::openFile(File& aFn);
+	void openFile(File& aFn);
+
+private:
+
+	class CMyMdi : public MultiDocumentPanel
+	{
+		bool tryToCloseDocument(Component* component)
+		{
+			return true;
+		}
+	};
 
 private:
     //==============================================================================
     // Your private member variables go here...
 
 	Label iStatuBar;
+
+	CMyMdi iMdiPanel;
 
 	OwnedArray<CKanbanCardComponent> iKanbanCards;
 

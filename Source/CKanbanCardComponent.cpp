@@ -17,13 +17,14 @@
 
 
 //==============================================================================
-CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner)
+CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false)
 {
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
 
-	//iColorBar = juce::Colours::coral;// gold);
-	iColorBar.fromRGBA(0, 0, 0, 0);
+	iColorBar = CConfiguration::getColourPalette().getColor(2);
+	//	juce::Colours::coral;// gold);
+	//iColorBar.fromRGBA(0, 0, 0, 0);
 
 	iLabel.setText("test", NotificationType::dontSendNotification);
 	addAndMakeVisible(iLabel);
@@ -46,7 +47,14 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 	}
 	else
 	{
-		g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
+		if (iMouseActive)
+		{
+			g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.08f));   // clear the background
+		}
+		else
+		{
+			g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));   // clear the background
+		}
 
 		g.setColour (juce::Colours::grey);
 		g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
@@ -112,6 +120,19 @@ void CKanbanCardComponent::mouseDoubleClick(const MouseEvent& event)
 	Logger::outputDebugString("DB");
 }
 
+void CKanbanCardComponent::mouseEnter(const MouseEvent& event)
+{
+	iMouseActive = true;
+	repaint();
+}
+
+void CKanbanCardComponent::mouseExit(const MouseEvent& event)
+{
+	iMouseActive = false;
+	repaint();
+}
+
+
 CKanbanColumnContentComponent* CKanbanCardComponent::getOwner()
 {
 	return iOwner;
@@ -147,6 +168,7 @@ String CKanbanCardComponent::getText()
 void CKanbanCardComponent::setColour(Colour aColor)
 {
 	iColorBar = aColor;
+	repaint();
 }
 
 Colour CKanbanCardComponent::getColour()

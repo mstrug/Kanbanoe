@@ -31,6 +31,8 @@ public:
 	void mouseDrag(const MouseEvent& event) override;
 	void mouseUp(const MouseEvent& event) override;
 	void mouseDoubleClick(const MouseEvent& event) override;
+	void mouseEnter(const MouseEvent& event) override;
+	void mouseExit(const MouseEvent& event) override;
 
 	CKanbanColumnContentComponent* getOwner();
 	void setOwner(CKanbanColumnContentComponent* aOwner);
@@ -61,6 +63,8 @@ private:
 	ComponentDragger iDragger;
 
 	bool iIsDragging;
+
+	bool iMouseActive;
 
 	Label iLabel;
 

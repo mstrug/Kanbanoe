@@ -11,6 +11,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "ColourPalette.h"
 
 using namespace juce;
 
@@ -33,9 +34,13 @@ public:
 
 	static int getIntValue(StringRef aPropertyName);
 
+	static ColourPalette& getColourPalette();
+
 private:
 
 	PropertiesFile* iFile;
+
+	ColourPalette* iPalette;
 
 };
 

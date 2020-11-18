@@ -24,11 +24,21 @@ CConfiguration::CConfiguration()
 	opt.millisecondsBeforeSaving = 0;
 
 	iFile = new PropertiesFile(opt);
+
+	int cc = iFile->getIntValue("ColoursCount");
+
+	iPalette = new ColourPalette(cc);
+	for (int i = 0; i < cc; i++)
+	{
+		auto s = iFile->getValue("Colour_" + String(i));
+		iPalette->setColor(i, Colour::fromString(s));
+	}
 }
 
 CConfiguration::~CConfiguration()
 {
 	delete iFile;
+	delete iPalette;
 }
 
 void CConfiguration::Destroy()
@@ -63,3 +73,8 @@ int CConfiguration::getIntValue(StringRef aPropertyName)
 	return c.iFile->getIntValue(aPropertyName);
 }
 
+ColourPalette& CConfiguration::getColourPalette()
+{
+	CConfiguration& c = getInstance();
+	return *c.iPalette;
+}
