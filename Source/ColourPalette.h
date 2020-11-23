@@ -26,6 +26,10 @@ public:
 
 	Colour getColor(int aIdx);
 
+	Colour getLastColor();
+
+	int getColourIndex(const Colour& aColor);
+
 	void setColor(int aIdx, const Colour& aColor);
 
 	Colour getColorActive(int aIdx);

@@ -14,11 +14,13 @@ MainComponent::MainComponent()
 	addAndMakeVisible(iMdiPanel);
 	iMdiPanel.setLayoutMode(MultiDocumentPanel::MaximisedWindowsWithTabs);
 	//iMdiPanel.setBackgroundColour(Colours::transparentBlack);
+	iMdiPanel.setBackgroundColour(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 
-	iKanbanBoard = new CKanbanBoardComponent();
-	iKanbanBoard->createDefaultBoard();
-	iKanbanBoard->setName("board1");
-	addAndMakeVisible(iKanbanBoard);
+	auto kb = new CKanbanBoardComponent();
+	kb->createDefaultBoard();
+	kb->setName("board 1");
+	//addAndMakeVisible(iKanbanBoard);
+	iKanbanBoards.add(kb);
 
 	juce::Time t = juce::Time::getCurrentTime();
 	int d = t.getDayOfYear();
@@ -35,13 +37,13 @@ MainComponent::MainComponent()
 	setSize(600, 400);
 
 
-	iMdiPanel.addDocument(iKanbanBoard, Colours::lightblue.withAlpha(0.6f), false);
+	iMdiPanel.addDocument(iKanbanBoards[0], getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
+	//	Colours::lightblue.withAlpha(0.6f), false);
 }
 
 MainComponent::~MainComponent()
 {
-	delete iKanbanBoard;
-
+	iMdiPanel.closeAllDocuments(false);
 	CConfiguration::getInstance().Destroy();
 }
 
@@ -95,9 +97,11 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 	if (topLevelMenuIndex == 0) // file
 	{
 		menu.addItem(0x0001, "New", true);
-		menu.addItem(0x0002, "Open", true);
-		menu.addItem(0x0003, "Save", true);
-		menu.addItem(0x0004, "Save as", true);
+		menu.addItem(0x0010, "Open", true);
+		menu.addItem(0x0020, "Close", true);
+		menu.addItem(0x0030, "Save", true);
+		menu.addItem(0x0040, "Save as", true);
+		menu.addItem(0x0050, "Save all", true);
 		menu.addItem(0x00f0, "Exit", true);
 	}
 	else if (topLevelMenuIndex == 1) // help
@@ -117,15 +121,18 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 	if (topLevelMenuIndex == 0)
 	{
 		if (menuItemID == 0x0001)
-		{
-			removeChildComponent(iKanbanBoard);
-			delete iKanbanBoard;
-			iKanbanBoard = new CKanbanBoardComponent();
-			//iKanbanBoard->createDefaultBoard();
-			addAndMakeVisible(iKanbanBoard);			
+		{ // new
+			//removeChildComponent(iKanbanBoard);
+			//delete iKanbanBoard;
+			auto kb = new CKanbanBoardComponent();
+			kb->setName("board " + String(iKanbanBoards.size()));
+			kb->createDefaultBoard();
+			//addAndMakeVisible(iKanbanBoard);			
+			iKanbanBoards.add(kb);
+			iMdiPanel.addDocument(iKanbanBoards.getLast(), getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
 		}
-		else if (menuItemID == 0x0002)
-		{
+		else if (menuItemID == 0x0010)
+		{ // open
 			iFileDialog.reset(new FileChooser("Choose a file to open...", File::getCurrentWorkingDirectory(), "*.pkb", false));
 			if (iFileDialog->showDialog(FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles, nullptr))
 			{
@@ -133,22 +140,18 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 				openFile(f);
 			}
 		}
-		else if (menuItemID == 0x0003)
-		{  // save
-			if (iOpenedFile.getFullPathName().isEmpty())
-			{
-				Logger::outputDebugString("File not opened!");
-			}
-			else
-			{
-				String errorMessage;
-				if (!iKanbanBoard->saveFile(iOpenedFile, errorMessage))
-				{
-					AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", errorMessage, "Close");
-				}
-			}
+		else if (menuItemID == 0x0020)
+		{ // close
+			auto kb = static_cast<CKanbanBoardComponent*>(iMdiPanel.getActiveDocument());
+			iMdiPanel.closeDocument(kb, false);
+			iKanbanBoards.removeObject(kb, true);
 		}
-		else if (menuItemID == 0x0004)
+		else if (menuItemID == 0x0030)
+		{  // save
+			auto kb = static_cast<CKanbanBoardComponent*>(iMdiPanel.getActiveDocument());
+			saveFile(kb);
+		}
+		else if (menuItemID == 0x0040)
 		{
 			// save as
 			iFileDialog.reset(new FileChooser("Choose a file to save...", File::getCurrentWorkingDirectory(), "*.pkb", false));
@@ -160,15 +163,19 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 					f = f.withFileExtension("pkb");
 				}
 
-				String errorMessage;
-				if (!iKanbanBoard->saveFile(f, errorMessage))
+				auto kb = static_cast<CKanbanBoardComponent*>(iMdiPanel.getActiveDocument());
+				if (kb)
 				{
-					AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", errorMessage, "Close");
+					kb->setFile(f);
+					saveFile(kb);
 				}
-				else
-				{
-					iOpenedFile = f;
-				}
+			}
+		}
+		else if (menuItemID == 0x0050)
+		{ // save all
+			for (auto& i : iKanbanBoards)
+			{
+				saveFile(i);
 			}
 		}
 		else if (menuItemID == 0x00f0)
@@ -215,15 +222,38 @@ void MainComponent::openFile(File& aFn)
 		}
 		else
 		{
-			removeChildComponent(iKanbanBoard);
-			delete iKanbanBoard;
-			iKanbanBoard = newboard;
-			addAndMakeVisible(newboard);
-			resized();
+			//removeChildComponent(iKanbanBoard);
+			//delete iKanbanBoard;
+			//iKanbanBoard = newboard;
+			//addAndMakeVisible(newboard);
+			//resized();
 
-			iOpenedFile = aFn;
+			iKanbanBoards.add(newboard);
+			newboard->setName(aFn.getFileName());
+			newboard->setFile(aFn);
+			iMdiPanel.addDocument(newboard, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
 
 			//Config::getInstance()->setOpenRecent(aFn.getFullPathName());
 		}
 	}
 }
+
+bool MainComponent::saveFile(CKanbanBoardComponent* aBoard)
+{
+	String errorMessage;
+	if (aBoard)
+	{
+		if (aBoard->getFile().getFullPathName().isEmpty())
+		{
+			Logger::outputDebugString("File not opened!");
+			return false;
+		}
+		if (!aBoard->saveFile(errorMessage))
+		{
+			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", errorMessage, "Close");
+		}
+		return true;
+	}
+	return false;
+}
+

@@ -12,6 +12,7 @@
 #include "CKanbanCardComponent.h"
 #include "CKanbanColumnContentComponent.h"
 #include "CKanbanColumnComponent.h"
+#include "CKanbanBoard.h"
 #include "Cconfiguration.h"
 #include "CKanbanCardPropertiesComponent.h"
 
@@ -22,7 +23,7 @@ CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
 
-	iColorBar = CConfiguration::getColourPalette().getColor(2);
+	iColorBar = CConfiguration::getColourPalette().getLastColor();
 	//	juce::Colours::coral;// gold);
 	//iColorBar.fromRGBA(0, 0, 0, 0);
 
@@ -112,6 +113,15 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 		{
 		});
 		menu.show();*/
+	}
+	else if (event.mods.isRightButtonDown())
+	{
+		PopupMenu menu;
+		menu.addItem("Remove", [&]()
+		{
+			this->getOwner()->getOwner().removeCard(this);
+		});
+		menu.show();
 	}
 }
 

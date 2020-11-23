@@ -26,7 +26,22 @@ int ColourPalette::getColorCount()
 Colour ColourPalette::getColor(int aIdx)
 {
 	if (aIdx >= iColors.size()) return iColors[aIdx % iColors.size()];
-	return iColors[aIdx];
+	if (aIdx >= 0 && aIdx < iColors.size()) return iColors[aIdx];
+	else return Colour();
+}
+
+Colour ColourPalette::getLastColor()
+{
+	if (iColors.size() > 0)
+	{
+		return iColors[iColors.size() - 1];
+	}
+	return Colour();
+}
+
+int ColourPalette::getColourIndex(const Colour& aColor)
+{
+	return iColors.indexOf(aColor);
 }
 
 void ColourPalette::setColor(int aIdx, const Colour& aColor)

@@ -38,6 +38,7 @@ public:
 	CKanbanBoardComponent& kanbanBoard();
 	CKanbanColumnContentComponent& cardsLayout();
 	void addCard(CKanbanCardComponent* aCard);
+	void removeCard(CKanbanCardComponent* aCard);
 	void scrollToBottom();
 
 	String getTitle();

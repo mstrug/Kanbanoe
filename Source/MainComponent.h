@@ -31,15 +31,28 @@ private: // from MenuBarModel
 private: 
 
 	void openFile(File& aFn);
+	bool saveFile(CKanbanBoardComponent* aBoard);
 
 private:
 
+	class CMyMdiDoc : public CKanbanBoardComponent
+	{
+		Viewport iViewport;
+	public:
+		CMyMdiDoc(CKanbanBoardComponent* board) { iViewport.setViewedComponent( board ); }
+		virtual ~CMyMdiDoc() {}
+	};
 	class CMyMdi : public MultiDocumentPanel
 	{
 		bool tryToCloseDocument(Component* component)
 		{
 			return true;
 		}
+	public:
+		/*bool addDocument(CKanbanBoardComponent* board)
+		{
+			//addDocument(board, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
+		}*/
 	};
 
 private:
@@ -54,11 +67,9 @@ private:
 
 	std::unique_ptr<MenuBarComponent> iMenuBar;
 	
-	CKanbanBoardComponent *iKanbanBoard;
+	OwnedArray<CKanbanBoardComponent> iKanbanBoards;
 
 	std::unique_ptr<FileChooser> iFileDialog;
-	
-	File iOpenedFile;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

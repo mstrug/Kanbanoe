@@ -82,18 +82,21 @@ void CKanbanBoardComponent::paint (juce::Graphics& g)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
 
     g.setColour (juce::Colours::grey);
-    g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
+    //g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
 
 }
 
 void CKanbanBoardComponent::resized()
 {
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
+	int w = CConfiguration::getIntValue("KanbanCardWidth");
+
+	int ww = iGrid.getNumberOfColumns() * ( w + 4 * m );
+	setSize(ww, getHeight());
 
 	Rectangle<int> r(getLocalBounds());
 	r.reduce(m, m);
 	iGrid.performLayout(r);
-	
 }
 
 CKanbanCardComponent* CKanbanBoardComponent::createCard()
@@ -102,6 +105,11 @@ CKanbanCardComponent* CKanbanBoardComponent::createCard()
 	iKanbanCards.add(c);
 	c->setText( "Empty card " + String(iKanbanCards.size()) );
 	return c;
+}
+
+void CKanbanBoardComponent::removeCard(CKanbanCardComponent* aCard)
+{
+	iKanbanCards.removeObject(aCard, true);
 }
 
 CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aReturnErrorMessage)
@@ -264,9 +272,9 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 	return ret;
 }
 
-bool CKanbanBoardComponent::saveFile(File& aFile, String& aReturnErrorMessage)
+bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 {
-	FileOutputStream f(aFile);
+	FileOutputStream f(iFile);
 	if (f.openedOk())
 	{
 		f.setPosition(0);
@@ -318,49 +326,22 @@ bool CKanbanBoardComponent::saveFile(File& aFile, String& aReturnErrorMessage)
 		}
 
 		f << "\n]\n}\n";
-
-/*		for (int i = 0; i <= iBarsCount; i++)
-		{
-			int pos, lane, len;
-			if (getBarPlacement(i, lane, pos, len))
-			{
-				auto b = iController.getBarComponent(i);
-				if (b)
-				{
-					f << "{\n\"lane\":" << lane << ",\n\"pos\":" << pos << ",\n\"len\":" << len << ",\n\"color\":" << b->getColour() << ",\n\"properties\":\n{\n";
-					auto p = b->getProperties();
-					for (int j = 0; j < p.size(); j++)
-					{
-						f << "\"" << p.getName(j).toString() << "\":\"" << p.getValueAt(j).toString() << "\"";
-						if (j < p.size() - 1)
-						{
-							f << ",";
-						}
-						f << "\n";
-					}
-					f << "}\n}";
-					if (i < iBarsCount) f << ",";
-				}
-			}
-		}
-		f << "\n],\n";
-
-		f << "\"custom_properties\": [ ";
-		for (int i = 0; i < iBarPropertiesList.size(); i++)
-		{
-			f << "\"" << iBarPropertiesList[i] << "\"";
-			if (i < iBarPropertiesList.size() - 1)
-			{
-				f << ",\n";
-			}
-		}
-
-		f << "]\n}\n";*/
-
+		
+		setName(iFile.getFileName());
 		return true;
 	}
 
 	aReturnErrorMessage = "Error opening file for write.";
 	return false;
+}
+
+void CKanbanBoardComponent::setFile(File& aFile)
+{
+	iFile = aFile;
+}
+
+File& CKanbanBoardComponent::getFile()
+{
+	return iFile;
 }
 

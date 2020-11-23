@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include "CKanbanColumnComponent.h"
 #include "CConfiguration.h"
+#include "CKanbanBoard.h"
 
 
 
@@ -145,6 +146,13 @@ CKanbanColumnContentComponent& CKanbanColumnComponent::cardsLayout()
 void CKanbanColumnComponent::addCard(CKanbanCardComponent* aCard)
 {
 	iViewportLayout.addCard(aCard);
+}
+
+void CKanbanColumnComponent::removeCard(CKanbanCardComponent* aCard)
+{
+	iViewportLayout.removeCard(aCard);
+	iViewportLayout.resized();
+	iOwner.removeCard(aCard);
 }
 
 void CKanbanColumnComponent::scrollToBottom()

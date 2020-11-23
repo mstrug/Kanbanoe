@@ -64,7 +64,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 
 	yofs = iTextEditor.getBottom() + 12;
 
-	iColours.reset(new ColoursComponent( 6, 1, CConfiguration::getColourPalette(), 0 ));
+	iColours.reset(new ColoursComponent( 6, 1, CConfiguration::getColourPalette(), CConfiguration::getColourPalette().getColourIndex( aOwner.getColour() )));
 	addAndMakeVisible(*iColours);
 	iColours->setTopLeftPosition( w + wm - iColours->getWidth() - 10, yofs);
 	iColours->setListener(this);

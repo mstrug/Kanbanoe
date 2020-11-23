@@ -33,12 +33,17 @@ public:
     void resized() override;
 
 	CKanbanCardComponent* createCard();
+	void removeCard(CKanbanCardComponent* aCard);
 
-	bool saveFile(File& aFile, String& aReturnErrorMessage);
+	bool saveFile(String& aReturnErrorMessage);
+	void setFile(File& aFile);
+	File& getFile();
 
 private:
 
 	Grid iGrid;
+
+	File iFile;
 
 	OwnedArray< CKanbanCardComponent > iKanbanCards;
 
