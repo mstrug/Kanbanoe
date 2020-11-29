@@ -40,7 +40,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 
 	int yofs = iTextName.getBottom() + 12;
 
-	iLabel.setText("notes", juce::NotificationType::dontSendNotification);
+	iLabel.setText("Notes:", juce::NotificationType::dontSendNotification);
 	addAndMakeVisible(iLabel);
 	iLabel.setBounds(10, yofs, 50, 24);
 	
@@ -61,6 +61,25 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	};
 
 	yofs = iTextEditor.getBottom() + 12;
+
+	iLabelUrl.setText("Url:", juce::NotificationType::dontSendNotification);
+	addAndMakeVisible(iLabelUrl);
+	iLabelUrl.setBounds(10, yofs, 50, 24);
+
+	addAndMakeVisible(iTextUrl);
+	iTextUrl.setBounds(10 + 50 + 10, yofs, w - 50 - 10, 24);
+	iTextUrl.setSelectAllWhenFocused(true);
+	iTextUrl.setText(aOwner.getProperties()["url"]);
+	iTextUrl.onTextChange = [this]
+	{
+		this->changesApply();
+	};
+	iTextUrl.onReturnKey = [this]
+	{
+		this->getParentComponent()->exitModalState(0);
+	};
+
+	yofs = iTextUrl.getBottom() + 12;
 
 	iColours.reset(new ColoursComponent( 6, 1, CConfiguration::getColourPalette(), CConfiguration::getColourPalette().getColourIndex( aOwner.getColour() )));
 	addAndMakeVisible(*iColours);
@@ -104,6 +123,7 @@ void CKanbanCardPropertiesComponent::changesApply()
 	iBar->setColour(this->iColours->getSelectedColourIdx());
 	iBar->repaint();*/
 
+	iOwner.setUrl(iTextUrl.getText());
 	iOwner.setText(iTextName.getText());
 	iOwner.repaint();
 }

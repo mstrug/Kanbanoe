@@ -44,11 +44,13 @@ private:
 	CKanbanCardComponent& iOwner;
 
 	TextEditor iTextName;
-	
 	Label iLabel;
 	
 	TextEditor iTextEditor;
-		
+
+	TextEditor iTextUrl;
+	Label iLabelUrl;
+
 	std::unique_ptr<ColoursComponent> iColours;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanCardPropertiesComponent)

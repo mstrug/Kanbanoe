@@ -247,14 +247,20 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 		{
 			auto obj2 = i.getDynamicObject();
 			var text = obj2->getProperty("text");
-			var notes = obj2->getProperty("notes");
+			var notes = obj2->getProperty("notes"); // opt
 			var colour = obj2->getProperty("colour");
 			var columnId = obj2->getProperty("columnId");
-			if (text.isString() && notes.isString() && colour.isString() && columnId.isInt() )
+			var url = obj2->getProperty("url"); // opt
+			if (text.isString() && colour.isString() && columnId.isInt() )
 			{
 				String s = colour;
 				CKanbanCardComponent* card = ret->createCard();
-				card->setupFromJson(text, notes, s);
+				NamedValueSet vs;
+				vs.set("text", text);
+				vs.set("notes", notes);
+				vs.set("colour", s);
+				vs.set("url", url);
+				card->setupFromJson(vs);
 				//card->setText(text);
 				//card->setNotes(notes);				
 				//card->setColour(Colour::fromString(s));

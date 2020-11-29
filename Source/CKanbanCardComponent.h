@@ -32,16 +32,19 @@ public:
 	void mouseUp(const MouseEvent& event) override;
 	void mouseDoubleClick(const MouseEvent& event) override;
 	void mouseEnter(const MouseEvent& event) override;
+	void mouseMove(const MouseEvent& event) override;
 	void mouseExit(const MouseEvent& event) override;
 
 	CKanbanColumnContentComponent* getOwner();
 	void setOwner(CKanbanColumnContentComponent* aOwner);
 
 	void openPropertiesWindow();
-	void setupFromJson(const String& aLabel, const String& aNotes, const String& aColour);
-	
+	void setupFromJson(const NamedValueSet& aValues); // const String& aLabel, const String& aNotes, const String& aColour);
+
 	void setText(const String& aString);
 	String getText();
+
+	void setUrl(const String& aString);
 
 	void setColour(Colour aColor);
 	Colour getColour();
@@ -72,6 +75,13 @@ private:
 	Colour iColorBar;
 
 	String iNotes;
+
+	HyperlinkButton iButtonUrl;
+
+	Line<float> iLineUrl;
+	Rectangle<int> iRectUrl;
+	bool iIsUrlSet;
+	bool iIsUrlMouseActive;
 
 	CKanbanColumnContentComponent* iOwner;
 

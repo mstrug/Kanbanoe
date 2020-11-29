@@ -18,7 +18,7 @@
 
 
 //==============================================================================
-CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false)
+CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false)
 {
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -31,6 +31,10 @@ CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner
 	addAndMakeVisible(iLabel);
 	iLabel.addMouseListener(this,true);
 	iLabel.setMinimumHorizontalScale(1);
+
+	iButtonUrl.setButtonText("+");
+	addAndMakeVisible(iButtonUrl);
+	
 
 	//setOpaque(true);
 
@@ -65,6 +69,14 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 
 		g.setColour(iColorBar);
 		g.fillRect(4,4,2,getHeight()-8);
+
+		if (iIsUrlSet)
+		{
+			g.setColour(juce::Colours::grey);
+			if (iIsUrlMouseActive) g.setColour(juce::Colours::lightgrey);
+			//g.fillRect(iRectUrl);
+			g.drawArrow(iLineUrl, 2, 7, 7);
+		}
 	}
 }
 
@@ -73,6 +85,13 @@ void CKanbanCardComponent::resized()
 	Rectangle<int> r(getBounds());
 	r.removeFromLeft(10);
 	iLabel.setBounds(r);
+
+	iRectUrl = getBounds().removeFromRight(15);
+	iRectUrl = iRectUrl.removeFromBottom(15);
+	iRectUrl -= Point<int>(1, 1);
+
+	iLineUrl.setStart(iRectUrl.getTopLeft().x + 2, iRectUrl.getBottom() - 2);
+	iLineUrl.setEnd(iRectUrl.getRight() - 2, iRectUrl.getTopLeft().y + 2);
 }
 
 void CKanbanCardComponent::mouseDown(const MouseEvent& event)
@@ -103,7 +122,18 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 	}
 	else if (event.mods.isLeftButtonDown())
 	{
-		showProperties();
+		URL u(getProperties()["url"]);
+		if (iIsUrlSet &&
+			((event.eventComponent == this && iRectUrl.contains(event.getPosition())) ||
+			(event.eventComponent != this && iRectUrl.contains(event.getEventRelativeTo(this).getPosition()))))
+		{
+			//u.isWellFormed() // todo
+			u.launchInDefaultBrowser();
+		}
+		else
+		{
+			showProperties();
+		}
 
 		/*PopupMenu menu;
 		menu.addItem("Edit card", [&]()
@@ -139,9 +169,32 @@ void CKanbanCardComponent::mouseEnter(const MouseEvent& event)
 	repaint();
 }
 
+void CKanbanCardComponent::mouseMove(const MouseEvent & event)
+{
+	if (iMouseActive && iIsUrlSet)
+	{
+		bool tmp = iIsUrlMouseActive;
+		//Logger::outputDebugString("pos: " + String(event.getPosition().x) + ", " + String(event.getPosition().y));
+		//Logger::outputDebugString("x: " + String(iRectUrl.getTopLeft().x) + "  y:" + String(iRectUrl.getTopLeft().y));
+		//Logger::outputDebugString(event.eventComponent == this ? "ok" : "nok");
+		if (event.eventComponent == this)
+		{
+			iIsUrlMouseActive = iRectUrl.contains(event.getPosition());
+		}
+		else
+		{
+			auto p = event.getEventRelativeTo(this).getPosition();
+			//Logger::outputDebugString("pos2: " + String(p.x) + ", " + String(p.y));
+			iIsUrlMouseActive = iRectUrl.contains(p);	
+		}
+		if ( tmp != iIsUrlMouseActive ) repaint();
+	}
+}
+
 void CKanbanCardComponent::mouseExit(const MouseEvent& event)
 {
 	iMouseActive = false;
+	iIsUrlMouseActive = false;
 	repaint();
 }
 
@@ -161,11 +214,12 @@ void CKanbanCardComponent::openPropertiesWindow()
 	showProperties();
 }
 
-void CKanbanCardComponent::setupFromJson(const String& aLabel, const String& aNotes, const String& aColour)
+void CKanbanCardComponent::setupFromJson(const NamedValueSet& aValues) //const String& aLabel, const String& aNotes, const String& aColour)
 {
-	iLabel.setText(URL::removeEscapeChars(aLabel), NotificationType::dontSendNotification);
-	iColorBar = Colour::fromString(URL::removeEscapeChars(aColour));
-	iNotes = URL::removeEscapeChars(aNotes);
+	iLabel.setText(URL::removeEscapeChars(aValues["text"]), NotificationType::dontSendNotification);
+	iColorBar = Colour::fromString(URL::removeEscapeChars(aValues["colour"]));
+	iNotes = URL::removeEscapeChars(aValues["notes"]);
+	setUrl(URL::removeEscapeChars(aValues["url"]));
 }
 
 void CKanbanCardComponent::setText(const String& aString)
@@ -176,6 +230,28 @@ void CKanbanCardComponent::setText(const String& aString)
 String CKanbanCardComponent::getText()
 {
 	return iLabel.getText();
+}
+
+void CKanbanCardComponent::setUrl(const String& aString)
+{
+	if ( aString.contains("://") || aString.indexOf("//") == 0 )
+	{
+		getProperties().set("url", aString);
+		iIsUrlSet = true;
+	}
+	else if ( aString.length() > 0 )
+	{
+		getProperties().set("url", "http://"+aString);
+		iIsUrlSet = true;
+	}
+	else
+	{
+		getProperties().remove("url");
+		iIsUrlSet = false;
+	}
+	/*iButtonUrl.setVisible(aString.length() > 0);
+	iButtonUrl.setURL(aString);
+	resized();*/
 }
 
 void CKanbanCardComponent::setColour(Colour aColor)
@@ -208,10 +284,24 @@ void CKanbanCardComponent::deselect()
 String CKanbanCardComponent::toJson()
 {
 	String l = URL::addEscapeChars(iLabel.getText().toUTF8(), false);
-	String n = URL::addEscapeChars(iNotes.toUTF8(), false);
 	String c = URL::addEscapeChars(iColorBar.toString().toUTF8(), false);
 	//String::fromUTF8(URL::removeEscapedChars(url));
-	String ret("{ \"text\":\"" + l + "\", \"notes\":\"" + n + "\", \"colour\":\"" + c + "\", \"columnId\":" + String(iOwner->getOwner().getColumnId()) + " }");
+	String ret("{ \"text\":\"" + l + "\", \"colour\":\"" + c + "\", \"columnId\":" + String(iOwner->getOwner().getColumnId()));
+
+	String n = iNotes.toUTF8();
+	if (n.length() > 0)
+	{
+		n = URL::addEscapeChars(n, false);
+		ret += ", \"notes\":\"" + n + "\"";
+	}
+
+	String url = getProperties()["url"];
+	if (url.length() > 0)
+	{
+		url = URL::addEscapeChars(url, false);
+		ret += ", \"url\":\"" + url + "\"";
+	}
+	ret += " }";
 	return ret;
 }
 
