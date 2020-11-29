@@ -30,6 +30,9 @@ CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner
 	iLabel.setText("test", NotificationType::dontSendNotification);
 	addAndMakeVisible(iLabel);
 	iLabel.addMouseListener(this,true);
+	iLabel.setMinimumHorizontalScale(1);
+
+	//setOpaque(true);
 
 	setSize(w, h);
 }
@@ -196,6 +199,12 @@ String CKanbanCardComponent::getNotes()
 	return iNotes;
 }
 
+void CKanbanCardComponent::deselect()
+{
+	iMouseActive = false;
+	repaint();
+}
+
 String CKanbanCardComponent::toJson()
 {
 	String l = URL::addEscapeChars(iLabel.getText().toUTF8(), false);
@@ -209,6 +218,7 @@ String CKanbanCardComponent::toJson()
 
 void CKanbanCardComponent::showProperties()
 {
+	iMouseActive = true;
 	auto comp = std::make_unique<CKanbanCardPropertiesComponent>(*this);
 	CallOutBox* box = &CallOutBox::launchAsynchronously(std::move(comp), this->getScreenBounds(), nullptr);
 	box->setAlwaysOnTop(true);

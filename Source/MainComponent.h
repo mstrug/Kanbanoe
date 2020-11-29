@@ -34,13 +34,26 @@ private:
 	bool saveFile(CKanbanBoardComponent* aBoard);
 
 private:
+	class testc : public Component
+	{
+	public:
+		testc() { setSize(100, 100); }
+		void paint(juce::Graphics& g)
+		{
+			g.setColour(juce::Colours::red);
+			g.drawLine(0, 0, getWidth(), getHeight());
+		}
 
-	class CMyMdiDoc : public CKanbanBoardComponent
+	};
+	class CMyMdiDoc : public Component
 	{
 		Viewport iViewport;
 	public:
-		CMyMdiDoc(CKanbanBoardComponent* board) { iViewport.setViewedComponent( board ); }
-		virtual ~CMyMdiDoc() {}
+		CMyMdiDoc(CKanbanBoardComponent* board) { addAndMakeVisible(iViewport); iViewport.setViewedComponent(board, false); setName(board->getName()); }
+		virtual ~CMyMdiDoc() { }
+		void resized() { auto r(getLocalBounds()); iViewport.setBounds(r); r.removeFromBottom(8); iViewport.getViewedComponent()->setBounds(r); }
+		operator CKanbanBoardComponent*() const { return static_cast<CKanbanBoardComponent*>(iViewport.getViewedComponent()); }
+		CKanbanBoardComponent* getKanbanBoard() { return static_cast<CKanbanBoardComponent*>(iViewport.getViewedComponent()); }
 	};
 	class CMyMdi : public MultiDocumentPanel
 	{
@@ -49,10 +62,11 @@ private:
 			return true;
 		}
 	public:
-		/*bool addDocument(CKanbanBoardComponent* board)
+		bool addDocument(CKanbanBoardComponent* board)
 		{
-			//addDocument(board, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
-		}*/
+			CMyMdiDoc* doc = new CMyMdiDoc(board);
+			return MultiDocumentPanel::addDocument(doc, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), true);
+		}
 	};
 
 private:

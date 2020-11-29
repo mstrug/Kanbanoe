@@ -34,7 +34,6 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	};
 	iTextName.onReturnKey = [this]
 	{
-//		this->iBar->deselect();
 //		this->iController->closePropertiesCallout();
 		this->getParentComponent()->exitModalState(0);
 	};
@@ -57,7 +56,6 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	};
 	iTextEditor.onReturnKey = [this]
 	{
-		//this->iBar->deselect();
 		//this->iController->closePropertiesCallout();
 		this->getParentComponent()->exitModalState(0);
 	};
@@ -76,6 +74,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 
 CKanbanCardPropertiesComponent::~CKanbanCardPropertiesComponent()
 {
+	iOwner.deselect();
 }
 
 void CKanbanCardPropertiesComponent::paint (Graphics& g)

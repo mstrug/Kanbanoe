@@ -36,8 +36,8 @@ MainComponent::MainComponent()
 
 	setSize(600, 400);
 
-
-	iMdiPanel.addDocument(iKanbanBoards[0], getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
+	iMdiPanel.addDocument(iKanbanBoards[0]);
+	//iMdiPanel.addDocument(iKanbanBoards[0], getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
 	//	Colours::lightblue.withAlpha(0.6f), false);
 }
 
@@ -129,7 +129,8 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 			kb->createDefaultBoard();
 			//addAndMakeVisible(iKanbanBoard);			
 			iKanbanBoards.add(kb);
-			iMdiPanel.addDocument(iKanbanBoards.getLast(), getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
+			//iMdiPanel.addDocument(iKanbanBoards.getLast(), getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
+			iMdiPanel.addDocument(iKanbanBoards.getLast());
 		}
 		else if (menuItemID == 0x0010)
 		{ // open
@@ -142,13 +143,13 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 		}
 		else if (menuItemID == 0x0020)
 		{ // close
-			auto kb = static_cast<CKanbanBoardComponent*>(iMdiPanel.getActiveDocument());
-			iMdiPanel.closeDocument(kb, false);
+			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
+			iMdiPanel.closeDocument(iMdiPanel.getActiveDocument(), false);
 			iKanbanBoards.removeObject(kb, true);
 		}
 		else if (menuItemID == 0x0030)
 		{  // save
-			auto kb = static_cast<CKanbanBoardComponent*>(iMdiPanel.getActiveDocument());
+			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
 			saveFile(kb);
 		}
 		else if (menuItemID == 0x0040)
@@ -163,7 +164,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 					f = f.withFileExtension("pkb");
 				}
 
-				auto kb = static_cast<CKanbanBoardComponent*>(iMdiPanel.getActiveDocument());
+				auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
 				if (kb)
 				{
 					kb->setFile(f);
@@ -231,7 +232,8 @@ void MainComponent::openFile(File& aFn)
 			iKanbanBoards.add(newboard);
 			newboard->setName(aFn.getFileName());
 			newboard->setFile(aFn);
-			iMdiPanel.addDocument(newboard, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
+			//iMdiPanel.addDocument(newboard, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
+			iMdiPanel.addDocument(newboard);
 
 			//Config::getInstance()->setOpenRecent(aFn.getFullPathName());
 		}

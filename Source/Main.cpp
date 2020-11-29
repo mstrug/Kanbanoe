@@ -64,7 +64,10 @@ public:
                                                           .findColour (juce::ResizableWindow::backgroundColourId),
                               DocumentWindow::allButtons)
         {
-            setUsingNativeTitleBar (true);
+			getLookAndFeel().setColour(juce::ScrollBar::thumbColourId, juce::Colours::dimgrey);
+			//getLookAndFeel().setDefaultSansSerifTypefaceName("MS Mincho");
+
+			setUsingNativeTitleBar (true);
             setContentOwned (new MainComponent(), true);
 
            #if JUCE_IOS || JUCE_ANDROID
@@ -73,6 +76,7 @@ public:
             setResizable (true, true);
             centreWithSize (getWidth(), getHeight());
            #endif
+
 
             setVisible (true);
         }

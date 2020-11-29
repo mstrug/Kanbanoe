@@ -33,6 +33,8 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 	iScrollBar.setAlwaysOnTop(true);
 	iScrollBar.setSingleStepSize( (h + m + m ) / 4);
 	addAndMakeVisible(iScrollBar);
+
+	setOpaque(true);
 }
 
 CKanbanColumnComponent::~CKanbanColumnComponent()
@@ -84,8 +86,8 @@ void CKanbanColumnComponent::resized()
 	iViewportLayout.setMinimumHeight(r.getHeight());
 	iViewportLayout.setBounds(r);
 	//iViewportLayout.updateSize();
-	Logger::outputDebugString("CminH: " + String(iViewportLayout.iMinimumHeight));
-	Logger::outputDebugString("CH: " + String(iViewportLayout.getHeight()));
+	//Logger::outputDebugString("CminH: " + String(iViewportLayout.iMinimumHeight));
+	//Logger::outputDebugString("CH: " + String(iViewportLayout.getHeight()));
 }
 
 void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
@@ -172,7 +174,7 @@ int CKanbanColumnComponent::getColumnId()
 
 void CKanbanColumnComponent::scrollBarMoved(ScrollBar * scrollBarThatHasMoved, double newRangeStart)
 {
-	Logger::outputDebugString("sc: " + String(newRangeStart));
+	//Logger::outputDebugString("sc: " + String(newRangeStart));
 	iViewportLayout.iScrollPos = newRangeStart;
 	iViewportLayout.resized();
 }

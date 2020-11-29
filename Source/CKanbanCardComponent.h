@@ -49,6 +49,7 @@ public:
 	void setNotes(const String& aString);
 	String getNotes();
 
+	void deselect();
 	String toJson();
 
 private:

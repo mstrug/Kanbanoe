@@ -22,6 +22,8 @@ CKanbanColumnContentComponent::CKanbanColumnContentComponent(CKanbanColumnCompon
 	iLayout.flexDirection = FlexBox::Direction::column;
 	iLayout.flexWrap = FlexBox::Wrap::noWrap;
 	iLayout.justifyContent = FlexBox::JustifyContent::flexStart;
+
+	setOpaque(true);
 }
 
 CKanbanColumnContentComponent::~CKanbanColumnContentComponent()
@@ -30,7 +32,7 @@ CKanbanColumnContentComponent::~CKanbanColumnContentComponent()
 
 void CKanbanColumnContentComponent::paint(juce::Graphics& g)
 {
-	//g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
+	g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
 
 	int ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
 

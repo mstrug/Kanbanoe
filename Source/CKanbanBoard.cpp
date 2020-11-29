@@ -15,6 +15,7 @@
 //==============================================================================
 CKanbanBoardComponent::CKanbanBoardComponent()
 {
+	setOpaque(true);
 }
 
 CKanbanBoardComponent::~CKanbanBoardComponent()
@@ -68,6 +69,8 @@ void CKanbanBoardComponent::createDefaultBoard()
 	GridItem gi5(iKanbanColumns[4]);
 	gi5.setArea(1, 4, 3, 4);
 	iGrid.items.add(gi5);
+
+	updateSize();
 }
 
 void CKanbanBoardComponent::paint (juce::Graphics& g)
@@ -79,24 +82,34 @@ void CKanbanBoardComponent::paint (juce::Graphics& g)
        drawing code..
     */
 
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
+   g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
 
     g.setColour (juce::Colours::grey);
     //g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
 
+
+
+	//g.setColour(juce::Colours::red);
+	//g.drawLine(0, 0, getWidth(), getHeight());
 }
 
 void CKanbanBoardComponent::resized()
 {
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
-	int w = CConfiguration::getIntValue("KanbanCardWidth");
 
-	int ww = iGrid.getNumberOfColumns() * ( w + 4 * m );
-	setSize(ww, getHeight());
+	updateSize();
 
 	Rectangle<int> r(getLocalBounds());
 	r.reduce(m, m);
 	iGrid.performLayout(r);
+}
+
+void CKanbanBoardComponent::updateSize()
+{
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
+	int w = CConfiguration::getIntValue("KanbanCardWidth");
+	int ww = iGrid.getNumberOfColumns() * (w + 3 * m) + m;
+	if ( getWidth() < ww ) setSize(ww, getHeight());
 }
 
 CKanbanCardComponent* CKanbanBoardComponent::createCard()
@@ -269,6 +282,7 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 		return nullptr;
 	}
 
+	ret->updateSize();
 	return ret;
 }
 

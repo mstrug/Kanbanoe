@@ -32,6 +32,8 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+	void updateSize();
+
 	CKanbanCardComponent* createCard();
 	void removeCard(CKanbanCardComponent* aCard);
 
@@ -48,6 +50,10 @@ private:
 	OwnedArray< CKanbanCardComponent > iKanbanCards;
 
 	OwnedArray< CKanbanColumnComponent > iKanbanColumns;
+
+	Component iContent;
+
+	Viewport iViewport;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanBoardComponent)
 };
