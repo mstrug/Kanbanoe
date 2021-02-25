@@ -81,6 +81,25 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 
 	yofs = iTextUrl.getBottom() + 12;
 
+	iLabelTags.setText("Tags:", juce::NotificationType::dontSendNotification);
+	addAndMakeVisible(iLabelTags);
+	iLabelTags.setBounds(10, yofs, 50, 24);
+
+	addAndMakeVisible(iTextTags);
+	iTextTags.setBounds(10 + 50 + 10, yofs, w - 50 - 10, 24);
+	iTextTags.setSelectAllWhenFocused(true);
+	iTextTags.setText(aOwner.getProperties()["tags"]);
+	iTextTags.onTextChange = [this]
+	{
+		this->changesApply();
+	};
+	iTextTags.onReturnKey = [this]
+	{
+		this->getParentComponent()->exitModalState(0);
+	};
+
+	yofs = iTextTags.getBottom() + 12;
+
 	iColours.reset(new ColoursComponent( 6, 1, CConfiguration::getColourPalette(), CConfiguration::getColourPalette().getColourIndex( aOwner.getColour() )));
 	addAndMakeVisible(*iColours);
 	iColours->setTopLeftPosition( w + wm - iColours->getWidth() - 10, yofs);
@@ -123,6 +142,7 @@ void CKanbanCardPropertiesComponent::changesApply()
 	iBar->setColour(this->iColours->getSelectedColourIdx());
 	iBar->repaint();*/
 
+	iOwner.setTags(iTextTags.getText());
 	iOwner.setUrl(iTextUrl.getText());
 	iOwner.setText(iTextName.getText());
 	iOwner.repaint();

@@ -51,6 +51,9 @@ private:
 	TextEditor iTextUrl;
 	Label iLabelUrl;
 
+	TextEditor iTextTags;
+	Label iLabelTags;
+
 	std::unique_ptr<ColoursComponent> iColours;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanCardPropertiesComponent)

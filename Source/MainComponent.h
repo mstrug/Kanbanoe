@@ -75,6 +75,9 @@ private:
 
 	Label iStatuBar;
 
+	TextEditor iTextSearch;
+	Label iLabelSearch;
+
 	CMyMdi iMdiPanel;
 
 	OwnedArray<CKanbanCardComponent> iKanbanCards;

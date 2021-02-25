@@ -220,6 +220,7 @@ void CKanbanCardComponent::setupFromJson(const NamedValueSet& aValues) //const S
 	iColorBar = Colour::fromString(URL::removeEscapeChars(aValues["colour"]));
 	iNotes = URL::removeEscapeChars(aValues["notes"]);
 	setUrl(URL::removeEscapeChars(aValues["url"]));
+	setTags(URL::removeEscapeChars(aValues["tags"]));
 }
 
 void CKanbanCardComponent::setText(const String& aString)
@@ -252,6 +253,11 @@ void CKanbanCardComponent::setUrl(const String& aString)
 	/*iButtonUrl.setVisible(aString.length() > 0);
 	iButtonUrl.setURL(aString);
 	resized();*/
+}
+
+void CKanbanCardComponent::setTags(const String& aString)
+{
+	getProperties().set("tags", aString);
 }
 
 void CKanbanCardComponent::setColour(Colour aColor)
@@ -301,6 +307,14 @@ String CKanbanCardComponent::toJson()
 		url = URL::addEscapeChars(url, false);
 		ret += ", \"url\":\"" + url + "\"";
 	}
+
+	String tags = getProperties()["tags"];
+	if (tags.length() > 0)
+	{
+		tags = URL::addEscapeChars(tags, false);
+		ret += ", \"tags\":\"" + tags + "\"";
+	}
+
 	ret += " }";
 	return ret;
 }

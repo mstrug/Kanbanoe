@@ -11,6 +11,17 @@ MainComponent::MainComponent()
 	iMenuBar.reset(new MenuBarComponent(this));
 	addAndMakeVisible(iMenuBar.get());
 
+	// search
+	iLabelSearch.setText("Search:", juce::NotificationType::dontSendNotification);
+	addAndMakeVisible(iLabelSearch);
+
+	addAndMakeVisible(iTextSearch);
+	iTextSearch.setSelectAllWhenFocused(true);
+	iTextSearch.onReturnKey = [this]
+	{
+		
+	};
+
 	addAndMakeVisible(iMdiPanel);
 	iMdiPanel.setLayoutMode(MultiDocumentPanel::MaximisedWindowsWithTabs);
 	//iMdiPanel.setBackgroundColour(Colours::transparentBlack);
@@ -28,7 +39,7 @@ MainComponent::MainComponent()
 	juce::Time t2 = t.fromISO8601(String(t.getYear()) + "0101");
 	int f = t2.getDayOfWeek();
 	int wk = ((d + 6) / 7);
-	if (e < f) wk++;
+	//if (e < f) wk++;
 
 	iStatuBar.setJustificationType(Justification::centredRight);
 	iStatuBar.setText( String(t.getYear()) + " wk" + String(wk), NotificationType::dontSendNotification );
@@ -67,6 +78,11 @@ void MainComponent::resized()
 	auto b = getLocalBounds();
 	auto b1 = b.removeFromTop(LookAndFeel::getDefaultLookAndFeel().getDefaultMenuBarHeight());
 	iMenuBar->setBounds( b1 );
+
+	int txtsw = 250;
+	int txtmar = 20;
+	iLabelSearch.setBounds(b.getWidth() - 50 - 10 - txtsw - txtmar, 0, 50, 24);
+	iTextSearch.setBounds(b.getWidth() - txtsw - txtmar, 2, txtsw, 20);
 
 	auto b2 = b.removeFromBottom(LookAndFeel::getDefaultLookAndFeel().getDefaultMenuBarHeight());
 	iStatuBar.setBounds(b2);
@@ -164,10 +180,12 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 					f = f.withFileExtension("pkb");
 				}
 
-				auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
+				auto md = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+				auto kb = md->getKanbanBoard();
 				if (kb)
 				{
 					kb->setFile(f);
+					md->setName(f.getFileName());
 					saveFile(kb);
 				}
 			}
@@ -200,7 +218,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 	{
 		if (menuItemID == 0x0201)
 		{
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About","Information about application","OK");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About","v0.18","OK");
 		}
 	}
 }

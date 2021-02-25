@@ -45,6 +45,7 @@ public:
 	String getText();
 
 	void setUrl(const String& aString);
+	void setTags(const String& aString);
 
 	void setColour(Colour aColor);
 	Colour getColour();

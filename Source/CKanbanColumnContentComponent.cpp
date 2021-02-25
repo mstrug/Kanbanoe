@@ -221,6 +221,7 @@ void CKanbanColumnContentComponent::itemDragExit(const SourceDetails & dragSourc
 	iDragTargetActive = false;
 	iOwner.setActiveFrame(false);
 	iDragTargetPlaceholderActive = false;
+	iDraggedCardIndex = -1;
 	repaint();
 }
 
