@@ -6,7 +6,7 @@
 MainComponent::MainComponent() : iMdiPanel(*this)
 {
 	auto& c = CConfiguration::getInstance(); // create object
-	c.getPropertiesFile()->setValue("Test", 1);
+	//c.getPropertiesFile()->setValue("Test", 1);
 
 	setApplicationCommandManagerToWatch(&iCommandManager);
 	iCommandManager.registerAllCommandsForTarget(this);
@@ -138,23 +138,22 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 
 	if (topLevelMenuIndex == 0) // file
 	{
-		menu.addItem(0x0002, "New", true);
-		menu.addItem(0x0010, "Open", true);
-		menu.addItem(0x0020, "Close", true);
-		menu.addItem(0x0030, "Save", true);
-		menu.addItem(0x0040, "Save as", true);
-		menu.addItem(0x0050, "Save all", true);
-//		menu.addItem(0x00f0, "Exit", true);
-		menu.addCommandItem(&iCommandManager, 1);
-
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileNew);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileOpen);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileClose);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileSave);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileSaveAs);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileSaveAll);
+		menu.addSeparator();
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileExit);
 	}
-	else if (topLevelMenuIndex == 1) // help
+	else if (topLevelMenuIndex == 1) // edit
 	{
-		menu.addItem(0x0101, "Add Card", true);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuEditAddCard);
 	}
 	else if (topLevelMenuIndex == 2) // help
 	{
-		menu.addItem(0x0201, "About", true);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuHelpAbout);
 	}
 
 	return menu;
@@ -162,10 +161,72 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 
 void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
-	if (topLevelMenuIndex == 0)
+}
+
+ApplicationCommandTarget* MainComponent::getNextCommandTarget()
+{
+	return nullptr;
+}
+
+void MainComponent::getAllCommands(Array<CommandID>& aCommands)
+{
+	Array<CommandID> commands{ CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
+		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileExit,
+		CommandIDs::menuEditAddCard, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch };
+	aCommands.addArray(commands);
+}
+
+void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& result)
+{
+	switch (commandID)
 	{
-		if (menuItemID == 0x0002)
-		{ // new
+	case menuFileNew:
+			result.setInfo("New", "", "Menu", 0);
+			result.addDefaultKeypress('N', ModifierKeys::ctrlModifier);
+		break;
+	case menuFileOpen:
+			result.setInfo("Open", "", "Menu", 0);
+			result.addDefaultKeypress('O', ModifierKeys::ctrlModifier);
+		break;
+	case menuFileClose:
+			result.setInfo("Close", "", "Menu", 0);
+		break;
+	case menuFileSave:
+			result.setInfo("Save", "", "Menu", 0);
+			result.addDefaultKeypress('S', ModifierKeys::ctrlModifier);
+		break;
+	case menuFileSaveAs:
+			result.setInfo("Save As", "", "Menu", 0);
+		break;
+	case menuFileSaveAll:
+			result.setInfo("Save All", "", "Menu", 0);
+			result.addDefaultKeypress('S', ModifierKeys::ctrlModifier | ModifierKeys::shiftModifier);
+		break;
+	case menuFileExit:
+			result.setInfo("Exit", "Exit from application", "Menu", 0);
+		break;
+	case menuEditAddCard:
+			result.setInfo("Add card", "", "Menu", 0);
+			//result.addDefaultKeypress('A', ModifierKeys::ctrlModifier);
+		break;
+	case menuHelpAbout:
+			result.setInfo("About", "", "Menu", 0);
+		break;
+	case menubarSearch:
+			result.setInfo("Search", "", "Menubar", 0);
+			result.addDefaultKeypress('F', ModifierKeys::ctrlModifier );
+		break;
+	default:
+		break;
+	}
+}
+
+bool MainComponent::perform(const InvocationInfo& info)
+{
+	switch (info.commandID)
+	{
+	case menuFileNew:
+		{
 			//removeChildComponent(iKanbanBoard);
 			//delete iKanbanBoard;
 			auto kb = new CKanbanBoardComponent();
@@ -176,8 +237,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 			//iMdiPanel.addDocument(iKanbanBoards.getLast(), getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
 			iMdiPanel.addDocument(iKanbanBoards.getLast());
 		}
-		else if (menuItemID == 0x0010)
-		{ // open
+		break;
+	case menuFileOpen:
+		{
 			iFileDialog.reset(new FileChooser("Choose a file to open...", File::getCurrentWorkingDirectory(), "*.pkb", false));
 			if (iFileDialog->showDialog(FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles, nullptr))
 			{
@@ -185,20 +247,22 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 				openFile(f);
 			}
 		}
-		else if (menuItemID == 0x0020)
-		{ // close
+		break;
+	case menuFileClose:
+		{
 			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
 			iMdiPanel.closeDocument(iMdiPanel.getActiveDocument(), false);
 			iKanbanBoards.removeObject(kb, true);
 		}
-		else if (menuItemID == 0x0030)
-		{  // save
+		break;
+	case menuFileSave:
+		{
 			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
 			saveFile(kb);
 		}
-		else if (menuItemID == 0x0040)
+		break;
+	case menuFileSaveAs:
 		{
-			// save as
 			iFileDialog.reset(new FileChooser("Choose a file to save...", File::getCurrentWorkingDirectory(), "*.pkb", false));
 			if (iFileDialog->showDialog(FileBrowserComponent::saveMode | FileBrowserComponent::warnAboutOverwriting | FileBrowserComponent::canSelectFiles, nullptr))
 			{
@@ -218,21 +282,19 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 				}
 			}
 		}
-		else if (menuItemID == 0x0050)
-		{ // save all
+		break;
+	case menuFileSaveAll:
+		{
 			for (auto& i : iKanbanBoards)
 			{
 				saveFile(i);
 			}
 		}
-		else if (menuItemID == 0x00f0)
-		{
+		break;
+	case menuFileExit:
 			JUCEApplicationBase::quit();
-		}
-	}
-	else if (topLevelMenuIndex == 1)
-	{
-		if (menuItemID == 0x0101)
+		break;
+	case menuEditAddCard:
 		{
 			static int t = 0;
 			auto c = new CKanbanCardComponent(nullptr);
@@ -241,46 +303,12 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 			iKanbanCards.add(c);
 			addAndMakeVisible(c);
 		}
-	}
-	else if (topLevelMenuIndex == 2)
-	{
-		if (menuItemID == 0x0201)
-		{
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About","v0.19\nM.Strug","OK");
-		}
-	}
-}
-
-ApplicationCommandTarget* MainComponent::getNextCommandTarget()
-{
-	return nullptr;
-}
-
-void MainComponent::getAllCommands(Array<CommandID>& aCommands)
-{
-	Array<CommandID> commands{ 1 };
-	aCommands.addArray(commands);
-}
-
-void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& result)
-{
-	switch (commandID)
-	{
-	case 1:
-		result.setInfo("Exit", "Exit from application", "Menu", 0);
-		result.addDefaultKeypress('x', ModifierKeys::shiftModifier);
 		break;
-	default:
+	case menuHelpAbout:
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.20\nM.Strug", "OK");
 		break;
-	}
-}
-
-bool MainComponent::perform(const InvocationInfo& info)
-{
-	switch (info.commandID)
-	{
-	case 1:
-		JUCEApplicationBase::quit();
+	case menubarSearch:
+			iTextSearch.grabKeyboardFocus();
 		break;
 	default:
 		return false;
