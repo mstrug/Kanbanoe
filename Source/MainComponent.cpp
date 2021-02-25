@@ -3,10 +3,13 @@
 
 
 //==============================================================================
-MainComponent::MainComponent()
+MainComponent::MainComponent() : iMdiPanel(*this)
 {
 	auto& c = CConfiguration::getInstance(); // create object
 	c.getPropertiesFile()->setValue("Test", 1);
+
+	setApplicationCommandManagerToWatch(&iCommandManager);
+	iCommandManager.registerAllCommandsForTarget(this);
 
 	iMenuBar.reset(new MenuBarComponent(this));
 	addAndMakeVisible(iMenuBar.get());
@@ -17,9 +20,25 @@ MainComponent::MainComponent()
 
 	addAndMakeVisible(iTextSearch);
 	iTextSearch.setSelectAllWhenFocused(true);
+	iTextSearch.onEscapeKey = [this]
+	{
+		iTextSearch.setText("");
+		auto mdi = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+		if (mdi)
+		{
+			mdi->setSearchText("");
+			auto kb = mdi->getKanbanBoard();
+			if (kb) kb->searchClear();
+		}
+	};
 	iTextSearch.onReturnKey = [this]
 	{
-		
+		auto mdi = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+		if (mdi)
+		{
+			mdi->setSearchText(iTextSearch.getText());
+			setSearchText(iTextSearch.getText(), false);
+		}
 	};
 
 	addAndMakeVisible(iMdiPanel);
@@ -50,6 +69,8 @@ MainComponent::MainComponent()
 	iMdiPanel.addDocument(iKanbanBoards[0]);
 	//iMdiPanel.addDocument(iKanbanBoards[0], getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
 	//	Colours::lightblue.withAlpha(0.6f), false);
+
+	//Timer::callAfterDelay(300, [this] { grabKeyboardFocus(); }); // ensure that key presses are sent to the KeyPressTarget object
 }
 
 MainComponent::~MainComponent()
@@ -100,6 +121,11 @@ void MainComponent::resized()
 	iA->setBounds(30, 200, 110, 70);*/
 }
 
+ApplicationCommandManager & MainComponent::getApplicationCommandManager()
+{
+	return iCommandManager;
+}
+
 StringArray MainComponent::getMenuBarNames()
 {
 	return { "File", "Edit", "Help" };
@@ -112,13 +138,15 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 
 	if (topLevelMenuIndex == 0) // file
 	{
-		menu.addItem(0x0001, "New", true);
+		menu.addItem(0x0002, "New", true);
 		menu.addItem(0x0010, "Open", true);
 		menu.addItem(0x0020, "Close", true);
 		menu.addItem(0x0030, "Save", true);
 		menu.addItem(0x0040, "Save as", true);
 		menu.addItem(0x0050, "Save all", true);
-		menu.addItem(0x00f0, "Exit", true);
+//		menu.addItem(0x00f0, "Exit", true);
+		menu.addCommandItem(&iCommandManager, 1);
+
 	}
 	else if (topLevelMenuIndex == 1) // help
 	{
@@ -136,7 +164,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
 	if (topLevelMenuIndex == 0)
 	{
-		if (menuItemID == 0x0001)
+		if (menuItemID == 0x0002)
 		{ // new
 			//removeChildComponent(iKanbanBoard);
 			//delete iKanbanBoard;
@@ -218,8 +246,65 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 	{
 		if (menuItemID == 0x0201)
 		{
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About","v0.18","OK");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About","v0.19\nM.Strug","OK");
 		}
+	}
+}
+
+ApplicationCommandTarget* MainComponent::getNextCommandTarget()
+{
+	return nullptr;
+}
+
+void MainComponent::getAllCommands(Array<CommandID>& aCommands)
+{
+	Array<CommandID> commands{ 1 };
+	aCommands.addArray(commands);
+}
+
+void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& result)
+{
+	switch (commandID)
+	{
+	case 1:
+		result.setInfo("Exit", "Exit from application", "Menu", 0);
+		result.addDefaultKeypress('x', ModifierKeys::shiftModifier);
+		break;
+	default:
+		break;
+	}
+}
+
+bool MainComponent::perform(const InvocationInfo& info)
+{
+	switch (info.commandID)
+	{
+	case 1:
+		JUCEApplicationBase::quit();
+		break;
+	default:
+		return false;
+	}
+
+	return true;
+}
+
+
+void MainComponent::setSearchText(const String & aString, bool aUpdateSearchField)
+{
+	auto mdi = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+	if (mdi)
+	{
+		auto kb = mdi->getKanbanBoard();
+		if (kb)
+		{
+			kb->searchClear();
+			kb->search(aString);
+		}
+	}
+	if (aUpdateSearchField)
+	{
+		iTextSearch.setText(aString);
 	}
 }
 

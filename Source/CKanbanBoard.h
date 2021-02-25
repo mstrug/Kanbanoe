@@ -34,6 +34,9 @@ public:
 
 	void updateSize();
 
+	void search(const String& aString);
+	void searchClear();
+
 	CKanbanCardComponent* createCard();
 	void removeCard(CKanbanCardComponent* aCard);
 

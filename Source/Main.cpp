@@ -68,7 +68,8 @@ public:
 			//getLookAndFeel().setDefaultSansSerifTypefaceName("MS Mincho");
 
 			setUsingNativeTitleBar (true);
-            setContentOwned (new MainComponent(), true);
+			auto mainComponent = new MainComponent();
+            setContentOwned (mainComponent, true);
 
            #if JUCE_IOS || JUCE_ANDROID
             setFullScreen (true);
@@ -79,6 +80,8 @@ public:
 
 
             setVisible (true);
+
+			if (mainComponent) addKeyListener(mainComponent->getApplicationCommandManager().getKeyMappings());
         }
 
         void closeButtonPressed() override

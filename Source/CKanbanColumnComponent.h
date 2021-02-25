@@ -41,6 +41,8 @@ public:
 	void removeCard(CKanbanCardComponent* aCard);
 	void scrollToBottom();
 
+	void search(const String& aString);
+
 	String getTitle();
 	int getColumnId();
 

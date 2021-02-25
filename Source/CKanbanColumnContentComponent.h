@@ -32,6 +32,8 @@ public:
 
 	void removeCard(CKanbanCardComponent* aCard);
 	void addCard(CKanbanCardComponent* aCard);
+	void hideCard(CKanbanCardComponent* aCard);
+	void unhideAllCards();
 	void createNewCard();
 	void updateSize();
 	void setMinimumHeight(int aHeight);

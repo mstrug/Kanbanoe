@@ -98,6 +98,38 @@ void CKanbanColumnContentComponent::addCard(CKanbanCardComponent* aCard)
 	itemDropped(s);
 }
 
+void CKanbanColumnContentComponent::hideCard(CKanbanCardComponent * aCard)
+{
+	for (auto& i : iLayout.items)
+	{
+		if (i.associatedComponent == aCard)
+		{
+			i.height = 0;
+			i.minHeight = 0;
+			i.margin = 0;
+			resized();
+			break;
+		}
+	}
+}
+
+void CKanbanColumnContentComponent::unhideAllCards()
+{
+	int h = CConfiguration::getIntValue("KanbanCardHeight");
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
+
+	for (auto& i : iLayout.items)
+	{
+//		if (i.height == 0)
+		{
+			i.height = h;
+			i.minHeight = h;
+			i.margin = m / 2;
+		}
+	}
+	resized();
+}
+
 void CKanbanColumnContentComponent::createNewCard()
 {
 	CKanbanCardComponent* c = iOwner.kanbanBoard().createCard();

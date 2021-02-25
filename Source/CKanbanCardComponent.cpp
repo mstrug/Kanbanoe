@@ -68,7 +68,7 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 		g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
 
 		g.setColour(iColorBar);
-		g.fillRect(4,4,2,getHeight()-8);
+		if (getHeight()>8) g.fillRect(4,4,2,getHeight()-8);
 
 		if (iIsUrlSet)
 		{
@@ -82,11 +82,13 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 
 void CKanbanCardComponent::resized()
 {
-	Rectangle<int> r(getBounds());
+	Rectangle<int> r(getLocalBounds());
+	if (r.getHeight() == 0) return;
+		
 	r.removeFromLeft(10);
 	iLabel.setBounds(r);
 
-	iRectUrl = getBounds().removeFromRight(15);
+	iRectUrl = getLocalBounds().removeFromRight(15);
 	iRectUrl = iRectUrl.removeFromBottom(15);
 	iRectUrl -= Point<int>(1, 1);
 

@@ -162,6 +162,19 @@ void CKanbanColumnComponent::scrollToBottom()
 	iScrollBar.scrollToBottom(NotificationType::sendNotificationSync);
 }
 
+void CKanbanColumnComponent::search(const String & aString)
+{
+	if (aString.startsWith("tag:"))
+	{
+		String s = aString.substring(4);
+		s = s.trim();
+		if (s.length() == 0) return;
+		Logger::outputDebugString("search tag: " + s);
+
+		//for ( auto c : iOwner.getcar)
+	}
+}
+
 String CKanbanColumnComponent::getTitle()
 {
 	return iTitle.getText();

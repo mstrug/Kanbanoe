@@ -112,6 +112,56 @@ void CKanbanBoardComponent::updateSize()
 	if ( getWidth() < ww ) setSize(ww, getHeight());
 }
 
+void CKanbanBoardComponent::search(const String & aString)
+{
+	String stag;
+
+	if (aString.startsWith("tag:"))
+	{
+		stag = aString.substring(4);
+	}
+	if (aString.startsWith("t:"))
+	{
+		stag = aString.substring(2);
+	}
+	stag = stag.trim();
+	if (stag.length() != 0)
+	{
+		Logger::outputDebugString("search tag: " + stag);
+
+		for (auto c : iKanbanCards)
+		{
+			String tgs = c->getProperties()["tags"];
+			if (!tgs.contains(stag))
+			{
+				c->getOwner()->hideCard(c);
+			}
+		}
+	}
+	else
+	{
+		String s(aString);
+		s = s.trim();
+		Logger::outputDebugString("search: " + s);
+
+		for (auto c : iKanbanCards)
+		{
+			if (!c->getText().contains(s) && !c->getNotes().contains(s))
+			{
+				c->getOwner()->hideCard(c);
+			}
+		}
+	}
+}
+
+void CKanbanBoardComponent::searchClear()
+{
+	for (auto c : iKanbanColumns)
+	{
+		c->cardsLayout().unhideAllCards();
+	}
+}
+
 CKanbanCardComponent* CKanbanBoardComponent::createCard()
 {
 	auto c = new CKanbanCardComponent(nullptr);
