@@ -109,7 +109,8 @@ private:
     //==============================================================================
     // Your private member variables go here...
 
-	Label iStatuBar;
+	Label iStatuBarR;
+	Label iStatuBarL;
 
 	TextEditor iTextSearch;
 	Label iLabelSearch;

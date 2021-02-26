@@ -114,34 +114,81 @@ void CKanbanBoardComponent::updateSize()
 
 void CKanbanBoardComponent::search(const String & aString)
 {
+	String s = aString.trim();
 	String stag;
+	bool tagmode = false, colormode = false;
 
-	if (aString.startsWith("tag:"))
+	if (s.isQuotedString())
 	{
-		stag = aString.substring(4);
-	}
-	if (aString.startsWith("t:"))
-	{
-		stag = aString.substring(2);
-	}
-	stag = stag.trim();
-	if (stag.length() != 0)
-	{
-		Logger::outputDebugString("search tag: " + stag);
-
-		for (auto c : iKanbanCards)
+		s = s.substring(1);
+		if (s.getLastCharacter() == '\'' || s.getLastCharacter() == '"')
 		{
-			String tgs = c->getProperties()["tags"];
-			if (!tgs.contains(stag))
-			{
-				c->getOwner()->hideCard(c);
-			}
+			s = s.dropLastCharacters(1);
 		}
 	}
 	else
 	{
-		String s(aString);
-		s = s.trim();
+		if (s.startsWith("tag:"))
+		{
+			stag = s.substring(4);
+			tagmode = true;
+		}
+		else if (s.startsWith("t:"))
+		{
+			stag = s.substring(2);
+			tagmode = true;
+		}
+		else if (s.startsWith("color:"))
+		{
+			stag = s.substring(6);
+			colormode = true;
+		}
+		else if (s.startsWith("colour:"))
+		{
+			stag = s.substring(7);
+			colormode = true;
+		}
+		else if (s.startsWith("c:"))
+		{
+			stag = s.substring(2);
+			colormode = true;
+		}
+		stag = stag.trim();
+	}
+
+	if (tagmode)
+	{
+		if (stag.length() != 0)
+		{
+			Logger::outputDebugString("search tag: " + stag);
+
+			for (auto c : iKanbanCards)
+			{
+				String tgs = c->getProperties()["tags"];
+				if (!tgs.contains(stag))
+				{
+					c->getOwner()->hideCard(c);
+				}
+			}
+		}
+		else // empty search
+		{
+			for (auto c : iKanbanCards)
+			{
+				String tgs = c->getProperties()["tags"];
+				if (!tgs.isEmpty())
+				{
+					c->getOwner()->hideCard(c);
+				}
+			}
+		}
+	}
+	else if (colormode)
+	{
+		// todo
+	}
+	else
+	{
 		Logger::outputDebugString("search: " + s);
 
 		for (auto c : iKanbanCards)

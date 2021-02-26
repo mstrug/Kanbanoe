@@ -143,7 +143,13 @@ void CKanbanColumnContentComponent::updateSize()
 {
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
-	int hh = iLayout.items.size() * (h + m);
+
+	int hh = m / 2;
+	for (auto i : iLayout.items)
+	{
+		if ( i.height != 0 ) hh += (h + m);
+	}
+	//int hh = iLayout.items.size() * (h + m);
 	if (hh < iMinimumHeight)
 	{
 		hh = iMinimumHeight;

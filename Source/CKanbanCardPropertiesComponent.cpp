@@ -19,23 +19,20 @@
 CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardComponent &aOwner) : iOwner(aOwner)
 {
 	setViewportIgnoreDragFlag(true);
+	addKeyListener(this);
 
 	int w = 300;
 	int wm = 20;
 
 	//iBar->getProperties().set("name", "test");
 	addAndMakeVisible(iTextName);
+	iTextName.addKeyListener(this);
 	iTextName.setBounds(10, 10, w, 24);
 	iTextName.setSelectAllWhenFocused(true);
 	iTextName.setText(aOwner.getText());
 	iTextName.onTextChange = [this]
 	{
 		this->changesApply();
-	};
-	iTextName.onReturnKey = [this]
-	{
-//		this->iController->closePropertiesCallout();
-		this->getParentComponent()->exitModalState(0);
 	};
 
 	int yofs = iTextName.getBottom() + 12;
@@ -45,6 +42,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	iLabel.setBounds(10, yofs, 50, 24);
 	
 	iTextEditor.setMultiLine(true);
+	iTextEditor.addKeyListener(this);
 	iTextEditor.setReturnKeyStartsNewLine(true);
 	iTextEditor.setScrollbarsShown(true);	
 	iTextEditor.setText( aOwner.getNotes() );
@@ -54,11 +52,6 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	{
 		aOwner.setNotes(this->iTextEditor.getText());
 	};
-	iTextEditor.onReturnKey = [this]
-	{
-		//this->iController->closePropertiesCallout();
-		this->getParentComponent()->exitModalState(0);
-	};
 
 	yofs = iTextEditor.getBottom() + 12;
 
@@ -67,16 +60,13 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	iLabelUrl.setBounds(10, yofs, 50, 24);
 
 	addAndMakeVisible(iTextUrl);
+	iTextUrl.addKeyListener(this);
 	iTextUrl.setBounds(10 + 50 + 10, yofs, w - 50 - 10, 24);
-	iTextUrl.setSelectAllWhenFocused(true);
+	//iTextUrl.setSelectAllWhenFocused(true);
 	iTextUrl.setText(aOwner.getProperties()["url"]);
 	iTextUrl.onTextChange = [this]
 	{
 		this->changesApply();
-	};
-	iTextUrl.onReturnKey = [this]
-	{
-		this->getParentComponent()->exitModalState(0);
 	};
 
 	yofs = iTextUrl.getBottom() + 12;
@@ -86,16 +76,13 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	iLabelTags.setBounds(10, yofs, 50, 24);
 
 	addAndMakeVisible(iTextTags);
+	iTextTags.addKeyListener(this);
 	iTextTags.setBounds(10 + 50 + 10, yofs, w - 50 - 10, 24);
-	iTextTags.setSelectAllWhenFocused(true);
+	//iTextTags.setSelectAllWhenFocused(true);
 	iTextTags.setText(aOwner.getProperties()["tags"]);
 	iTextTags.onTextChange = [this]
 	{
 		this->changesApply();
-	};
-	iTextTags.onReturnKey = [this]
-	{
-		this->getParentComponent()->exitModalState(0);
 	};
 
 	yofs = iTextTags.getBottom() + 12;
@@ -134,6 +121,21 @@ void CKanbanCardPropertiesComponent::mouseUp(const MouseEvent& event)
 void CKanbanCardPropertiesComponent::ColorChanged(int aSelectedColorIdx)
 {
 	iOwner.setColour(CConfiguration::getColourPalette().getColor(aSelectedColorIdx));
+}
+
+bool CKanbanCardPropertiesComponent::keyPressed(const KeyPress & key, Component * originatingComponent)
+{
+	if (key == key.escapeKey )
+	{
+		getParentComponent()->exitModalState(0);
+		return true;
+	}
+	else if (key == key.returnKey && originatingComponent != &iTextEditor)
+	{
+		getParentComponent()->exitModalState(0);
+		return true;
+	}
+	return false;
 }
 
 void CKanbanCardPropertiesComponent::changesApply()

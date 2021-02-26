@@ -46,11 +46,11 @@ MainComponent::MainComponent() : iMdiPanel(*this)
 	//iMdiPanel.setBackgroundColour(Colours::transparentBlack);
 	iMdiPanel.setBackgroundColour(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 
-	auto kb = new CKanbanBoardComponent();
+	/*auto kb = new CKanbanBoardComponent();
 	kb->createDefaultBoard();
 	kb->setName("board 1");
 	//addAndMakeVisible(iKanbanBoard);
-	iKanbanBoards.add(kb);
+	iKanbanBoards.add(kb);*/
 
 	juce::Time t = juce::Time::getCurrentTime();
 	int d = t.getDayOfYear();
@@ -60,13 +60,18 @@ MainComponent::MainComponent() : iMdiPanel(*this)
 	int wk = ((d + 6) / 7);
 	//if (e < f) wk++;
 
-	iStatuBar.setJustificationType(Justification::centredRight);
-	iStatuBar.setText( String(t.getYear()) + " wk" + String(wk), NotificationType::dontSendNotification );
-	addAndMakeVisible(iStatuBar);
+	iStatuBarR.setJustificationType(Justification::centredRight);
+	iStatuBarR.setText( String(t.getYear()) + " wk" + String(wk), NotificationType::dontSendNotification );
+	addAndMakeVisible(iStatuBarR);
 
-	setSize(600, 400);
+	iStatuBarL.setJustificationType(Justification::centredLeft);
+	//iStatuBarL.setText("started", NotificationType::dontSendNotification);
+//	iStatuBarL.setco
+	addAndMakeVisible(iStatuBarL);
 
-	iMdiPanel.addDocument(iKanbanBoards[0]);
+	setSize(1100, 600);
+
+	//iMdiPanel.addDocument(iKanbanBoards[0]);
 	//iMdiPanel.addDocument(iKanbanBoards[0], getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
 	//	Colours::lightblue.withAlpha(0.6f), false);
 
@@ -83,11 +88,23 @@ MainComponent::~MainComponent()
 void MainComponent::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+	//g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
+	//g.fillAll(getLookAndFeel().findColour(Toolbar::backgroundColourId));
 
     //g.setFont (juce::Font (16.0f));
     //g.setColour (juce::Colours::white);
     //g.drawText ("Hello World!", getLocalBounds(), juce::Justification::centred, true);
+
+
+	auto r = getBounds();
+	auto r2 = r.removeFromBottom(LookAndFeel::getDefaultLookAndFeel().getDefaultMenuBarHeight());
+	auto colour = findColour(TextEditor::backgroundColourId);
+	g.setColour(colour);
+	g.fillRect(r2);
+
+	g.setColour(Colours::darkgrey);
+	g.fillRect(r2.removeFromBottom(1));
+	g.fillRect(r2.removeFromTop(1)); // .translated(0, -1));
 }
 
 void MainComponent::resized()
@@ -106,7 +123,9 @@ void MainComponent::resized()
 	iTextSearch.setBounds(b.getWidth() - txtsw - txtmar, 2, txtsw, 20);
 
 	auto b2 = b.removeFromBottom(LookAndFeel::getDefaultLookAndFeel().getDefaultMenuBarHeight());
-	iStatuBar.setBounds(b2);
+	auto b3 = b2.removeFromLeft(b.getWidth() / 2);
+	iStatuBarR.setBounds(b2);
+	iStatuBarL.setBounds(b3);
 
 	iMdiPanel.setBounds(b);
 	//iKanbanBoard->setBounds(b);
@@ -259,6 +278,9 @@ bool MainComponent::perform(const InvocationInfo& info)
 		{
 			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
 			saveFile(kb);
+
+			iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
+			Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
 		}
 		break;
 	case menuFileSaveAs:
@@ -280,6 +302,9 @@ bool MainComponent::perform(const InvocationInfo& info)
 					md->setName(f.getFileName());
 					saveFile(kb);
 				}
+
+				iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
+				Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
 			}
 		}
 		break;
@@ -289,6 +314,9 @@ bool MainComponent::perform(const InvocationInfo& info)
 			{
 				saveFile(i);
 			}
+
+			iStatuBarL.setText("All files saved", NotificationType::dontSendNotification);
+			Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
 		}
 		break;
 	case menuFileExit:
@@ -305,7 +333,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 		}
 		break;
 	case menuHelpAbout:
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.20\nM.Strug", "OK");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.21\nM.Strug", "OK");
 		break;
 	case menubarSearch:
 			iTextSearch.grabKeyboardFocus();

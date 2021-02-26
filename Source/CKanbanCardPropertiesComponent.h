@@ -20,7 +20,7 @@ using namespace juce;
 
 class CKanbanCardComponent;
 
-class CKanbanCardPropertiesComponent : public juce::Component, public ColoursComponentListener
+class CKanbanCardPropertiesComponent : public juce::Component, public ColoursComponentListener, public KeyListener
 {
 public:
 	CKanbanCardPropertiesComponent(CKanbanCardComponent& aOwner);
@@ -31,9 +31,13 @@ public:
 	void mouseDown(const MouseEvent& event) override;
 	void mouseUp(const MouseEvent& event) override;
 	
-public: // ColoursComponentListener
+public: // from ColoursComponentListener
 
 	void ColorChanged(int aSelectedColorIdx);
+
+public: // from KeyListener
+
+	bool keyPressed(const KeyPress& key, Component* originatingComponent) override;
 
 private:
 
