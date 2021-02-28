@@ -23,6 +23,7 @@ class MainComponent  : public Component, public MenuBarModel, public DragAndDrop
 		menuFileSaveAll,
 		menuFileExit,
 		menuEditAddCard,
+		menuEditViewArchive,
 		menuHelpAbout,
 		menubarSearch
 	};

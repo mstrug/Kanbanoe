@@ -56,6 +56,8 @@ public:
 	void deselect();
 	String toJson();
 
+	int getOwnerColumnId() const;
+
 private:
 
 	void showProperties();

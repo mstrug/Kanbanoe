@@ -294,7 +294,7 @@ String CKanbanCardComponent::toJson()
 	String l = URL::addEscapeChars(iLabel.getText().toUTF8(), false);
 	String c = URL::addEscapeChars(iColorBar.toString().toUTF8(), false);
 	//String::fromUTF8(URL::removeEscapedChars(url));
-	String ret("{ \"text\":\"" + l + "\", \"colour\":\"" + c + "\", \"columnId\":" + String(iOwner->getOwner().getColumnId()));
+	String ret("{ \"text\":\"" + l + "\", \"colour\":\"" + c + "\", \"columnId\":" + String(getOwnerColumnId()));
 
 	String n = iNotes.toUTF8();
 	if (n.length() > 0)
@@ -319,6 +319,12 @@ String CKanbanCardComponent::toJson()
 
 	ret += " }";
 	return ret;
+}
+
+int CKanbanCardComponent::getOwnerColumnId() const
+{
+	if (!iOwner) return -1;
+	return iOwner->getOwner().getColumnId();
 }
 
 

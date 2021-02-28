@@ -39,12 +39,13 @@ public:
 	CKanbanColumnContentComponent& cardsLayout();
 	void addCard(CKanbanCardComponent* aCard);
 	void removeCard(CKanbanCardComponent* aCard);
+	void removeAllCards();
 	void scrollToBottom();
 
 	void search(const String& aString);
 
 	String getTitle();
-	int getColumnId();
+	int getColumnId() const;
 
 public: // from ScrollBar::Listener
 

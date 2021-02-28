@@ -99,7 +99,48 @@ void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 		{ 
 			this->iViewportLayout.createNewCard();
 		});
-		menu.addItem(1,"Archive column");
+		menu.addItem("Archive column", [&]()
+		{
+			if (this->iViewportLayout.getCardsCount() == 0)
+			{
+				AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Column is empty!", "", "OK");
+				return;
+			}
+
+			AlertWindow w("Archive column options",
+				"Provide descriptive name for the archived column.\nProposed name is year and a weak number.\nArchived columns are accessible in menu Edit -> Show Archives.\n",
+				AlertWindow::QuestionIcon);
+
+			w.addTextEditor("text", CConfiguration::YearAndWeekOfYear(), "Archive name:");
+
+			ToggleButton tb("Clear column after archivisation");
+			tb.setComponentID("checkbox");
+			tb.setSize(250, 36);
+			tb.setName("");
+			tb.setToggleState(true, NotificationType::dontSendNotification);
+			w.addCustomComponent(&tb);
+			w.addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
+			w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+
+			if (w.runModalLoop() != 0) // is they picked 'ok'
+			{
+				auto text = w.getTextEditorContents("text");
+				bool checked = tb.getToggleState();
+				if (text.isEmpty())
+				{
+					AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Archive column options", "Wrong archive name!", "OK");
+				}
+				else
+				{
+					if (iOwner.archiveColumn(this, text, checked))
+					{
+
+					}
+				}
+			}
+
+			//this->iViewportLayout.createNewCard();
+		});
 		menu.show();
 	}
 }
@@ -157,6 +198,11 @@ void CKanbanColumnComponent::removeCard(CKanbanCardComponent* aCard)
 	iOwner.removeCard(aCard);
 }
 
+void CKanbanColumnComponent::removeAllCards()
+{
+	
+}
+
 void CKanbanColumnComponent::scrollToBottom()
 {
 	iScrollBar.scrollToBottom(NotificationType::sendNotificationSync);
@@ -180,7 +226,7 @@ String CKanbanColumnComponent::getTitle()
 	return iTitle.getText();
 }
 
-int CKanbanColumnComponent::getColumnId()
+int CKanbanColumnComponent::getColumnId() const
 {
 	return iColumnId;
 }

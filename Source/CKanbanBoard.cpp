@@ -222,6 +222,51 @@ void CKanbanBoardComponent::removeCard(CKanbanCardComponent* aCard)
 	iKanbanCards.removeObject(aCard, true);
 }
 
+bool CKanbanBoardComponent::archiveColumn(CKanbanColumnComponent * aColumn, const String & aArchiveName, bool aClearColumn)
+{
+	int id = aColumn->getColumnId();
+	int archiveId = iArchive.size() + 1;
+
+	SArchive* arch = new SArchive();
+	iArchive.add(arch);
+	arch->iId = archiveId;
+	arch->iName = aArchiveName;
+
+	for (auto& c : iKanbanCards)
+	{
+		if (c->getOwnerColumnId() == id)
+		{
+			arch->iKanbanCards.add(c->toJson());
+		}
+	}
+
+	if (aClearColumn && iKanbanCards.size() > 0)
+	{
+		for (int i = iKanbanCards.size() - 1; i >= 0; i--)
+		{
+			if (iKanbanCards[i]->getOwnerColumnId() == id)
+			{
+				aColumn->removeCard(iKanbanCards[i]);
+			}
+		}
+	}
+	
+	return true;
+}
+
+void CKanbanBoardComponent::logArchives()
+{
+	for (auto a : iArchive)
+	{
+		Logger::outputDebugString("Arcive: [" + String(a->iId) + "]  [" + a->iName + "]    cards:");
+		for (auto c : a->iKanbanCards)
+		{
+			Logger::outputDebugString(c);
+		}
+	}
+
+}
+
 CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aReturnErrorMessage)
 {
 	auto obj = aFile.getDynamicObject();
@@ -242,7 +287,7 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 	var version = obj->getProperty("version");
 	if (version.isString())
 	{
-		if (version.toString() != "0.1")
+		if (version.toString() != "0.1" && version.toString() != "0.2")
 		{
 			aReturnErrorMessage = "Not supported file version";
 			delete ret;
@@ -337,7 +382,7 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 	}
 
 	var cards = obj->getProperty("cards");
-	if (cards.isArray())
+	/*if (cards.isArray())
 	{
 		auto ar = cards.getArray();
 		for (auto& i : *ar)
@@ -379,17 +424,122 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 				return nullptr;
 			}
 		}
+	}*/
+	if (!fromJsonCardList(cards, ret, aReturnErrorMessage, nullptr))
+	{
+	//	aReturnErrorMessage = "Not supported file type [cards array]";
+		delete ret;
+		return nullptr;
+	}
+
+	var arch = obj->getProperty("archives");
+	if (arch.isArray())
+	{
+		auto ar = arch.getArray();
+		for (auto& i : *ar)
+		{
+			auto obj2 = i.getDynamicObject();
+			var name = obj2->getProperty("name");
+			var id = obj2->getProperty("id"); 
+			var cards = obj2->getProperty("cards");
+			if (name.isString() && id.isInt() && cards.isArray())
+			{
+				SArchive* archiveObject = new SArchive();
+				ret->iArchive.add(archiveObject);
+				archiveObject->iId = (int)id;
+				archiveObject->iName = name;
+
+				if (!fromJsonCardList(cards, ret, aReturnErrorMessage, archiveObject))
+				{
+					aReturnErrorMessage += "[archives array]";
+					delete ret;
+					return nullptr;
+				}
+			}
+
+		}
 	}
 	else
 	{
-		aReturnErrorMessage = "Not supported file type [cards array]";
-		delete ret;
-		return nullptr;
+		if (version.toString() == "0.2")
+		{
+			aReturnErrorMessage = "Not supported file type [archives array]";
+			delete ret;
+			return nullptr;
+		}
+		// else -> vesrion 0.1 doesn't supports archives
 	}
 
 	ret->updateSize();
 	return ret;
 }
+
+bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardComponent* aKanbanBoard, String& aReturnErrorMessage, SArchive* aArchiveObject)
+{
+	if (cards.isArray())
+	{
+		auto ar = cards.getArray();
+		for (auto& i : *ar)
+		{
+			auto obj2 = i.getDynamicObject();
+			var text = obj2->getProperty("text");
+			var notes = obj2->getProperty("notes"); // opt
+			var colour = obj2->getProperty("colour");
+			var columnId = obj2->getProperty("columnId");
+			var url = obj2->getProperty("url"); // opt
+			var tags = obj2->getProperty("tags"); // opt
+			if (text.isString() && colour.isString() && columnId.isInt())
+			{
+				String s = colour;
+
+				if (aArchiveObject)
+				{
+					String _t = text;
+					String _n = notes;
+					String _tg = tags;
+					String _u = url;
+					String ss("{ \"text\":\"" + _t + "\", \"colour\":\"" + s + "\", \"columnId\":" + String((int)columnId) + ", \"notes\":\"" + _n + "\", \"url\":\"" + _u + "\", \"tags\":\"" + _tg + "\" }");
+					aArchiveObject->iKanbanCards.add(ss);
+				}
+				else
+				{
+					NamedValueSet vs;
+					vs.set("text", text);
+					vs.set("notes", notes);
+					vs.set("colour", s);
+					vs.set("url", url);
+					vs.set("tags", tags);
+					//card->setText(text);
+					//card->setNotes(notes);				
+					//card->setColour(Colour::fromString(s));
+
+					CKanbanCardComponent* card = aKanbanBoard->createCard();
+					card->setupFromJson(vs);
+					for (auto j : aKanbanBoard->iKanbanColumns)
+					{
+						if (j->getColumnId() == (int)columnId)
+						{
+							j->addCard(card);
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				aReturnErrorMessage = "Not supported file type [cards]";
+				return false;
+			}
+		}
+	}
+	else
+	{
+		aReturnErrorMessage = "Not supported file type [cards array]";
+		return false;
+	}
+	return true;
+}
+
 
 bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 {
@@ -399,7 +549,7 @@ bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 		f.setPosition(0);
 		f.truncate();
 
-		f << "{\n\"version\":\"0.1\",\n\n\"board\":\n{\n";
+		f << "{\n\"version\":\"0.2\",\n\n\"board\":\n{\n";
 
 		f << "\"rows\":" + String(iGrid.templateRows.size()) + ", \"columns\":" + String(iGrid.templateColumns.size()) + ", \n";
 
@@ -444,8 +594,27 @@ bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 			}
 		}
 
-		f << "\n]\n}\n";
-		
+		f << "\n],\n\n\"archives\":\n[\n";
+
+		j = 0;
+		for (auto l : iArchive)
+		{
+			if (j > 0) f << ",\n";
+			f << "{ \"id\":" + String(l->iId) + ", \"name\":\"" + l->iName + "\", \"cards\": [\n";
+
+			for (int i = 0; i < l->iKanbanCards.size(); i++)
+			{
+				if (i > 0) f << ",\n";
+				f << " " << l->iKanbanCards[i];
+			}
+
+			f << "\n]}";
+			j++;
+		}
+
+		f << "\n]\n";
+		f << "}\n";
+
 		setName(iFile.getFileName());
 		return true;
 	}

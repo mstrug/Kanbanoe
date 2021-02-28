@@ -36,6 +36,10 @@ public:
 
 	static ColourPalette& getColourPalette();
 
+	static int WeekOfYear();
+
+	static String YearAndWeekOfYear();
+
 private:
 
 	PropertiesFile* iFile;

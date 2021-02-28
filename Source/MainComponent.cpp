@@ -51,17 +51,13 @@ MainComponent::MainComponent() : iMdiPanel(*this)
 	kb->setName("board 1");
 	//addAndMakeVisible(iKanbanBoard);
 	iKanbanBoards.add(kb);*/
+	
 
-	juce::Time t = juce::Time::getCurrentTime();
-	int d = t.getDayOfYear();
-	int e = t.getDayOfWeek();
-	juce::Time t2 = t.fromISO8601(String(t.getYear()) + "0101");
-	int f = t2.getDayOfWeek();
-	int wk = ((d + 6) / 7);
-	//if (e < f) wk++;
-
+	//juce::Time t = juce::Time::getCurrentTime();
+	//int woy = CConfiguration::WeekOfYear();
+	//iStatuBarR.setText( String(t.getYear()) + " "+ String::formatted("wk%02d",woy), NotificationType::dontSendNotification );
+	iStatuBarR.setText(CConfiguration::YearAndWeekOfYear(), NotificationType::dontSendNotification);
 	iStatuBarR.setJustificationType(Justification::centredRight);
-	iStatuBarR.setText( String(t.getYear()) + " wk" + String(wk), NotificationType::dontSendNotification );
 	addAndMakeVisible(iStatuBarR);
 
 	iStatuBarL.setJustificationType(Justification::centredLeft);
@@ -169,6 +165,7 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 	else if (topLevelMenuIndex == 1) // edit
 	{
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuEditAddCard);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuEditViewArchive);		
 	}
 	else if (topLevelMenuIndex == 2) // help
 	{
@@ -191,7 +188,7 @@ void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 {
 	Array<CommandID> commands{ CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
 		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileExit,
-		CommandIDs::menuEditAddCard, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch };
+		CommandIDs::menuEditAddCard, CommandIDs::menuEditViewArchive, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch };
 	aCommands.addArray(commands);
 }
 
@@ -227,6 +224,9 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 	case menuEditAddCard:
 			result.setInfo("Add card", "", "Menu", 0);
 			//result.addDefaultKeypress('A', ModifierKeys::ctrlModifier);
+		break;
+	case menuEditViewArchive:
+			result.setInfo("View archives", "", "Menu", 0);
 		break;
 	case menuHelpAbout:
 			result.setInfo("About", "", "Menu", 0);
@@ -269,6 +269,8 @@ bool MainComponent::perform(const InvocationInfo& info)
 		break;
 	case menuFileClose:
 		{
+			if (!iMdiPanel.getActiveDocument()) break;
+
 			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
 			iMdiPanel.closeDocument(iMdiPanel.getActiveDocument(), false);
 			iKanbanBoards.removeObject(kb, true);
@@ -276,6 +278,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 		break;
 	case menuFileSave:
 		{
+			if (!iMdiPanel.getActiveDocument()) break;
 			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
 			saveFile(kb);
 
@@ -285,6 +288,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 		break;
 	case menuFileSaveAs:
 		{
+			if (!iMdiPanel.getActiveDocument()) break;
 			iFileDialog.reset(new FileChooser("Choose a file to save...", File::getCurrentWorkingDirectory(), "*.pkb", false));
 			if (iFileDialog->showDialog(FileBrowserComponent::saveMode | FileBrowserComponent::warnAboutOverwriting | FileBrowserComponent::canSelectFiles, nullptr))
 			{
@@ -324,16 +328,27 @@ bool MainComponent::perform(const InvocationInfo& info)
 		break;
 	case menuEditAddCard:
 		{
-			static int t = 0;
+//		static std::unique_ptr<LookAndFeel> lf(new LookAndFeel_V4(LookAndFeel_V4::getLightColourScheme()));
+//		for (auto* child : getChildren())
+//			child->setLookAndFeel(lf.get());
+
+		/*	static int t = 0;
 			auto c = new CKanbanCardComponent(nullptr);
 			c->setTopLeftPosition(10, 20);
 			c->setText("Card " + String(t++));
 			iKanbanCards.add(c);
-			addAndMakeVisible(c);
+			addAndMakeVisible(c);*/
+		}
+		break;
+	case menuEditViewArchive:
+		{
+			if (!iMdiPanel.getActiveDocument()) break;
+			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
+			kb->logArchives();
 		}
 		break;
 	case menuHelpAbout:
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.21\nM.Strug", "OK");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.22\nM.Strug", "OK");
 		break;
 	case menubarSearch:
 			iTextSearch.grabKeyboardFocus();

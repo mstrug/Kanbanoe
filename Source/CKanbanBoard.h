@@ -40,9 +40,23 @@ public:
 	CKanbanCardComponent* createCard();
 	void removeCard(CKanbanCardComponent* aCard);
 
+	bool archiveColumn(CKanbanColumnComponent* aColumn, const String& aArchiveName, bool aClearColumn);
+	void logArchives();
+
 	bool saveFile(String& aReturnErrorMessage);
 	void setFile(File& aFile);
 	File& getFile();
+
+private:
+
+	struct SArchive
+	{
+		int iId;
+		String iName;
+		StringArray iKanbanCards;
+	};
+
+	static bool fromJsonCardList(juce::var& aObject, CKanbanBoardComponent* aKanbanBoard, String& aReturnErrorMessage, SArchive* aArchiveObject);
 
 private:
 
@@ -53,6 +67,8 @@ private:
 	OwnedArray< CKanbanCardComponent > iKanbanCards;
 
 	OwnedArray< CKanbanColumnComponent > iKanbanColumns;
+	
+	OwnedArray< SArchive > iArchive;
 
 	Component iContent;
 

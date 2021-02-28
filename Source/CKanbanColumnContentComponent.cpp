@@ -173,6 +173,11 @@ const FlexBox& CKanbanColumnContentComponent::getLayout()
 	return iLayout;
 }
 
+int CKanbanColumnContentComponent::getCardsCount()
+{
+	return iLayout.items.size();
+}
+
 bool CKanbanColumnContentComponent::isInterestedInDragSource(const SourceDetails & dragSourceDetails)
 {
 	int j = 0;
