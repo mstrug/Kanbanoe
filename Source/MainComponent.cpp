@@ -188,7 +188,8 @@ void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 {
 	Array<CommandID> commands{ CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
 		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileExit,
-		CommandIDs::menuEditAddCard, CommandIDs::menuEditViewArchive, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch };
+		CommandIDs::menuEditAddCard, CommandIDs::menuEditViewArchive, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
+		CommandIDs::menubarSearchClear, CommandIDs::mdiNextDoc, CommandIDs::mdiPrevDoc };
 	aCommands.addArray(commands);
 }
 
@@ -234,6 +235,18 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 	case menubarSearch:
 			result.setInfo("Search", "", "Menubar", 0);
 			result.addDefaultKeypress('F', ModifierKeys::ctrlModifier );
+		break;
+	case menubarSearchClear:
+			result.setInfo("Search Clear", "", "Menubar", 0);
+			result.addDefaultKeypress(KeyPress::escapeKey, ModifierKeys::noModifiers);
+		break;
+	case mdiNextDoc:
+			result.setInfo("Next Tab", "", "Mdi", 0);
+			result.addDefaultKeypress(KeyPress::tabKey, ModifierKeys::ctrlModifier);
+		break;
+	case mdiPrevDoc:
+			result.setInfo("Previous Tab", "", "Mdi", 0);
+			result.addDefaultKeypress(KeyPress::tabKey, ModifierKeys::ctrlModifier | ModifierKeys::shiftModifier);
 		break;
 	default:
 		break;
@@ -348,10 +361,19 @@ bool MainComponent::perform(const InvocationInfo& info)
 		}
 		break;
 	case menuHelpAbout:
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.22\nM.Strug", "OK");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.23\nM.Strug", "OK");
 		break;
 	case menubarSearch:
 			iTextSearch.grabKeyboardFocus();
+		break;
+	case menubarSearchClear:
+			iTextSearch.onEscapeKey();
+		break;
+	case mdiNextDoc:
+			iMdiPanel.activateNextPrevDocument(true);
+		break;
+	case mdiPrevDoc:
+			//iMdiPanel.activateNextPrevDocument(false);
 		break;
 	default:
 		return false;

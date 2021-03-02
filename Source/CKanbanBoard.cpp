@@ -120,11 +120,7 @@ void CKanbanBoardComponent::search(const String & aString)
 
 	if (s.isQuotedString())
 	{
-		s = s.substring(1);
-		if (s.getLastCharacter() == '\'' || s.getLastCharacter() == '"')
-		{
-			s = s.dropLastCharacters(1);
-		}
+		s = s.unquoted();
 	}
 	else
 	{
@@ -193,7 +189,7 @@ void CKanbanBoardComponent::search(const String & aString)
 
 		for (auto c : iKanbanCards)
 		{
-			if (!c->getText().contains(s) && !c->getNotes().contains(s))
+			if (!c->getText().containsIgnoreCase(s) && !c->getNotes().containsIgnoreCase(s))
 			{
 				c->getOwner()->hideCard(c);
 			}

@@ -25,7 +25,10 @@ class MainComponent  : public Component, public MenuBarModel, public DragAndDrop
 		menuEditAddCard,
 		menuEditViewArchive,
 		menuHelpAbout,
-		menubarSearch
+		menubarSearch,
+		menubarSearchClear,
+		mdiNextDoc,
+		mdiPrevDoc
 	};
 
 public:
@@ -104,6 +107,26 @@ private:
 			auto mdi = static_cast<CMyMdiDoc*>(getActiveDocument());
 			if (mdi) iOwner.setSearchText(mdi->getSearchText(), true);
 		}
+		void activateNextPrevDocument(bool aNext)
+		{
+			auto ad = getActiveDocument();
+			int docCnt = getNumDocuments();
+			if (docCnt <= 1) return;
+			for (int i = 0; i < docCnt; i++)
+			{
+				if (getDocument(i) == ad)
+				{
+					Logger::outputDebugString("active doc idx: " + String(i));
+					if (aNext) i++;
+					else i--;
+					if (i == docCnt) i = 0;
+					if (i < 0) i = docCnt - 1;
+					setActiveDocument(getDocument(i));
+					return;
+				}
+			}
+		}
+
 	};
 
 private:
