@@ -40,6 +40,8 @@ public:
 	CKanbanColumnComponent& getOwner();
 	const FlexBox& getLayout();
 	int getCardsCount();
+	void moveCardTop(CKanbanCardComponent* aCard);
+	void moveCardBottom(CKanbanCardComponent* aCard);
 
 public: // from DragAndDropTarget
 

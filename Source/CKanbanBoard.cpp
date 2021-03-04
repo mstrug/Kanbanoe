@@ -466,6 +466,8 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 		// else -> vesrion 0.1 doesn't supports archives
 	}
 
+	for (auto c : ret->iKanbanColumns) c->scrollToTop();
+
 	ret->updateSize();
 	return ret;
 }

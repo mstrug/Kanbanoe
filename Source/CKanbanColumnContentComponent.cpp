@@ -178,6 +178,38 @@ int CKanbanColumnContentComponent::getCardsCount()
 	return iLayout.items.size();
 }
 
+void CKanbanColumnContentComponent::moveCardTop(CKanbanCardComponent * aCard)
+{
+	int j = 0;
+	for (auto& i : iLayout.items)
+	{
+		if (i.associatedComponent == aCard && j > 0 )
+		{
+			iLayout.items.move(j, 0);
+			resized();
+			iOwner.scrollEnsureVisible(aCard);
+			break;
+		}
+		j++;
+	}
+}
+
+void CKanbanColumnContentComponent::moveCardBottom(CKanbanCardComponent * aCard)
+{
+	int j = 0;
+	for (auto& i : iLayout.items)
+	{
+		if (i.associatedComponent == aCard && j < iLayout.items.size() - 1)
+		{
+			iLayout.items.move(j, iLayout.items.size() - 1);
+			resized();
+			iOwner.scrollEnsureVisible(aCard);
+			break;
+		}
+		j++;
+	}
+}
+
 bool CKanbanColumnContentComponent::isInterestedInDragSource(const SourceDetails & dragSourceDetails)
 {
 	int j = 0;
@@ -324,6 +356,7 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 
 	iDragTargetActive = false;
 	iOwner.setActiveFrame(false);
+	iOwner.scrollEnsureVisible(card);
 	iDragTargetPlaceholderActive = false;
 	iDraggedCardIndex = -1;
 

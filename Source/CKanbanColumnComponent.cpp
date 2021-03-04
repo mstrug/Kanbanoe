@@ -208,6 +208,33 @@ void CKanbanColumnComponent::scrollToBottom()
 	iScrollBar.scrollToBottom(NotificationType::sendNotificationSync);
 }
 
+void CKanbanColumnComponent::scrollToTop()
+{
+	iScrollBar.scrollToTop(NotificationType::sendNotificationSync);
+}
+
+void CKanbanColumnComponent::scrollEnsureVisible(CKanbanCardComponent * aCard)
+{
+	if (aCard)
+	{
+		int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
+		auto ran = iScrollBar.getCurrentRange();
+		int top = aCard->getBounds().getTopLeft().getY() + ran.getStart();
+		int bottom = aCard->getBounds().getBottom() + ran.getStart();
+		//Logger::outputDebugString("range: " + String(ran.getStart()) + "  " + String(ran.getEnd()) + "    |  " + String(top) + "  " + String(bottom));
+		if (!ran.contains(top))
+		{
+			iScrollBar.setCurrentRangeStart(top-m);
+		}
+		else if (!ran.contains(bottom))
+		{
+			int c = bottom + m - ran.getEnd() + iScrollBar.getCurrentRangeStart();
+			if  (c >= 0 ) iScrollBar.setCurrentRangeStart(c);
+			//Logger::outputDebugString("not contains bottom  " + String(c));
+		}
+	}
+}
+
 void CKanbanColumnComponent::search(const String & aString)
 {
 	if (aString.startsWith("tag:"))

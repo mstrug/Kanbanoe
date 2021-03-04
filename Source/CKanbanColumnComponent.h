@@ -41,6 +41,8 @@ public:
 	void removeCard(CKanbanCardComponent* aCard);
 	void removeAllCards();
 	void scrollToBottom();
+	void scrollToTop();
+	void scrollEnsureVisible(CKanbanCardComponent* aCard);
 
 	void search(const String& aString);
 

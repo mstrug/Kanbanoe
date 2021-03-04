@@ -80,13 +80,14 @@ private:
 		Viewport iViewport;
 		String iSearchText;
 	public:
-		CMyMdiDoc(CKanbanBoardComponent* board) { addAndMakeVisible(iViewport); iViewport.setViewedComponent(board, false); setName(board->getName()); }
-		virtual ~CMyMdiDoc() { }
+		CMyMdiDoc(CKanbanBoardComponent* board):iNext(nullptr),iPrev(nullptr) { addAndMakeVisible(iViewport); iViewport.setViewedComponent(board, false); setName(board->getName()); }
+		virtual ~CMyMdiDoc() { if (iPrev) iPrev->iNext = iNext; if (iNext) iNext->iPrev = iPrev; }
 		void resized() { auto r(getLocalBounds()); iViewport.setBounds(r); r.removeFromBottom(8); iViewport.getViewedComponent()->setBounds(r); }
 		operator CKanbanBoardComponent*() const { return static_cast<CKanbanBoardComponent*>(iViewport.getViewedComponent()); }
 		CKanbanBoardComponent* getKanbanBoard() { return static_cast<CKanbanBoardComponent*>(iViewport.getViewedComponent()); }
 		void setSearchText(const String& aText) { iSearchText = aText; }
 		String& getSearchText() { return iSearchText; }
+		CMyMdiDoc *iNext, *iPrev;
 	};
 	class CMyMdi : public MultiDocumentPanel
 	{
@@ -100,6 +101,8 @@ private:
 		bool addDocument(CKanbanBoardComponent* board)
 		{
 			CMyMdiDoc* doc = new CMyMdiDoc(board);
+			doc->iPrev = (CMyMdiDoc*) getActiveDocument();
+			if (doc->iPrev) doc->iPrev->iNext = doc;
 			return MultiDocumentPanel::addDocument(doc, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), true);
 		}
 		void activeDocumentChanged() override
@@ -109,21 +112,26 @@ private:
 		}
 		void activateNextPrevDocument(bool aNext)
 		{
-			auto ad = getActiveDocument();
-			int docCnt = getNumDocuments();
-			if (docCnt <= 1) return;
-			for (int i = 0; i < docCnt; i++)
+			CMyMdiDoc* ad = (CMyMdiDoc*) getActiveDocument();
+			if (aNext)
 			{
-				if (getDocument(i) == ad)
+				if (ad->iNext == nullptr)
 				{
-					Logger::outputDebugString("active doc idx: " + String(i));
-					if (aNext) i++;
-					else i--;
-					if (i == docCnt) i = 0;
-					if (i < 0) i = docCnt - 1;
-					setActiveDocument(getDocument(i));
-					return;
+					CMyMdiDoc* i = ad;
+					while (i->iPrev) i = i->iPrev;
+					setActiveDocument(i);
 				}
+				else setActiveDocument(ad->iNext);
+			}
+			else
+			{
+				if (ad->iPrev == nullptr)
+				{
+					CMyMdiDoc* i = ad;
+					while (i->iNext) i = i->iNext;
+					setActiveDocument(i);
+				}
+				else setActiveDocument(ad->iPrev);
 			}
 		}
 

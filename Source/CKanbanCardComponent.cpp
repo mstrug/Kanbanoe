@@ -156,6 +156,19 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 		{
 			this->getOwner()->getOwner().removeCard(this);
 		});
+		menu.addSeparator();
+		menu.addItem("Move top", [&]()
+		{
+			this->iMouseActive = false;
+			this->getOwner()->moveCardTop(this);
+			this->repaint();
+		});
+		menu.addItem("Move bottom", [&]()
+		{
+			this->iMouseActive = false;
+			this->getOwner()->moveCardBottom(this);
+			this->repaint();
+		});
 		menu.show();
 	}
 }
