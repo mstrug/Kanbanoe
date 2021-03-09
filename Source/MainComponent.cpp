@@ -361,7 +361,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 		}
 		break;
 	case menuHelpAbout:
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.24\nM.Strug", "OK");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.25\nM.Strug", "OK");
 		break;
 	case menubarSearch:
 			iTextSearch.grabKeyboardFocus();

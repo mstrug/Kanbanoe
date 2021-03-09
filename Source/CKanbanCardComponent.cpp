@@ -18,7 +18,7 @@
 
 
 //==============================================================================
-CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false)
+CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iCreationDate(juce::Time::getCurrentTime())
 {
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -39,6 +39,8 @@ CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner
 	//setOpaque(true);
 
 	setSize(w, h);
+
+	iLastUpdateDate = iCreationDate;
 }
 
 CKanbanCardComponent::~CKanbanCardComponent()
@@ -77,6 +79,31 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 			//g.fillRect(iRectUrl);
 			g.drawArrow(iLineUrl, 2, 7, 7);
 		}
+
+		if (iIsDueDateSet)
+		{
+			auto b = getLocalBounds();
+			auto b1 = b.removeFromRight(50);
+			auto b2 = b1.removeFromTop(20);
+			b2.translate(-1, 0);
+			g.setColour(Colours::lightgrey);
+			g.setFont(juce::Font(12.0f));
+
+			
+			auto ct = Time::getCurrentTime();
+			RelativeTime d = Time( iDueDate.getYear(), iDueDate.getMonth(), iDueDate.getDayOfMonth(),0,0) - Time(ct.getYear(), ct.getMonth(), ct.getDayOfMonth(), 0, 0);
+			double dval = d.inDays();
+			String s;
+
+			if (dval > 14) s = String((int)ceil(d.inWeeks())) + "wks";
+			else if (dval == 0) s = "tooday";
+			else if (dval == 1) s = "tomorrow";
+			else if (dval == -1) s = "yesterday";
+			else if (dval < -365) s = String((int)ceil(d.inWeeks()) / 54) + "y";
+			else if (dval < -14) s = String((int)ceil(d.inWeeks())) + "wks";
+			else s = String((int)ceil(dval)) + "d";
+			g.drawText( s, b2, Justification::topRight, false);
+		}
 	}
 }
 
@@ -86,6 +113,7 @@ void CKanbanCardComponent::resized()
 	if (r.getHeight() == 0) return;
 		
 	r.removeFromLeft(10);
+	r.removeFromRight(10);
 	iLabel.setBounds(r);
 
 	iRectUrl = getLocalBounds().removeFromRight(15);
@@ -236,11 +264,21 @@ void CKanbanCardComponent::setupFromJson(const NamedValueSet& aValues) //const S
 	iNotes = URL::removeEscapeChars(aValues["notes"]);
 	setUrl(URL::removeEscapeChars(aValues["url"]));
 	setTags(URL::removeEscapeChars(aValues["tags"]));
+	iIsDueDateSet = aValues["dueDateSet"];
+	iCreationDate = Time(aValues["creationDate"].toString().getLargeIntValue());
+	iDueDate = Time(aValues["dueDate"].toString().getLargeIntValue());
+	iLastUpdateDate = Time(aValues["lastUpdateDate"].toString().getLargeIntValue());
+
+	// todo:  wa for versions prev 0.25: (remove in future)
+	if (iCreationDate.toMilliseconds() == 0) iCreationDate = Time(2021, 0, 1, 12, 00);
+	if (iLastUpdateDate.toMilliseconds() == 0) iLastUpdateDate = Time(2021, 0, 1, 12, 00);
+	if (iIsDueDateSet && iDueDate.toMilliseconds() == 0) iDueDate = Time(2021, 0, 1, 12, 00);
 }
 
 void CKanbanCardComponent::setText(const String& aString)
 {
-	iLabel.setText(aString, NotificationType::dontSendNotification);	
+	updateLastUpdateDate();
+	iLabel.setText(aString, NotificationType::dontSendNotification);
 }
 
 String CKanbanCardComponent::getText()
@@ -250,6 +288,7 @@ String CKanbanCardComponent::getText()
 
 void CKanbanCardComponent::setUrl(const String& aString)
 {
+	updateLastUpdateDate();
 	if ( aString.contains("://") || aString.indexOf("//") == 0 )
 	{
 		getProperties().set("url", aString);
@@ -272,11 +311,46 @@ void CKanbanCardComponent::setUrl(const String& aString)
 
 void CKanbanCardComponent::setTags(const String& aString)
 {
+	updateLastUpdateDate();
 	getProperties().set("tags", aString);
+}
+
+bool CKanbanCardComponent::isDueDateSet()
+{
+	return iIsDueDateSet;
+}
+
+void CKanbanCardComponent::setDueDate(bool aIsSet, juce::Time& aDueDate)
+{
+	updateLastUpdateDate();
+	iIsDueDateSet = aIsSet;
+	if (aIsSet) iDueDate = aDueDate;
+	else iDueDate = Time(0);
+}
+
+juce::Time CKanbanCardComponent::getCreationDate()
+{
+	return iCreationDate;
+}
+
+juce::Time CKanbanCardComponent::getLastUpdateDate()
+{
+	return iLastUpdateDate;
+}
+
+juce::Time CKanbanCardComponent::getDueDate()
+{
+	return iDueDate;
+}
+
+void CKanbanCardComponent::updateLastUpdateDate()
+{
+	iLastUpdateDate = Time::getCurrentTime();
 }
 
 void CKanbanCardComponent::setColour(Colour aColor)
 {
+	updateLastUpdateDate();
 	iColorBar = aColor;
 	repaint();
 }
@@ -288,6 +362,7 @@ Colour CKanbanCardComponent::getColour()
 
 void CKanbanCardComponent::setNotes(const String& aString)
 {
+	updateLastUpdateDate();
 	iNotes = aString;
 }
 
@@ -329,6 +404,11 @@ String CKanbanCardComponent::toJson()
 		tags = URL::addEscapeChars(tags, false);
 		ret += ", \"tags\":\"" + tags + "\"";
 	}
+
+	ret += ", \"dueDateSet\":" + String(iIsDueDateSet ? "true" : "false");
+	ret += ", \"creationDate\":" + String(iCreationDate.toMilliseconds());
+	ret += ", \"dueDate\":" + String(iDueDate.toMilliseconds());
+	ret += ", \"lastUpdateDate\":" + String(iLastUpdateDate.toMilliseconds());
 
 	ret += " }";
 	return ret;

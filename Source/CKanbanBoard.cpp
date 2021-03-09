@@ -486,6 +486,10 @@ bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardCompo
 			var columnId = obj2->getProperty("columnId");
 			var url = obj2->getProperty("url"); // opt
 			var tags = obj2->getProperty("tags"); // opt
+			var dueDateSet = obj2->getProperty("dueDateSet");
+			var crDate = obj2->getProperty("creationDate");
+			var dueDate = obj2->getProperty("dueDate");
+			var luDate = obj2->getProperty("lastUpdateDate");
 			if (text.isString() && colour.isString() && columnId.isInt())
 			{
 				String s = colour;
@@ -496,7 +500,12 @@ bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardCompo
 					String _n = notes;
 					String _tg = tags;
 					String _u = url;
-					String ss("{ \"text\":\"" + _t + "\", \"colour\":\"" + s + "\", \"columnId\":" + String((int)columnId) + ", \"notes\":\"" + _n + "\", \"url\":\"" + _u + "\", \"tags\":\"" + _tg + "\" }");
+					bool _dds = dueDateSet;
+					String _crd(((juce::int64)crDate));
+					String _dd(((juce::int64)dueDate));
+					String _ld(((juce::int64)luDate));
+					String ss("{ \"text\":\"" + _t + "\", \"colour\":\"" + s + "\", \"columnId\":" + String((int)columnId) + ", \"notes\":\"" + _n + "\", \"url\":\"" + _u + "\", \"tags\":\"" + _tg + "\", \"dueDateSet\":" + (_dds?"true":"false") + ", \"creationDate\":" + _crd + "\, \"dueDate\":" + _dd +
+						", \"lastUpdateDate\":" + _ld + "}");
 					aArchiveObject->iKanbanCards.add(ss);
 				}
 				else
@@ -507,6 +516,10 @@ bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardCompo
 					vs.set("colour", s);
 					vs.set("url", url);
 					vs.set("tags", tags);
+					vs.set("dueDateSet", dueDateSet);
+					vs.set("creationDate", crDate);
+					vs.set("dueDate", dueDate);
+					vs.set("lastUpdateDate", luDate);
 					//card->setText(text);
 					//card->setNotes(notes);				
 					//card->setColour(Colour::fromString(s));

@@ -46,6 +46,13 @@ public:
 
 	void setUrl(const String& aString);
 	void setTags(const String& aString);
+	
+	bool isDueDateSet();
+	void setDueDate(bool aIsSet, juce::Time& aDueDate);
+	juce::Time getCreationDate();
+	juce::Time getLastUpdateDate();
+	juce::Time getDueDate();
+	void updateLastUpdateDate();
 
 	void setColour(Colour aColor);
 	Colour getColour();
@@ -85,6 +92,11 @@ private:
 	Rectangle<int> iRectUrl;
 	bool iIsUrlSet;
 	bool iIsUrlMouseActive;
+
+	bool iIsDueDateSet;
+	juce::Time iDueDate;
+	juce::Time iCreationDate;
+	juce::Time iLastUpdateDate;
 
 	CKanbanColumnContentComponent* iOwner;
 

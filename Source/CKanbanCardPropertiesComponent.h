@@ -43,6 +43,8 @@ private:
 
 	void changesApply();
 
+	void setDueDate( double aSliderVal );
+
 private:
 
 	CKanbanCardComponent& iOwner;
@@ -57,6 +59,11 @@ private:
 
 	TextEditor iTextTags;
 	Label iLabelTags;
+
+	Label iLabelCreationDate;
+
+	Slider iSliderDueDate;
+	Label iLabelSlider;
 
 	std::unique_ptr<ColoursComponent> iColours;
 

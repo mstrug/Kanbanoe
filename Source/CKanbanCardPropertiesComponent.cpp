@@ -21,7 +21,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	setViewportIgnoreDragFlag(true);
 	addKeyListener(this);
 
-	int w = 300;
+	int w = 350;
 	int wm = 20;
 
 	//iBar->getProperties().set("name", "test");
@@ -47,7 +47,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	iTextEditor.setScrollbarsShown(true);	
 	iTextEditor.setText( aOwner.getNotes() );
 	addAndMakeVisible(iTextEditor);
-	iTextEditor.setBounds(10 + 50 + 10, yofs, w - 50 - 10, 24 + 24 * 2);
+	iTextEditor.setBounds(10 + 50 + 10, yofs, w - 50 - 10, 24 + 24 * 3);
 	iTextEditor.onTextChange = [this, &aOwner]
 	{
 		aOwner.setNotes(this->iTextEditor.getText());
@@ -87,12 +87,50 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 
 	yofs = iTextTags.getBottom() + 12;
 
+	iLabelSlider.setBounds(10, yofs, 160, 24);
+	addAndMakeVisible(iLabelSlider);
+
+	iSliderDueDate.setRange(-1, 365, 1);
+	iSliderDueDate.setSliderStyle(Slider::IncDecButtons);
+	iSliderDueDate.setIncDecButtonsMode(Slider::incDecButtonsDraggable_AutoDirection);
+	//iSliderDueDate.setTextBoxStyle(Slider::TextBoxLeft, true, 50, 20);
+	iSliderDueDate.setTextBoxStyle(Slider::NoTextBox, false, 0, 0);
+//	iSliderDueDate.setBounds(10, yofs, w - 10, 24);
+	iSliderDueDate.setBounds(10 + 160 + 10, yofs - 3, w - 160 - 10, 30);
+	//iSliderDueDate.setVelocityBasedMode(true);
+	//iSliderDueDate.setVelocityModeParameters(2, 1, 0);
+	iSliderDueDate.setTextValueSuffix(" days");
+	iSliderDueDate.onValueChange = [this]
+	{
+		auto sv = this->iSliderDueDate.getValue();
+		this->setDueDate(sv);		
+	};
+	addAndMakeVisible(iSliderDueDate);
+	if (!aOwner.isDueDateSet()) iSliderDueDate.setValue(-1);
+	else
+	{
+		iSliderDueDate.setValue((aOwner.getDueDate().toMilliseconds() - aOwner.getCreationDate().toMilliseconds()) / (24 * 3600000), dontSendNotification);
+		iLabelSlider.setText(aOwner.getDueDate().formatted("Due date: %d.%m.%Y"), dontSendNotification);
+	}
+	//this->setDueDate(-1);
+	//iSliderDueDate.setValue()
+
+	yofs = iSliderDueDate.getBottom() + 12;
+
 	iColours.reset(new ColoursComponent( 6, 1, CConfiguration::getColourPalette(), CConfiguration::getColourPalette().getColourIndex( aOwner.getColour() )));
 	addAndMakeVisible(*iColours);
 	iColours->setTopLeftPosition( w + wm - iColours->getWidth() - 10, yofs);
 	iColours->setListener(this);
 
 	yofs = iColours->getBottom() + 12;
+
+	iLabelCreationDate.setBounds(10, yofs, w - 10, 20);
+	//iLabelCreationDate.setText(aOwner.getCreationDate().toISO8601(true) + "  " + aOwner.getLastUpdateDate().toISO8601(true), dontSendNotification);
+	iLabelCreationDate.setText(aOwner.getCreationDate().formatted("Created: %d.%m.%Y %H:%M    ") + aOwner.getLastUpdateDate().formatted("Updated: %d.%m.%Y %H:%M"), dontSendNotification);
+	iLabelCreationDate.setColour(Label::textColourId, getLookAndFeel().findColour(Label::textColourId).darker());
+	addAndMakeVisible(iLabelCreationDate);
+
+	yofs = iLabelCreationDate.getBottom() + 12;
 
 	setSize(w + wm, yofs);
 }
@@ -148,5 +186,22 @@ void CKanbanCardPropertiesComponent::changesApply()
 	iOwner.setUrl(iTextUrl.getText());
 	iOwner.setText(iTextName.getText());
 	iOwner.repaint();
+}
+
+void CKanbanCardPropertiesComponent::setDueDate(double aSliderVal)
+{
+	if (aSliderVal < 0)
+	{
+		this->iLabelSlider.setText("Due date: -", dontSendNotification);
+		this->iOwner.setDueDate(false, Time::getCurrentTime() - RelativeTime(24 * 3600));
+	}
+	else
+	{
+		auto d = this->iOwner.getCreationDate();
+		RelativeTime rt(aSliderVal * 24 * 3600);
+		d += rt;
+		this->iLabelSlider.setText(d.formatted("Due date: %d.%m.%Y"), dontSendNotification);
+		this->iOwner.setDueDate(true, d);
+	}
 }
 
