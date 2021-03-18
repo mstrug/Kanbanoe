@@ -37,7 +37,8 @@ public:
 	void contentUpdated();
 	CKanbanBoardComponent& kanbanBoard();
 	CKanbanColumnContentComponent& cardsLayout();
-	void addCard(CKanbanCardComponent* aCard);
+	void addCard(CKanbanCardComponent* aCard); // takes ownership of the pointer
+	void duplicateCard(const CKanbanCardComponent* aCard);
 	void removeCard(CKanbanCardComponent* aCard);
 	void removeAllCards();
 	void scrollToBottom();
@@ -48,6 +49,8 @@ public:
 
 	String getTitle();
 	int getColumnId() const;
+	bool isColumnDueDateDone() const;
+	void setColumnDueDateDone(bool aDueDateDone);
 
 public: // from ScrollBar::Listener
 
@@ -60,6 +63,8 @@ private:
 	int iColumnId;
 
 	bool iIsFrameActive;
+
+	bool iDueDateDone;
 
 	Label iTitle;
 

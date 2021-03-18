@@ -25,6 +25,8 @@ public:
     CKanbanCardComponent(CKanbanColumnContentComponent* aOwner);
     ~CKanbanCardComponent() override;
 
+	void duplicateDataFrom(const CKanbanCardComponent& aCard);
+
     void paint (juce::Graphics&) override;
     void resized() override;
 	void mouseDown(const MouseEvent& event) override;
@@ -49,6 +51,7 @@ public:
 	
 	bool isDueDateSet();
 	void setDueDate(bool aIsSet, juce::Time& aDueDate);
+	void setDone(bool aDone);
 	juce::Time getCreationDate();
 	juce::Time getLastUpdateDate();
 	juce::Time getDueDate();
@@ -60,10 +63,18 @@ public:
 	void setNotes(const String& aString);
 	String getNotes();
 
+	void setAssigne(const String& aString);
+	String getAssigne();
+
 	void deselect();
 	String toJson();
 
 	int getOwnerColumnId() const;
+
+public: // clipboard
+
+	static CKanbanCardComponent* getClipboardCard();
+	static void setClipboardCard(CKanbanCardComponent* aCard);
 
 private:
 
@@ -94,9 +105,13 @@ private:
 	bool iIsUrlMouseActive;
 
 	bool iIsDueDateSet;
+	bool iIsDone;
 	juce::Time iDueDate;
 	juce::Time iCreationDate;
 	juce::Time iLastUpdateDate;
+
+	Label iAssigne;
+	Rectangle<int> iRectAssigne;
 
 	CKanbanColumnContentComponent* iOwner;
 

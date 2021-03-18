@@ -16,9 +16,11 @@
 #include "Cconfiguration.h"
 #include "CKanbanCardPropertiesComponent.h"
 
+// clipboard card
+static CKanbanCardComponent* clipboardCard = nullptr;
 
 //==============================================================================
-CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iCreationDate(juce::Time::getCurrentTime())
+CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iIsDone(false), iCreationDate(juce::Time::getCurrentTime())
 {
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -47,6 +49,23 @@ CKanbanCardComponent::~CKanbanCardComponent()
 {
 }
 
+void CKanbanCardComponent::duplicateDataFrom(const CKanbanCardComponent & aCard)
+{
+	iLabel.setText(aCard.iLabel.getText(), NotificationType::dontSendNotification);
+	iColorBar = aCard.iColorBar;
+	iNotes = aCard.iNotes;
+	iAssigne.setText(aCard.iAssigne.getText(), NotificationType::dontSendNotification);
+	iButtonUrl.setButtonText(aCard.iButtonUrl.getButtonText());
+	iIsUrlSet = aCard.iIsUrlSet;
+	iIsDueDateSet = aCard.iIsDueDateSet;
+	iDueDate = aCard.iDueDate;
+
+	for ( int i = 0; i < aCard.getProperties().size(); i++)
+	{
+		getProperties().set(aCard.getProperties().getName(i), aCard.getProperties().getValueAt(i));		
+	}
+}
+
 void CKanbanCardComponent::paint (juce::Graphics& g)
 {
 	if (iIsDragging)
@@ -72,6 +91,15 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 		g.setColour(iColorBar);
 		if (getHeight()>8) g.fillRect(4,4,2,getHeight()-8);
 
+		//g.setColour(Colours::red);
+		//g.fillRect(iRectAssigne);
+		if (!iAssigne.getText().isEmpty())
+		{
+			g.setColour(Colours::lightgrey);
+			g.setFont(juce::Font(12.0f));
+			g.drawText(iAssigne.getText().substring(0,2), iRectAssigne, Justification::centredRight, false);
+		}
+
 		if (iIsUrlSet)
 		{
 			g.setColour(juce::Colours::grey);
@@ -95,13 +123,41 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 			double dval = d.inDays();
 			String s;
 
-			if (dval > 14) s = String((int)ceil(d.inWeeks())) + "wks";
-			else if (dval == 0) s = "tooday";
-			else if (dval == 1) s = "tomorrow";
-			else if (dval == -1) s = "yesterday";
-			else if (dval < -365) s = String((int)ceil(d.inWeeks()) / 54) + "y";
-			else if (dval < -14) s = String((int)ceil(d.inWeeks())) + "wks";
-			else s = String((int)ceil(dval)) + "d";
+			if (iIsDone)
+			{
+				s = "done";
+			}
+			else
+			{
+				if (dval > 14) s = String((int)ceil(d.inWeeks())) + "wks";
+				else if (dval == 0)
+				{
+					g.setColour(Colours::whitesmoke);
+					s = "tooday";
+				}
+				else if (dval == 1) s = "tomorrow";
+				else if (dval == -1)
+				{
+					g.setColour(Colours::tomato);
+					s = "yesterday";
+				}
+				else if (dval < -365)
+				{
+					g.setColour(Colours::red);
+					s = String((int)ceil(d.inWeeks()) / 54) + "y";
+				}
+				else if (dval < -14)
+				{
+					g.setColour(Colours::red);
+					s = String((int)ceil(d.inWeeks())) + "wks";
+				}
+				else
+				{
+					if ( dval < 0 ) g.setColour(Colours::red);
+					s = String((int)ceil(dval)) + "d";
+				}
+			}
+
 			g.drawText( s, b2, Justification::topRight, false);
 		}
 	}
@@ -119,6 +175,11 @@ void CKanbanCardComponent::resized()
 	iRectUrl = getLocalBounds().removeFromRight(15);
 	iRectUrl = iRectUrl.removeFromBottom(15);
 	iRectUrl -= Point<int>(1, 1);
+
+	iRectAssigne = getLocalBounds().removeFromRight(30);
+	iRectAssigne.removeFromTop(14);
+	iRectAssigne.removeFromBottom(15);
+	iRectAssigne.translate(-1, 0);
 
 	iLineUrl.setStart(iRectUrl.getTopLeft().x + 2, iRectUrl.getBottom() - 2);
 	iLineUrl.setEnd(iRectUrl.getRight() - 2, iRectUrl.getTopLeft().y + 2);
@@ -182,18 +243,35 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 		PopupMenu menu;
 		menu.addItem("Remove", [&]()
 		{
-			this->getOwner()->getOwner().removeCard(this);
+			int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Confirmation", "Do you really want to remove this card?");
+			if ( ret == 1 ) this->getOwner()->getOwner().removeCard(this);
 		});
+		menu.addItem("Duplicate", [&]()
+		{
+			//deselect();
+			iMouseActive = false;
+			this->getOwner()->getOwner().duplicateCard(this);
+		});
+		menu.addItem("Copy", [&]()
+		{
+			deselect();
+			setClipboardCard(this);
+		});
+		/*menu.addItem("Cut", [&]()
+		{
+			this->getOwner()->getOwner().removeCard(this);
+			setClipboardCard(this);
+		});*/
 		menu.addSeparator();
 		menu.addItem("Move top", [&]()
 		{
-			this->iMouseActive = false;
+			this->deselect();
 			this->getOwner()->moveCardTop(this);
 			this->repaint();
 		});
 		menu.addItem("Move bottom", [&]()
 		{
-			this->iMouseActive = false;
+			this->deselect();
 			this->getOwner()->moveCardBottom(this);
 			this->repaint();
 		});
@@ -264,7 +342,9 @@ void CKanbanCardComponent::setupFromJson(const NamedValueSet& aValues) //const S
 	iNotes = URL::removeEscapeChars(aValues["notes"]);
 	setUrl(URL::removeEscapeChars(aValues["url"]));
 	setTags(URL::removeEscapeChars(aValues["tags"]));
+	setAssigne(URL::removeEscapeChars(aValues["assignee"]));
 	iIsDueDateSet = aValues["dueDateSet"];
+	iIsDone = aValues["isDone"];
 	iCreationDate = Time(aValues["creationDate"].toString().getLargeIntValue());
 	iDueDate = Time(aValues["dueDate"].toString().getLargeIntValue());
 	iLastUpdateDate = Time(aValues["lastUpdateDate"].toString().getLargeIntValue());
@@ -328,6 +408,11 @@ void CKanbanCardComponent::setDueDate(bool aIsSet, juce::Time& aDueDate)
 	else iDueDate = Time(0);
 }
 
+void CKanbanCardComponent::setDone(bool aDone)
+{
+	iIsDone = aDone;
+}
+
 juce::Time CKanbanCardComponent::getCreationDate()
 {
 	return iCreationDate;
@@ -371,16 +456,54 @@ String CKanbanCardComponent::getNotes()
 	return iNotes;
 }
 
+void CKanbanCardComponent::setAssigne(const String & aString)
+{
+	String s1 = aString.trim();
+	getProperties().set("assignee", s1);
+	if (s1.isEmpty())
+	{
+		iAssigne.setText("", NotificationType::dontSendNotification);
+		return;
+	}
+
+	String out = s1.substring(0, 1);
+
+	int spidx = s1.indexOfChar(' ');
+	if (spidx != -1)
+	{
+		String s2 = s1.substring(spidx);
+		s2 = s2.trim();
+		if ( s2.isEmpty() ) out += s1.substring(1, 2);
+		else out += s2.substring(0, 1);
+	}
+	else
+	{
+		out += s1.substring(1, 2);
+	}
+
+	iAssigne.setText(out, NotificationType::dontSendNotification);
+}
+
+String CKanbanCardComponent::getAssigne()
+{
+	return getProperties()["assignee"];
+}
+
 void CKanbanCardComponent::deselect()
 {
-	iMouseActive = false;
-	repaint();
+	auto pos = Desktop::getMousePosition();
+	if (!getScreenBounds().contains(pos))
+	{
+		iMouseActive = false;
+		repaint();
+	}
 }
 
 String CKanbanCardComponent::toJson()
 {
 	String l = URL::addEscapeChars(iLabel.getText().toUTF8(), false);
 	String c = URL::addEscapeChars(iColorBar.toString().toUTF8(), false);
+	String a = URL::addEscapeChars(getProperties()["assignee"], false);
 	//String::fromUTF8(URL::removeEscapedChars(url));
 	String ret("{ \"text\":\"" + l + "\", \"colour\":\"" + c + "\", \"columnId\":" + String(getOwnerColumnId()));
 
@@ -405,7 +528,10 @@ String CKanbanCardComponent::toJson()
 		ret += ", \"tags\":\"" + tags + "\"";
 	}
 
+	if (a.length() > 0) ret += ", \"assignee\":\"" + a + "\"";
+
 	ret += ", \"dueDateSet\":" + String(iIsDueDateSet ? "true" : "false");
+	ret += ", \"isDone\":" + String(iIsDone ? "true" : "false");
 	ret += ", \"creationDate\":" + String(iCreationDate.toMilliseconds());
 	ret += ", \"dueDate\":" + String(iDueDate.toMilliseconds());
 	ret += ", \"lastUpdateDate\":" + String(iLastUpdateDate.toMilliseconds());
@@ -418,6 +544,16 @@ int CKanbanCardComponent::getOwnerColumnId() const
 {
 	if (!iOwner) return -1;
 	return iOwner->getOwner().getColumnId();
+}
+
+CKanbanCardComponent * CKanbanCardComponent::getClipboardCard()
+{
+	return clipboardCard;
+}
+
+void CKanbanCardComponent::setClipboardCard(CKanbanCardComponent * aCard)
+{
+	clipboardCard = aCard;
 }
 
 

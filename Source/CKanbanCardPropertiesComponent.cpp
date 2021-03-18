@@ -21,7 +21,8 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	setViewportIgnoreDragFlag(true);
 	addKeyListener(this);
 
-	int w = 350;
+	int w = 360;
+	int wl = 60;
 	int wm = 20;
 
 	//iBar->getProperties().set("name", "test");
@@ -39,7 +40,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 
 	iLabel.setText("Notes:", juce::NotificationType::dontSendNotification);
 	addAndMakeVisible(iLabel);
-	iLabel.setBounds(10, yofs, 50, 24);
+	iLabel.setBounds(10, yofs, wl, 24);
 	
 	iTextEditor.setMultiLine(true);
 	iTextEditor.addKeyListener(this);
@@ -47,7 +48,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	iTextEditor.setScrollbarsShown(true);	
 	iTextEditor.setText( aOwner.getNotes() );
 	addAndMakeVisible(iTextEditor);
-	iTextEditor.setBounds(10 + 50 + 10, yofs, w - 50 - 10, 24 + 24 * 3);
+	iTextEditor.setBounds(10 + wl + 10, yofs, w - wl - 10, 24 + 24 * 3);
 	iTextEditor.onTextChange = [this, &aOwner]
 	{
 		aOwner.setNotes(this->iTextEditor.getText());
@@ -57,11 +58,11 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 
 	iLabelUrl.setText("Url:", juce::NotificationType::dontSendNotification);
 	addAndMakeVisible(iLabelUrl);
-	iLabelUrl.setBounds(10, yofs, 50, 24);
+	iLabelUrl.setBounds(10, yofs, wl, 24);
 
 	addAndMakeVisible(iTextUrl);
 	iTextUrl.addKeyListener(this);
-	iTextUrl.setBounds(10 + 50 + 10, yofs, w - 50 - 10, 24);
+	iTextUrl.setBounds(10 + wl + 10, yofs, w - wl - 10, 24);
 	//iTextUrl.setSelectAllWhenFocused(true);
 	iTextUrl.setText(aOwner.getProperties()["url"]);
 	iTextUrl.onTextChange = [this]
@@ -73,11 +74,11 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 
 	iLabelTags.setText("Tags:", juce::NotificationType::dontSendNotification);
 	addAndMakeVisible(iLabelTags);
-	iLabelTags.setBounds(10, yofs, 50, 24);
+	iLabelTags.setBounds(10, yofs, wl, 24);
 
 	addAndMakeVisible(iTextTags);
 	iTextTags.addKeyListener(this);
-	iTextTags.setBounds(10 + 50 + 10, yofs, w - 50 - 10, 24);
+	iTextTags.setBounds(10 + wl + 10, yofs, w - wl - 10, 24);
 	//iTextTags.setSelectAllWhenFocused(true);
 	iTextTags.setText(aOwner.getProperties()["tags"]);
 	iTextTags.onTextChange = [this]
@@ -86,6 +87,21 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	};
 
 	yofs = iTextTags.getBottom() + 12;
+
+	iLabelAssigne.setText("Assignee:", juce::NotificationType::dontSendNotification);
+	addAndMakeVisible(iLabelAssigne);
+	iLabelAssigne.setBounds(10, yofs, wl + 10, 24);
+
+	addAndMakeVisible(iTextAssigne);
+	iTextAssigne.addKeyListener(this);
+	iTextAssigne.setBounds(10 + wl + 10, yofs, w - wl - 10, 24);
+	iTextAssigne.setText(aOwner.getAssigne());
+	iTextAssigne.onTextChange = [this]
+	{
+		this->changesApply();
+	};
+
+	yofs = iTextAssigne.getBottom() + 12;
 
 	iLabelSlider.setBounds(10, yofs, 160, 24);
 	addAndMakeVisible(iLabelSlider);
@@ -185,6 +201,7 @@ void CKanbanCardPropertiesComponent::changesApply()
 	iOwner.setTags(iTextTags.getText());
 	iOwner.setUrl(iTextUrl.getText());
 	iOwner.setText(iTextName.getText());
+	iOwner.setAssigne(iTextAssigne.getText());
 	iOwner.repaint();
 }
 

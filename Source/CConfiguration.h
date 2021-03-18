@@ -15,6 +15,9 @@
 
 using namespace juce;
 
+const int KRecentlyOpenedMenuItemIdBase = 0xff001;
+const int KRecentlyOpenedMenuItemIdCount = 4;
+
 class CConfiguration
 {
 private:
@@ -27,6 +30,11 @@ public:
 	void Destroy();
 
 	PropertiesFile* getPropertiesFile();
+
+	Array<String>& RecentlyOpened();
+	void updateRecentlyOpenedMenu(PopupMenu& aMenu);
+	String getRecentlyOpened(int aIdx);
+	void addRecentlyOpened(const String& aFn);
 
 	static CConfiguration& getInstance();
 
@@ -45,6 +53,8 @@ private:
 	PropertiesFile* iFile;
 
 	ColourPalette* iPalette;
+
+	Array<String> iRecentlyOpened;
 
 };
 

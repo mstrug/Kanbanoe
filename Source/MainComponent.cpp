@@ -146,19 +146,22 @@ StringArray MainComponent::getMenuBarNames()
 	return { "File", "Edit", "Help" };
 }
 
-
 PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 {
 	PopupMenu menu;
 
 	if (topLevelMenuIndex == 0) // file
 	{
+		PopupMenu pm;
+		CConfiguration::getInstance().updateRecentlyOpenedMenu(pm);
+
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileNew);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileOpen);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileClose);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileSave);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileSaveAs);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileSaveAll);
+		menu.addSubMenu("Open recent", pm);
 		menu.addSeparator();
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileExit);
 	}
@@ -177,6 +180,17 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 
 void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
+	if (menuItemID >= KRecentlyOpenedMenuItemIdBase && menuItemID < KRecentlyOpenedMenuItemIdBase + KRecentlyOpenedMenuItemIdCount )
+	{
+		File f(CConfiguration::getInstance().getRecentlyOpened(menuItemID - KRecentlyOpenedMenuItemIdBase));
+		if (f.exists())
+		{
+			if (openFile(f))
+			{
+				CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName());
+			}
+		}
+	}
 }
 
 ApplicationCommandTarget* MainComponent::getNextCommandTarget()
@@ -186,8 +200,8 @@ ApplicationCommandTarget* MainComponent::getNextCommandTarget()
 
 void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 {
-	Array<CommandID> commands{ CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
-		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileExit,
+	Array<CommandID> commands{ CommandIDs::menuFile, CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
+		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileOpenRecent1, CommandIDs::menuFileExit,
 		CommandIDs::menuEditAddCard, CommandIDs::menuEditViewArchive, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
 		CommandIDs::menubarSearchClear, CommandIDs::mdiNextDoc, CommandIDs::mdiPrevDoc };
 	aCommands.addArray(commands);
@@ -197,6 +211,10 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 {
 	switch (commandID)
 	{
+	case menuFile:
+			result.setInfo("File", "", "Menu Bar", 0);
+			result.addDefaultKeypress('F', ModifierKeys::altModifier);
+		break;
 	case menuFileNew:
 			result.setInfo("New", "", "Menu", 0);
 			result.addDefaultKeypress('N', ModifierKeys::ctrlModifier);
@@ -207,6 +225,7 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		break;
 	case menuFileClose:
 			result.setInfo("Close", "", "Menu", 0);
+			result.addDefaultKeypress('W', ModifierKeys::ctrlModifier);
 		break;
 	case menuFileSave:
 			result.setInfo("Save", "", "Menu", 0);
@@ -218,6 +237,9 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 	case menuFileSaveAll:
 			result.setInfo("Save All", "", "Menu", 0);
 			result.addDefaultKeypress('S', ModifierKeys::ctrlModifier | ModifierKeys::shiftModifier);
+		break;
+	case menuFileOpenRecent1:
+			result.setInfo("Open recent", "", "Menu", 0);
 		break;
 	case menuFileExit:
 			result.setInfo("Exit", "Exit from application", "Menu", 0);
@@ -257,9 +279,13 @@ bool MainComponent::perform(const InvocationInfo& info)
 {
 	switch (info.commandID)
 	{
+	case menuFile:
+		{
+			iMenuBar->showMenu(0);
+		}
+		break;
 	case menuFileNew:
 		{
-			//removeChildComponent(iKanbanBoard);
 			//delete iKanbanBoard;
 			auto kb = new CKanbanBoardComponent();
 			kb->setName("board " + String(iKanbanBoards.size()));
@@ -276,7 +302,10 @@ bool MainComponent::perform(const InvocationInfo& info)
 			if (iFileDialog->showDialog(FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles, nullptr))
 			{
 				auto f = iFileDialog->getResult();
-				openFile(f);
+				if (openFile(f))
+				{
+					CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName());
+				}
 			}
 		}
 		break;
@@ -285,7 +314,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 			if (!iMdiPanel.getActiveDocument()) break;
 
 			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
-			iMdiPanel.closeDocument(iMdiPanel.getActiveDocument(), false);
+			iMdiPanel.closeDocument(iMdiPanel.getActiveDocument(), true);
 			iKanbanBoards.removeObject(kb, true);
 		}
 		break;
@@ -293,7 +322,10 @@ bool MainComponent::perform(const InvocationInfo& info)
 		{
 			if (!iMdiPanel.getActiveDocument()) break;
 			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
-			saveFile(kb);
+			if (saveFile(kb))
+			{
+				CConfiguration::getInstance().addRecentlyOpened(kb->getFile().getFullPathName());
+			}
 
 			iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
 			Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
@@ -317,7 +349,10 @@ bool MainComponent::perform(const InvocationInfo& info)
 				{
 					kb->setFile(f);
 					md->setName(f.getFileName());
-					saveFile(kb);
+					if (saveFile(kb))
+					{
+						CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName());
+					}
 				}
 
 				iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
@@ -361,7 +396,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 		}
 		break;
 	case menuHelpAbout:
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.25\nM.Strug", "OK");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.26\nM.Strug", "OK");
 		break;
 	case menubarSearch:
 			iTextSearch.grabKeyboardFocus();
@@ -401,7 +436,7 @@ void MainComponent::setSearchText(const String & aString, bool aUpdateSearchFiel
 	}
 }
 
-void MainComponent::openFile(File& aFn)
+bool MainComponent::openFile(File& aFn)
 {
 	var d = JSON::parse(aFn);
 	if (d == var())
@@ -432,8 +467,10 @@ void MainComponent::openFile(File& aFn)
 			iMdiPanel.addDocument(newboard);
 
 			//Config::getInstance()->setOpenRecent(aFn.getFullPathName());
+			return true;
 		}
 	}
+	return false;
 }
 
 bool MainComponent::saveFile(CKanbanBoardComponent* aBoard)

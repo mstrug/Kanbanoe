@@ -130,9 +130,15 @@ void CKanbanColumnContentComponent::unhideAllCards()
 	resized();
 }
 
-void CKanbanColumnContentComponent::createNewCard()
+void CKanbanColumnContentComponent::createNewCard(const CKanbanCardComponent* aCardToCopyDataFrom )
 {
 	CKanbanCardComponent* c = iOwner.kanbanBoard().createCard();
+
+	if (aCardToCopyDataFrom)
+	{
+		c->duplicateDataFrom(*aCardToCopyDataFrom);
+	}
+
 	addCard(c);
 	iOwner.scrollToBottom();
 	repaint();
@@ -328,6 +334,8 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 		}
 		card->setOwner(this);
 
+		if (getOwner().isColumnDueDateDone()) card->setDone(true);
+		else card->setDone(false);
 	}
 
 	int w = CConfiguration::getIntValue("KanbanCardWidth");

@@ -15,7 +15,7 @@
 
 
 
-CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iIsFrameActive(false), iViewportLayout(*this), iScrollBar(true)
+CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iIsFrameActive(false), iDueDateDone(false), iViewportLayout(*this), iScrollBar(true)
 {
 	iViewportLayout.addMouseListener(this, false);
 	addAndMakeVisible(iViewportLayout);
@@ -99,6 +99,11 @@ void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 		{ 
 			this->iViewportLayout.createNewCard();
 		});
+		menu.addItem("Paste card", CKanbanCardComponent::getClipboardCard(), false, [&]()
+		{
+			duplicateCard(CKanbanCardComponent::getClipboardCard());
+		});
+		menu.addSeparator();
 		menu.addItem("Archive column", [&]()
 		{
 			if (this->iViewportLayout.getCardsCount() == 0)
@@ -186,6 +191,11 @@ CKanbanColumnContentComponent& CKanbanColumnComponent::cardsLayout()
 	return iViewportLayout;
 }
 
+void CKanbanColumnComponent::duplicateCard(const CKanbanCardComponent* aCard)
+{
+	iViewportLayout.createNewCard(aCard);
+}
+
 void CKanbanColumnComponent::addCard(CKanbanCardComponent* aCard)
 {
 	iViewportLayout.addCard(aCard);
@@ -256,6 +266,16 @@ String CKanbanColumnComponent::getTitle()
 int CKanbanColumnComponent::getColumnId() const
 {
 	return iColumnId;
+}
+
+bool CKanbanColumnComponent::isColumnDueDateDone() const
+{
+	return iDueDateDone;
+}
+
+void CKanbanColumnComponent::setColumnDueDateDone(bool aDueDateDone)
+{
+	iDueDateDone = aDueDateDone;
 }
 
 void CKanbanColumnComponent::scrollBarMoved(ScrollBar * scrollBarThatHasMoved, double newRangeStart)

@@ -15,12 +15,14 @@ class MainComponent  : public Component, public MenuBarModel, public DragAndDrop
 {
 	enum CommandIDs
 	{
-		menuFileNew = 1,
+		menuFile = 1,
+		menuFileNew,
 		menuFileOpen,
 		menuFileClose,
 		menuFileSave,
 		menuFileSaveAs,
 		menuFileSaveAll,
+		menuFileOpenRecent1,
 		menuFileExit,
 		menuEditAddCard,
 		menuEditViewArchive,
@@ -60,7 +62,7 @@ private:
 
 	void setSearchText(const String& aString, bool aUpdateSearchField);
 
-	void openFile(File& aFn);
+	bool openFile(File& aFn);
 	bool saveFile(CKanbanBoardComponent* aBoard);
 
 private:
@@ -81,7 +83,7 @@ private:
 		String iSearchText;
 	public:
 		CMyMdiDoc(CKanbanBoardComponent* board):iNext(nullptr),iPrev(nullptr) { addAndMakeVisible(iViewport); iViewport.setViewedComponent(board, false); setName(board->getName()); }
-		virtual ~CMyMdiDoc() { if (iPrev) iPrev->iNext = iNext; if (iNext) iNext->iPrev = iPrev; }
+		virtual ~CMyMdiDoc() { if (iPrev) iPrev->iNext = iNext; if (iNext) iNext->iPrev = iPrev;	}
 		void resized() { auto r(getLocalBounds()); iViewport.setBounds(r); r.removeFromBottom(8); iViewport.getViewedComponent()->setBounds(r); }
 		operator CKanbanBoardComponent*() const { return static_cast<CKanbanBoardComponent*>(iViewport.getViewedComponent()); }
 		CKanbanBoardComponent* getKanbanBoard() { return static_cast<CKanbanBoardComponent*>(iViewport.getViewedComponent()); }
@@ -94,6 +96,9 @@ private:
 		MainComponent& iOwner;
 		bool tryToCloseDocument(Component* component)
 		{
+			/*CMyMdiDoc* doc = (CMyMdiDoc*)component;
+			if (doc->iPrev) doc->iPrev->iNext = doc->iNext; 
+			if (doc->iNext) doc->iNext->iPrev = doc->iPrev;*/
 			return true;
 		}
 	public:
@@ -101,7 +106,7 @@ private:
 		bool addDocument(CKanbanBoardComponent* board)
 		{
 			CMyMdiDoc* doc = new CMyMdiDoc(board);
-			doc->iPrev = (CMyMdiDoc*) getActiveDocument();
+			doc->iPrev = getLastDocument();
 			if (doc->iPrev) doc->iPrev->iNext = doc;
 			return MultiDocumentPanel::addDocument(doc, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), true);
 		}
@@ -109,6 +114,17 @@ private:
 		{
 			auto mdi = static_cast<CMyMdiDoc*>(getActiveDocument());
 			if (mdi) iOwner.setSearchText(mdi->getSearchText(), true);
+		}
+		CMyMdiDoc* getLastDocument()
+		{
+			CMyMdiDoc* ad = (CMyMdiDoc*)getActiveDocument();
+			if (ad && ad->iNext != nullptr)
+			{
+				CMyMdiDoc* i = ad;
+				while (i->iNext) i = i->iNext;
+				return i;
+			}
+			else return ad;
 		}
 		void activateNextPrevDocument(bool aNext)
 		{

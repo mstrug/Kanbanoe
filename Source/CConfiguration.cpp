@@ -33,6 +33,15 @@ CConfiguration::CConfiguration()
 		auto s = iFile->getValue("Colour_" + String(i));
 		iPalette->setColor(i, Colour::fromString(s));
 	}
+
+	for (int i = 0; i < KRecentlyOpenedMenuItemIdCount; i++)
+	{
+		auto s = iFile->getValue("RecentlyOpened_" + String(i));
+		if (s.isNotEmpty())
+		{
+			iRecentlyOpened.add(s);
+		}
+	}
 }
 
 CConfiguration::~CConfiguration()
@@ -50,6 +59,50 @@ void CConfiguration::Destroy()
 PropertiesFile * CConfiguration::getPropertiesFile()
 {
 	return iFile;
+}
+
+Array<String>& CConfiguration::RecentlyOpened()
+{
+	return iRecentlyOpened;
+}
+
+void CConfiguration::updateRecentlyOpenedMenu(PopupMenu & aMenu)
+{
+	for (int i = 0; i < iRecentlyOpened.size(); i++)
+	{
+		aMenu.addItem(KRecentlyOpenedMenuItemIdBase + i, iRecentlyOpened[i]);
+	//	aMenu.addCommandItem(&iCommandManager, CommandIDs::menuFileOpenRecent1, iRecentlyOpened[i]);
+	}
+}
+
+String CConfiguration::getRecentlyOpened(int aIdx)
+{
+	if (aIdx < iRecentlyOpened.size()) return iRecentlyOpened[aIdx];
+	return String();
+}
+
+void CConfiguration::addRecentlyOpened(const String & aFn)
+{
+	int idx = iRecentlyOpened.indexOf(aFn);
+	if (idx == 0)
+	{
+		return;
+	}
+	else if ( idx > 0 )
+	{
+		iRecentlyOpened.move(idx, 0);
+	}
+	else
+	{
+		iRecentlyOpened.insert(0, aFn);
+		iRecentlyOpened.removeRange(KRecentlyOpenedMenuItemIdCount, iRecentlyOpened.size());
+	}
+
+	for (int i = 0; i < iRecentlyOpened.size(); i++)
+	{
+		iFile->setValue("RecentlyOpened_" + String(i), iRecentlyOpened[i]);
+	}
+	iFile->save();
 }
 
 CConfiguration & CConfiguration::getInstance()

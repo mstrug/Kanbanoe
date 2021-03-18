@@ -60,6 +60,9 @@ private:
 	TextEditor iTextTags;
 	Label iLabelTags;
 
+	TextEditor iTextAssigne;
+	Label iLabelAssigne;
+
 	Label iLabelCreationDate;
 
 	Slider iSliderDueDate;

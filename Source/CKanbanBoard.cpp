@@ -306,9 +306,12 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 			auto obj2 = i.getDynamicObject();
 			var title = obj2->getProperty("title");
 			var id = obj2->getProperty("id");
+			var dueDateDone = obj2->getProperty("dueDateDone");
 			if (title.isString() && id.isInt())
 			{
-				ret->iKanbanColumns.add(new CKanbanColumnComponent(id, title, *ret));
+				auto col = new CKanbanColumnComponent(id, URL::removeEscapeChars(title), *ret);
+				ret->iKanbanColumns.add( col );
+				if (dueDateDone.isBool()) col->setColumnDueDateDone(true);
 				ret->addAndMakeVisible(ret->iKanbanColumns.getLast());
 			}
 			else
@@ -378,49 +381,6 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 	}
 
 	var cards = obj->getProperty("cards");
-	/*if (cards.isArray())
-	{
-		auto ar = cards.getArray();
-		for (auto& i : *ar)
-		{
-			auto obj2 = i.getDynamicObject();
-			var text = obj2->getProperty("text");
-			var notes = obj2->getProperty("notes"); // opt
-			var colour = obj2->getProperty("colour");
-			var columnId = obj2->getProperty("columnId");
-			var url = obj2->getProperty("url"); // opt
-			var tags = obj2->getProperty("tags"); // opt
-			if (text.isString() && colour.isString() && columnId.isInt() )
-			{
-				String s = colour;
-				CKanbanCardComponent* card = ret->createCard();
-				NamedValueSet vs;
-				vs.set("text", text);
-				vs.set("notes", notes);
-				vs.set("colour", s);
-				vs.set("url", url);
-				vs.set("tags", tags);
-				card->setupFromJson(vs);
-				//card->setText(text);
-				//card->setNotes(notes);				
-				//card->setColour(Colour::fromString(s));
-				for (auto j : ret->iKanbanColumns)
-				{
-					if (j->getColumnId() == (int)columnId)
-					{
-						j->addCard(card);
-						break;
-					}
-				}
-			}
-			else
-			{
-				aReturnErrorMessage = "Not supported file type [cards]";
-				delete ret;
-				return nullptr;
-			}
-		}
-	}*/
 	if (!fromJsonCardList(cards, ret, aReturnErrorMessage, nullptr))
 	{
 	//	aReturnErrorMessage = "Not supported file type [cards array]";
@@ -443,7 +403,7 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 				SArchive* archiveObject = new SArchive();
 				ret->iArchive.add(archiveObject);
 				archiveObject->iId = (int)id;
-				archiveObject->iName = name;
+				archiveObject->iName = URL::removeEscapeChars(name);
 
 				if (!fromJsonCardList(cards, ret, aReturnErrorMessage, archiveObject))
 				{
@@ -486,7 +446,9 @@ bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardCompo
 			var columnId = obj2->getProperty("columnId");
 			var url = obj2->getProperty("url"); // opt
 			var tags = obj2->getProperty("tags"); // opt
+			var assigne = obj2->getProperty("assignee"); // opt
 			var dueDateSet = obj2->getProperty("dueDateSet");
+			var isDone = obj2->getProperty("isDone");
 			var crDate = obj2->getProperty("creationDate");
 			var dueDate = obj2->getProperty("dueDate");
 			var luDate = obj2->getProperty("lastUpdateDate");
@@ -499,12 +461,14 @@ bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardCompo
 					String _t = text;
 					String _n = notes;
 					String _tg = tags;
+					String _as = assigne;
 					String _u = url;
 					bool _dds = dueDateSet;
+					bool _id = isDone;
 					String _crd(((juce::int64)crDate));
 					String _dd(((juce::int64)dueDate));
 					String _ld(((juce::int64)luDate));
-					String ss("{ \"text\":\"" + _t + "\", \"colour\":\"" + s + "\", \"columnId\":" + String((int)columnId) + ", \"notes\":\"" + _n + "\", \"url\":\"" + _u + "\", \"tags\":\"" + _tg + "\", \"dueDateSet\":" + (_dds?"true":"false") + ", \"creationDate\":" + _crd + "\, \"dueDate\":" + _dd +
+					String ss("{ \"text\":\"" + _t + "\", \"colour\":\"" + s + "\", \"columnId\":" + String((int)columnId) + ", \"notes\":\"" + _n + "\", \"url\":\"" + _u + "\", \"tags\":\"" + _tg + "\", \"assignee\":\"" + _as + "\", \"dueDateSet\":" + (_dds ? "true" : "false") + ", \"isDone\":" + (_id ? "true" : "false") + ", \"creationDate\":" + _crd + "\, \"dueDate\":" + _dd +
 						", \"lastUpdateDate\":" + _ld + "}");
 					aArchiveObject->iKanbanCards.add(ss);
 				}
@@ -516,7 +480,9 @@ bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardCompo
 					vs.set("colour", s);
 					vs.set("url", url);
 					vs.set("tags", tags);
+					vs.set("assignee", assigne);
 					vs.set("dueDateSet", dueDateSet);
+					vs.set("isDone", isDone);
 					vs.set("creationDate", crDate);
 					vs.set("dueDate", dueDate);
 					vs.set("lastUpdateDate", luDate);
@@ -581,7 +547,9 @@ bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 		for (auto i : iKanbanColumns)
 		{
 			if (j > 0) f << ",\n";
-			f << "{ \"title\":\"" + i->getTitle() + "\", \"id\":" + String(i->getColumnId()) + " }";
+			f << "{ \"title\":\"" + URL::addEscapeChars( i->getTitle(), false ) + "\", \"id\":" + String(i->getColumnId());
+			if (i->isColumnDueDateDone()) f << ", \"dueDateDone\":true ";
+			f << " }";
 			j++;
 		}
 
@@ -611,7 +579,7 @@ bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 		for (auto l : iArchive)
 		{
 			if (j > 0) f << ",\n";
-			f << "{ \"id\":" + String(l->iId) + ", \"name\":\"" + l->iName + "\", \"cards\": [\n";
+			f << "{ \"id\":" + String(l->iId) + ", \"name\":\"" + URL::addEscapeChars( l->iName, false ) + "\", \"cards\": [\n";
 
 			for (int i = 0; i < l->iKanbanCards.size(); i++)
 			{
