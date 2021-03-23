@@ -3,7 +3,7 @@
 
 
 //==============================================================================
-MainComponent::MainComponent() : iMdiPanel(*this)
+MainComponent::MainComponent() : iMdiPanel(*this), iTimer24h(*this)
 {
 	auto& c = CConfiguration::getInstance(); // create object
 	//c.getPropertiesFile()->setValue("Test", 1);
@@ -56,7 +56,7 @@ MainComponent::MainComponent() : iMdiPanel(*this)
 	//juce::Time t = juce::Time::getCurrentTime();
 	//int woy = CConfiguration::WeekOfYear();
 	//iStatuBarR.setText( String(t.getYear()) + " "+ String::formatted("wk%02d",woy), NotificationType::dontSendNotification );
-	iStatuBarR.setText(CConfiguration::YearAndWeekOfYear(), NotificationType::dontSendNotification);
+	updateTimer24h(); // set status bar text
 	iStatuBarR.setJustificationType(Justification::centredRight);
 	addAndMakeVisible(iStatuBarR);
 
@@ -72,6 +72,8 @@ MainComponent::MainComponent() : iMdiPanel(*this)
 	//	Colours::lightblue.withAlpha(0.6f), false);
 
 	//Timer::callAfterDelay(300, [this] { grabKeyboardFocus(); }); // ensure that key presses are sent to the KeyPressTarget object
+
+	iTimer24h.Start();
 }
 
 MainComponent::~MainComponent()
@@ -136,6 +138,11 @@ void MainComponent::resized()
 	iA->setBounds(30, 200, 110, 70);*/
 }
 
+void MainComponent::updateTimer24h()
+{
+	iStatuBarR.setText(CConfiguration::YearAndWeekOfYear(), NotificationType::dontSendNotification);
+}
+
 ApplicationCommandManager & MainComponent::getApplicationCommandManager()
 {
 	return iCommandManager;
@@ -158,9 +165,14 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileNew);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileOpen);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileClose);
+		menu.addSeparator();
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileSave);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileSaveAs);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileSaveAll);
+		menu.addSeparator();
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileSaveGroup);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileSaveGroupAs);
+		menu.addSeparator();
 		menu.addSubMenu("Open recent", pm);
 		menu.addSeparator();
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileExit);
@@ -191,6 +203,17 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 			}
 		}
 	}
+	else if (menuItemID >= KRecentlyOpenedGroupMenuItemIdBase && menuItemID < KRecentlyOpenedGroupMenuItemIdBase + KRecentlyOpenedGroupMenuItemIdCount)
+	{
+		File f(CConfiguration::getInstance().getRecentlyOpened(menuItemID - KRecentlyOpenedGroupMenuItemIdBase, true));
+		if (f.exists())
+		{
+			if (openGroupFile(f))
+			{
+				CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName(), true);
+			}
+		}
+	}
 }
 
 ApplicationCommandTarget* MainComponent::getNextCommandTarget()
@@ -201,7 +224,7 @@ ApplicationCommandTarget* MainComponent::getNextCommandTarget()
 void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 {
 	Array<CommandID> commands{ CommandIDs::menuFile, CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
-		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileOpenRecent1, CommandIDs::menuFileExit,
+		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileSaveGroup, CommandIDs::menuFileSaveGroupAs, CommandIDs::menuFileOpenRecent, CommandIDs::menuFileExit,
 		CommandIDs::menuEditAddCard, CommandIDs::menuEditViewArchive, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
 		CommandIDs::menubarSearchClear, CommandIDs::mdiNextDoc, CommandIDs::mdiPrevDoc };
 	aCommands.addArray(commands);
@@ -238,7 +261,13 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 			result.setInfo("Save All", "", "Menu", 0);
 			result.addDefaultKeypress('S', ModifierKeys::ctrlModifier | ModifierKeys::shiftModifier);
 		break;
-	case menuFileOpenRecent1:
+	case menuFileSaveGroup:
+			result.setInfo("Save Group", "", "Menu", 0);
+		break;
+	case menuFileSaveGroupAs:
+			result.setInfo("Save Group As", "", "Menu", 0);
+		break;
+	case menuFileOpenRecent:
 			result.setInfo("Open recent", "", "Menu", 0);
 		break;
 	case menuFileExit:
@@ -298,11 +327,18 @@ bool MainComponent::perform(const InvocationInfo& info)
 		break;
 	case menuFileOpen:
 		{
-			iFileDialog.reset(new FileChooser("Choose a file to open...", File::getCurrentWorkingDirectory(), "*.pkb", false));
+			iFileDialog.reset(new FileChooser("Choose a file to open...", File::getCurrentWorkingDirectory(), "*.pkb;*.kbf;*.kbg", false));
 			if (iFileDialog->showDialog(FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles, nullptr))
 			{
 				auto f = iFileDialog->getResult();
-				if (openFile(f))
+				if (f.getFileExtension().compareIgnoreCase(".kbg") == 0)
+				{ // open group
+					if (openGroupFile(f))
+					{
+						CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName(), true);
+					}
+				}
+				else if (openFile(f))
 				{
 					CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName());
 				}
@@ -324,23 +360,23 @@ bool MainComponent::perform(const InvocationInfo& info)
 			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
 			if (saveFile(kb))
 			{
-				CConfiguration::getInstance().addRecentlyOpened(kb->getFile().getFullPathName());
-			}
+				CConfiguration::getInstance().addRecentlyOpened(kb->getFile().getFullPathName()); // todo
 
-			iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
-			Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+				iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
+				Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+			}
 		}
 		break;
 	case menuFileSaveAs:
 		{
 			if (!iMdiPanel.getActiveDocument()) break;
-			iFileDialog.reset(new FileChooser("Choose a file to save...", File::getCurrentWorkingDirectory(), "*.pkb", false));
+			iFileDialog.reset(new FileChooser("Choose a file to save...", File::getCurrentWorkingDirectory(), "*.kbf", false));
 			if (iFileDialog->showDialog(FileBrowserComponent::saveMode | FileBrowserComponent::warnAboutOverwriting | FileBrowserComponent::canSelectFiles, nullptr))
 			{
 				auto f = iFileDialog->getResult();
 				if (f.getFileExtension().isEmpty())
 				{
-					f = f.withFileExtension("pkb");
+					f = f.withFileExtension("kbf");
 				}
 
 				auto md = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
@@ -351,12 +387,12 @@ bool MainComponent::perform(const InvocationInfo& info)
 					md->setName(f.getFileName());
 					if (saveFile(kb))
 					{
-						CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName());
+						CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName()); // todo
+
+						iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
+						Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
 					}
 				}
-
-				iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
-				Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
 			}
 		}
 		break;
@@ -370,6 +406,29 @@ bool MainComponent::perform(const InvocationInfo& info)
 			iStatuBarL.setText("All files saved", NotificationType::dontSendNotification);
 			Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
 		}
+		break;
+	case menuFileSaveGroup:
+		//break;
+	case menuFileSaveGroupAs:
+		{
+			if (!iMdiPanel.getActiveDocument()) break;
+			iFileDialog.reset(new FileChooser("Choose a file to save group...", File(), "*.kbg", false));
+			if (iFileDialog->showDialog(FileBrowserComponent::saveMode | FileBrowserComponent::warnAboutOverwriting | FileBrowserComponent::canSelectFiles, nullptr))
+			{
+				auto f = iFileDialog->getResult();
+				if (f.getFileExtension().isEmpty())
+				{
+					f = f.withFileExtension("kbg");
+				}
+				if (saveGroupFile(f))
+				{
+					CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName(), true);
+
+					iStatuBarL.setText("Group saved", NotificationType::dontSendNotification);
+					Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+				}
+			}
+		}	
 		break;
 	case menuFileExit:
 			JUCEApplicationBase::quit();
@@ -396,7 +455,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 		}
 		break;
 	case menuHelpAbout:
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.26\nM.Strug", "OK");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.28\nM.Strug", "OK");
 		break;
 	case menubarSearch:
 			iTextSearch.grabKeyboardFocus();
@@ -490,5 +549,27 @@ bool MainComponent::saveFile(CKanbanBoardComponent* aBoard)
 		return true;
 	}
 	return false;
+}
+
+bool MainComponent::openGroupFile(File & aFn)
+{
+	Array<String> files;
+	if (iMdiPanel.openFile(aFn, files))
+	{
+		for (auto fstr : files)
+		{
+			File f(fstr);
+			if (f.exists() && openFile(f))
+			{
+				CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName());
+			}
+		}
+	}
+	return true;
+}
+
+bool MainComponent::saveGroupFile(File & aFn)
+{
+	return iMdiPanel.saveFile(aFn);
 }
 

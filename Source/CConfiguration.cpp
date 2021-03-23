@@ -42,6 +42,15 @@ CConfiguration::CConfiguration()
 			iRecentlyOpened.add(s);
 		}
 	}
+
+	for (int i = 0; i < KRecentlyOpenedGroupMenuItemIdCount; i++)
+	{
+		auto s = iFile->getValue("RecentlyOpenedGroup_" + String(i));
+		if (s.isNotEmpty())
+		{
+			iRecentlyOpenedGroup.add(s);
+		}
+	}
 }
 
 CConfiguration::~CConfiguration()
@@ -61,8 +70,9 @@ PropertiesFile * CConfiguration::getPropertiesFile()
 	return iFile;
 }
 
-Array<String>& CConfiguration::RecentlyOpened()
+Array<String>& CConfiguration::RecentlyOpened(bool aReturnGroup)
 {
+	if (aReturnGroup) return iRecentlyOpenedGroup;
 	return iRecentlyOpened;
 }
 
@@ -71,36 +81,45 @@ void CConfiguration::updateRecentlyOpenedMenu(PopupMenu & aMenu)
 	for (int i = 0; i < iRecentlyOpened.size(); i++)
 	{
 		aMenu.addItem(KRecentlyOpenedMenuItemIdBase + i, iRecentlyOpened[i]);
-	//	aMenu.addCommandItem(&iCommandManager, CommandIDs::menuFileOpenRecent1, iRecentlyOpened[i]);
+	} 
+	if (iRecentlyOpenedGroup.size() > 0) aMenu.addSeparator();
+	for (int i = 0; i < iRecentlyOpenedGroup.size(); i++)
+	{
+		aMenu.addItem(KRecentlyOpenedGroupMenuItemIdBase + i, iRecentlyOpenedGroup[i]);
 	}
 }
 
-String CConfiguration::getRecentlyOpened(int aIdx)
+String CConfiguration::getRecentlyOpened(int aIdx, bool aReturnGroup)
 {
-	if (aIdx < iRecentlyOpened.size()) return iRecentlyOpened[aIdx];
+	if (aReturnGroup)
+	{
+		if (aIdx < iRecentlyOpenedGroup.size()) return iRecentlyOpenedGroup[aIdx];
+	}
+	else if (aIdx < iRecentlyOpened.size()) return iRecentlyOpened[aIdx];
 	return String();
 }
 
-void CConfiguration::addRecentlyOpened(const String & aFn)
+void CConfiguration::addRecentlyOpened(const String & aFn, bool aReturnGroup)
 {
-	int idx = iRecentlyOpened.indexOf(aFn);
+	Array<String>* a = (aReturnGroup ? &iRecentlyOpenedGroup : &iRecentlyOpened);
+	int idx = a->indexOf(aFn);
 	if (idx == 0)
 	{
 		return;
 	}
 	else if ( idx > 0 )
 	{
-		iRecentlyOpened.move(idx, 0);
+		a->move(idx, 0);
 	}
 	else
 	{
-		iRecentlyOpened.insert(0, aFn);
-		iRecentlyOpened.removeRange(KRecentlyOpenedMenuItemIdCount, iRecentlyOpened.size());
+		a->insert(0, aFn);
+		a->removeRange((aReturnGroup ? KRecentlyOpenedGroupMenuItemIdCount : KRecentlyOpenedMenuItemIdCount), a->size());
 	}
 
-	for (int i = 0; i < iRecentlyOpened.size(); i++)
+	for (int i = 0; i < a->size(); i++)
 	{
-		iFile->setValue("RecentlyOpened_" + String(i), iRecentlyOpened[i]);
+		iFile->setValue((aReturnGroup ? "RecentlyOpenedGroup_" : "RecentlyOpened_" )+ String(i), (*a)[i]);
 	}
 	iFile->save();
 }
