@@ -52,9 +52,23 @@ public:
 	bool isColumnDueDateDone() const;
 	void setColumnDueDateDone(bool aDueDateDone);
 
+private:
+
+	void showSetupMenu();
+
 public: // from ScrollBar::Listener
 
 	void scrollBarMoved(ScrollBar* scrollBarThatHasMoved, double newRangeStart) override;
+
+private: // from ModalComponentManager::Callback
+
+	class BtnMenuHandler : public ModalComponentManager::Callback
+	{
+		CKanbanColumnComponent& iOwner;
+	public:
+		BtnMenuHandler(CKanbanColumnComponent& aOwner) : iOwner(aOwner) {}
+		void modalStateFinished(int returnValue) override { iOwner.iSetupButton.setState(Button::buttonNormal); }
+	};
 
 private:
 
@@ -70,7 +84,9 @@ private:
 
 	ScrollBar iScrollBar;
 
-	TextButton iAddCardButton;
+	DrawableButton iAddCardButton;
+
+	DrawableButton iSetupButton;
 
 	CKanbanColumnContentComponent iViewportLayout;
 

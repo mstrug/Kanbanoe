@@ -15,7 +15,7 @@
 
 
 
-CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iIsFrameActive(false), iDueDateDone(false), iViewportLayout(*this), iScrollBar(true)
+CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iIsFrameActive(false), iDueDateDone(false), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw)
 {
 	iViewportLayout.addMouseListener(this, false);
 	addAndMakeVisible(iViewportLayout);
@@ -24,8 +24,67 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 	iTitle.addMouseListener(this,true);
 	addAndMakeVisible(iTitle);
 
-	iAddCardButton.setButtonText("+");
+	DrawablePath btnImg;
+	{
+		Path p;
+		int w = 10, dh = 4;
+		p.addLineSegment(Line<float>(0, 0, w, 0), 1);
+		p.addLineSegment(Line<float>(0, dh, w, dh), 1);
+		p.addLineSegment(Line<float>(0, 2*dh, w, 2*dh), 1);
+		AffineTransform af = AffineTransform::translation(7, 8);
+		p.applyTransform(af);
+		p.addRectangle(-5, -5, 35, 35);
+		btnImg.setPath(p);
+		PathStrokeType pt(1, PathStrokeType::curved);
+		btnImg.setStrokeType(pt);
+		btnImg.setStrokeFill(FillType(Colours::lightgrey));
+		btnImg.setFill(Colours::transparentWhite);
+	}
+	DrawablePath btnImgOver(btnImg);
+	btnImgOver.setStrokeFill(FillType(Colours::whitesmoke));
+	btnImgOver.setFill(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.08f));
+	DrawablePath btnImgPushed(btnImgOver);
+	btnImgPushed.setFill(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).darker());
+
+	iSetupButton.setImages(&btnImg, &btnImgOver, &btnImgPushed);
+	iSetupButton.setTooltip("Column options");
+	iSetupButton.onClick = [this]
+	{// todo: clear mouse over state
+		iSetupButton.setState(Button::buttonDown);
+		this->showSetupMenu();
+	};
+	addAndMakeVisible(iSetupButton);
+
+
+	DrawablePath btnImg2;
+	{
+		Path p;
+		int w = 10;
+		p.addLineSegment(Line<float>(0, w/2, w, w/2), 1);
+		p.addLineSegment(Line<float>(w/2, 0, w/2, w), 1);
+		AffineTransform af = AffineTransform::translation(7, 7);
+		p.applyTransform(af);
+		p.addRectangle(-5, -5, 35, 35);
+		btnImg2.setPath(p);
+		PathStrokeType pt(1, PathStrokeType::curved);
+		btnImg2.setStrokeType(pt);
+		btnImg2.setStrokeFill(FillType(Colours::lightgrey));
+		btnImg2.setFill(Colours::transparentWhite);
+	}
+	DrawablePath btnImgOver2(btnImg2);
+	btnImgOver2.setStrokeFill(FillType(Colours::whitesmoke));
+	btnImgOver2.setFill(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.08f));
+	DrawablePath btnImgPushed2(btnImgOver2);
+	btnImgPushed2.setFill(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).darker());
+	iAddCardButton.setImages(&btnImg2, &btnImgOver2, &btnImgPushed2);
+	iAddCardButton.onClick = [this]
+	{ // todo: clear mouse over state
+		iAddCardButton.setState(Button::buttonNormal);
+		this->iViewportLayout.createNewCard();
+	};
+	iAddCardButton.setTooltip("Add card");
 	addAndMakeVisible(iAddCardButton);
+
 
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
@@ -71,9 +130,15 @@ void CKanbanColumnComponent::resized()
 {
 	Rectangle<int> r(getLocalBounds());
 	Rectangle<int> r1(r.removeFromTop(25));
-	//Rectangle<int> r1b = r1.removeFromRight(25);
+	Rectangle<int> r1b = r1.removeFromRight(25);
 	iTitle.setBounds(r1);
-	//iAddCardButton.setBounds(r1b);
+
+	r1b.translate(0, 1);
+	r1b.setHeight(r1b.getHeight() - 1);
+	iSetupButton.setBounds(r1b);
+
+	r1b.translate(-r1b.getWidth(), 0);
+	iAddCardButton.setBounds(r1b);
 
 	Rectangle<int> r2(r);
 	r2.setLeft(r2.getWidth() - 8);
@@ -276,6 +341,30 @@ bool CKanbanColumnComponent::isColumnDueDateDone() const
 void CKanbanColumnComponent::setColumnDueDateDone(bool aDueDateDone)
 {
 	iDueDateDone = aDueDateDone;
+	// todo: update content cards on change!
+}
+
+void CKanbanColumnComponent::showSetupMenu()
+{
+	PopupMenu menu;
+	menu.addItem("Sort by colour", [&]()
+	{
+
+	});
+	menu.addItem("Remove all cards", [&]()
+	{
+
+	});
+	menu.addSeparator();
+	menu.addItem("Edit name",  [&]()
+	{
+		
+	});
+	menu.addItem("Due date done", true, iDueDateDone, [&]()
+	{
+		this->setColumnDueDateDone(!iDueDateDone);
+	});
+	menu.show(0,0,0,0, new BtnMenuHandler(*this));
 }
 
 void CKanbanColumnComponent::scrollBarMoved(ScrollBar * scrollBarThatHasMoved, double newRangeStart)
@@ -284,3 +373,4 @@ void CKanbanColumnComponent::scrollBarMoved(ScrollBar * scrollBarThatHasMoved, d
 	iViewportLayout.iScrollPos = newRangeStart;
 	iViewportLayout.resized();
 }
+

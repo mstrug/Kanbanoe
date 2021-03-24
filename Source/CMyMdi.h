@@ -41,6 +41,8 @@ class CMyMdi : public MultiDocumentPanel
 {
 	MainComponent& iOwner;
 
+	File iGroupFile;
+
 	bool tryToCloseDocument(Component* component) override;
 
 public:
@@ -56,6 +58,8 @@ public:
 	void activateNextPrevDocument(bool aNext);
 
 	bool openFile(File & aFn, Array<String>& aRet);
+
+	File& getFile();
 
 	bool saveFile(File & aFn);
 };

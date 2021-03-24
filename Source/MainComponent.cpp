@@ -1,6 +1,9 @@
 #include "MainComponent.h"
 #include "CConfiguration.h"
 
+const String AppVersion("v0.29");
+
+
 
 //==============================================================================
 MainComponent::MainComponent() : iMdiPanel(*this), iTimer24h(*this)
@@ -141,6 +144,7 @@ void MainComponent::resized()
 void MainComponent::updateTimer24h()
 {
 	iStatuBarR.setText(CConfiguration::YearAndWeekOfYear(), NotificationType::dontSendNotification);
+	repaint(); // force redraw all due date kards
 }
 
 ApplicationCommandManager & MainComponent::getApplicationCommandManager()
@@ -408,7 +412,21 @@ bool MainComponent::perform(const InvocationInfo& info)
 		}
 		break;
 	case menuFileSaveGroup:
-		//break;
+		{
+			if (!iMdiPanel.getActiveDocument()) break;
+			auto f = iMdiPanel.getFile();
+			if (f.exists())
+			{
+				if (saveGroupFile(f))
+				{
+					CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName(), true);
+
+					iStatuBarL.setText("Group saved", NotificationType::dontSendNotification);
+					Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+				}
+			}
+		}
+		break;
 	case menuFileSaveGroupAs:
 		{
 			if (!iMdiPanel.getActiveDocument()) break;
@@ -455,7 +473,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 		}
 		break;
 	case menuHelpAbout:
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "v0.28\nM.Strug", "OK");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", AppVersion + "\nM.Strug", "OK");
 		break;
 	case menubarSearch:
 			iTextSearch.grabKeyboardFocus();

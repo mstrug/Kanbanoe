@@ -179,6 +179,11 @@ bool CMyMdi::openFile(File & aFn, Array<String>& aRet)
 	return false;
 }
 
+File & CMyMdi::getFile()
+{
+	return iGroupFile;
+}
+
 bool CMyMdi::saveFile(File & aFn)
 {
 	FileOutputStream f(aFn);
@@ -199,6 +204,7 @@ bool CMyMdi::saveFile(File & aFn)
 		f << "\n]\n";
 		f << "}\n";
 
+		iGroupFile = aFn;
 		return true;
 	}
 
