@@ -84,6 +84,7 @@ void CKanbanColumnContentComponent::removeCard(CKanbanCardComponent * aCard)
 		if (i.associatedComponent == aCard)
 		{
 			iLayout.items.remove(&i);
+			iOwner.cardsCoutUpdated();
 			break;
 		}
 	}
@@ -214,6 +215,18 @@ void CKanbanColumnContentComponent::moveCardBottom(CKanbanCardComponent * aCard)
 		}
 		j++;
 	}
+}
+
+void CKanbanColumnContentComponent::updateDueDateDoneOnCards(bool aDone)
+{
+	for (auto& i : iLayout.items)
+	{
+		if (i.associatedComponent)
+		{
+			((CKanbanCardComponent*)i.associatedComponent)->setDone(aDone);
+		}
+	}
+	repaint();
 }
 
 bool CKanbanColumnContentComponent::isInterestedInDragSource(const SourceDetails & dragSourceDetails)
@@ -356,6 +369,7 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 	{
 		iLayout.items.insert(iPlaceholderIndex, fi);
 	}
+	iOwner.cardsCoutUpdated();
 
 	//auto& flexItem = iLayout.items.getReference(iLayout.items.size() - 1);
 

@@ -42,6 +42,7 @@ public:
 	int getCardsCount();
 	void moveCardTop(CKanbanCardComponent* aCard);
 	void moveCardBottom(CKanbanCardComponent* aCard);
+	void updateDueDateDoneOnCards(bool aDone);
 
 public: // from DragAndDropTarget
 

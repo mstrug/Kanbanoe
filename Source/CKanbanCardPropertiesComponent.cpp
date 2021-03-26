@@ -127,7 +127,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	else
 	{
 		iSliderDueDate.setValue((aOwner.getDueDate().toMilliseconds() - aOwner.getCreationDate().toMilliseconds()) / (24 * 3600000), dontSendNotification);
-		iLabelSlider.setText(aOwner.getDueDate().formatted("Due date: %d.%m.%Y"), dontSendNotification);
+		iLabelSlider.setText(aOwner.getDueDate().formatted("Due date: %d.%m.%Y %a"), dontSendNotification);
 	}
 	//this->setDueDate(-1);
 	//iSliderDueDate.setValue()

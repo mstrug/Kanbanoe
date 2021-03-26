@@ -59,6 +59,8 @@ public:
 
 	bool openFile(File & aFn, Array<String>& aRet);
 
+	bool isFileSet();
+
 	File& getFile();
 
 	bool saveFile(File & aFn);

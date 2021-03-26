@@ -174,9 +174,15 @@ bool CMyMdi::openFile(File & aFn, Array<String>& aRet)
 			return false;
 		}
 
+		iGroupFile = aFn;
 		return true;
 	}
 	return false;
+}
+
+bool CMyMdi::isFileSet()
+{
+	return iGroupFile.exists();
 }
 
 File & CMyMdi::getFile()

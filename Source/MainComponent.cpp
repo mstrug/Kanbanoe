@@ -1,7 +1,7 @@
 #include "MainComponent.h"
 #include "CConfiguration.h"
 
-const String AppVersion("v0.29");
+const String AppVersion("v0.30");
 
 
 
@@ -236,6 +236,8 @@ void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 
 void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& result)
 {
+	bool isDocOpened = iMdiPanel.getActiveDocument() != nullptr;
+
 	switch (commandID)
 	{
 	case menuFile:
@@ -251,25 +253,33 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 			result.addDefaultKeypress('O', ModifierKeys::ctrlModifier);
 		break;
 	case menuFileClose:
-			result.setInfo("Close", "", "Menu", 0);
+			result.setInfo("Close", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));
 			result.addDefaultKeypress('W', ModifierKeys::ctrlModifier);
 		break;
 	case menuFileSave:
-			result.setInfo("Save", "", "Menu", 0);
+		{
+			bool enabled = false;
+			if (isDocOpened)
+			{
+				CMyMdiDoc* d = static_cast<CMyMdiDoc*>( iMdiPanel.getActiveDocument() );
+				enabled = d->getKanbanBoard()->isFileSet();
+			}
+			result.setInfo("Save", "", "Menu", (!enabled ? ApplicationCommandInfo::isDisabled : 0));
 			result.addDefaultKeypress('S', ModifierKeys::ctrlModifier);
+		}
 		break;
 	case menuFileSaveAs:
-			result.setInfo("Save As", "", "Menu", 0);
+			result.setInfo("Save As", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));
 		break;
 	case menuFileSaveAll:
-			result.setInfo("Save All", "", "Menu", 0);
+			result.setInfo("Save All", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));
 			result.addDefaultKeypress('S', ModifierKeys::ctrlModifier | ModifierKeys::shiftModifier);
 		break;
 	case menuFileSaveGroup:
-			result.setInfo("Save Group", "", "Menu", 0);
+			result.setInfo("Save Group", "", "Menu", (!isDocOpened || !iMdiPanel.isFileSet() ? ApplicationCommandInfo::isDisabled : 0 ) );
 		break;
 	case menuFileSaveGroupAs:
-			result.setInfo("Save Group As", "", "Menu", 0);
+			result.setInfo("Save Group As", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));
 		break;
 	case menuFileOpenRecent:
 			result.setInfo("Open recent", "", "Menu", 0);

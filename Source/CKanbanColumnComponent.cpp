@@ -15,14 +15,23 @@
 
 
 
-CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iIsFrameActive(false), iDueDateDone(false), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw)
+CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iIsFrameActive(false), iDueDateDone(false), iColumnTitle(aTitle), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw)
 {
 	iViewportLayout.addMouseListener(this, false);
 	addAndMakeVisible(iViewportLayout);
 
-	iTitle.setText(aTitle, NotificationType::dontSendNotification);
+	//iTitle.setText(aTitle, NotificationType::dontSendNotification);
 	iTitle.addMouseListener(this,true);
 	addAndMakeVisible(iTitle);
+
+	iTitleCardsCount.addMouseListener(this, true);
+	iTitleCardsCount.setJustificationType(Justification::right);
+	iTitleCardsCount.setColour(Label::textColourId, getLookAndFeel().findColour(juce::Label::textColourId).darker(0.6));
+//	iTitleCardsCount.setColour(Label::textColourId, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter());
+	iTitleCardsCount.setTooltip("Cards count");
+	addAndMakeVisible(iTitleCardsCount);
+
+	updateColumnTitle();
 
 	DrawablePath btnImg;
 	{
@@ -53,6 +62,7 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 		iSetupButton.setState(Button::buttonDown);
 		this->showSetupMenu();
 	};
+	iSetupButton.setTooltip("Column menu");
 	addAndMakeVisible(iSetupButton);
 
 
@@ -131,6 +141,8 @@ void CKanbanColumnComponent::resized()
 	Rectangle<int> r(getLocalBounds());
 	Rectangle<int> r1(r.removeFromTop(25));
 	Rectangle<int> r1b = r1.removeFromRight(25);
+
+	r1.removeFromRight(25);
 	iTitle.setBounds(r1);
 
 	r1b.translate(0, 1);
@@ -139,6 +151,12 @@ void CKanbanColumnComponent::resized()
 
 	r1b.translate(-r1b.getWidth(), 0);
 	iAddCardButton.setBounds(r1b);
+
+	r1b.translate(-50, 0);
+	r1b.setWidth(50);
+	r1b.setTop(r1.getTopLeft().y);
+	r1b.setBottom(r1.getBottom());
+	iTitleCardsCount.setBounds(r1b);
 
 	Rectangle<int> r2(r);
 	r2.setLeft(r2.getWidth() - 8);
@@ -168,49 +186,11 @@ void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 		{
 			duplicateCard(CKanbanCardComponent::getClipboardCard());
 		});
-		menu.addSeparator();
+		/*menu.addSeparator();
 		menu.addItem("Archive column", [&]()
 		{
-			if (this->iViewportLayout.getCardsCount() == 0)
-			{
-				AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Column is empty!", "", "OK");
-				return;
-			}
-
-			AlertWindow w("Archive column options",
-				"Provide descriptive name for the archived column.\nProposed name is year and a weak number.\nArchived columns are accessible in menu Edit -> Show Archives.\n",
-				AlertWindow::QuestionIcon);
-
-			w.addTextEditor("text", CConfiguration::YearAndWeekOfYear(), "Archive name:");
-
-			ToggleButton tb("Clear column after archivisation");
-			tb.setComponentID("checkbox");
-			tb.setSize(250, 36);
-			tb.setName("");
-			tb.setToggleState(true, NotificationType::dontSendNotification);
-			w.addCustomComponent(&tb);
-			w.addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
-			w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
-
-			if (w.runModalLoop() != 0) // is they picked 'ok'
-			{
-				auto text = w.getTextEditorContents("text");
-				bool checked = tb.getToggleState();
-				if (text.isEmpty())
-				{
-					AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Archive column options", "Wrong archive name!", "OK");
-				}
-				else
-				{
-					if (iOwner.archiveColumn(this, text, checked))
-					{
-
-					}
-				}
-			}
-
-			//this->iViewportLayout.createNewCard();
-		});
+			this->archive();
+		});*/
 		menu.show();
 	}
 }
@@ -246,6 +226,11 @@ void CKanbanColumnComponent::contentUpdated()
 	iScrollBar.setCurrentRange(iScrollBar.getCurrentRangeStart(), iViewportLayout.iMinimumHeight);
 }
 
+void CKanbanColumnComponent::cardsCoutUpdated()
+{
+	updateColumnTitle();
+}
+
 CKanbanBoardComponent& CKanbanColumnComponent::kanbanBoard()
 {
 	return iOwner;
@@ -275,7 +260,19 @@ void CKanbanColumnComponent::removeCard(CKanbanCardComponent* aCard)
 
 void CKanbanColumnComponent::removeAllCards()
 {
-	
+	int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Confirmation", "Do you really want to remove all cards from this column?");
+	if (ret == 1)
+	{
+		auto ar = iOwner.getCardsForColumn(this);
+
+		if (ar.size() > 0)
+		{
+			for (int i = ar.size() - 1; i >= 0; --i)
+			{
+				removeCard(ar[i]);
+			}
+		}
+	}
 }
 
 void CKanbanColumnComponent::scrollToBottom()
@@ -341,19 +338,27 @@ bool CKanbanColumnComponent::isColumnDueDateDone() const
 void CKanbanColumnComponent::setColumnDueDateDone(bool aDueDateDone)
 {
 	iDueDateDone = aDueDateDone;
-	// todo: update content cards on change!
+	iViewportLayout.updateDueDateDoneOnCards(iDueDateDone);
 }
 
 void CKanbanColumnComponent::showSetupMenu()
 {
 	PopupMenu menu;
-	menu.addItem("Sort by colour", [&]()
+	menu.addItem("Paste card", CKanbanCardComponent::getClipboardCard(), false, [&]()
+	{
+		this->duplicateCard(CKanbanCardComponent::getClipboardCard());
+	});
+	menu.addItem("Sort by colour", iViewportLayout.getCardsCount() > 0, false, [&]()
 	{
 
 	});
-	menu.addItem("Remove all cards", [&]()
+	menu.addItem("Remove all cards", iViewportLayout.getCardsCount() > 0, false, [&]()
 	{
-
+		this->removeAllCards();
+	});
+	menu.addItem("Archive column", iViewportLayout.getCardsCount() > 0, false, [&]()
+	{
+		this->archive();
 	});
 	menu.addSeparator();
 	menu.addItem("Edit name",  [&]()
@@ -365,6 +370,58 @@ void CKanbanColumnComponent::showSetupMenu()
 		this->setColumnDueDateDone(!iDueDateDone);
 	});
 	menu.show(0,0,0,0, new BtnMenuHandler(*this));
+}
+
+void CKanbanColumnComponent::archive()
+{
+	if (this->iViewportLayout.getCardsCount() == 0)
+	{
+		AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Column is empty!", "", "OK");
+		return;
+	}
+
+	AlertWindow w("Archive column options",
+		"Provide descriptive name for the archived column.\nProposed name is year and a weak number.\nArchived columns are accessible in menu Edit -> Show Archives.\n",
+		AlertWindow::QuestionIcon);
+
+	w.addTextEditor("text", CConfiguration::YearAndWeekOfYear(), "Archive name:");
+
+	ToggleButton tb("Clear column after archivisation");
+	tb.setComponentID("checkbox");
+	tb.setSize(250, 36);
+	tb.setName("");
+	tb.setToggleState(true, NotificationType::dontSendNotification);
+	w.addCustomComponent(&tb);
+	w.addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
+	w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+
+	if (w.runModalLoop() != 0) // is they picked 'ok'
+	{
+		auto text = w.getTextEditorContents("text");
+		bool checked = tb.getToggleState();
+		if (text.isEmpty())
+		{
+			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Archive column options", "Wrong archive name!", "OK");
+		}
+		else
+		{
+			if (iOwner.archiveColumn(this, text, checked))
+			{
+
+			}
+		}
+	}
+
+	//this->iViewportLayout.createNewCard();
+}
+
+void CKanbanColumnComponent::updateColumnTitle()
+{
+	iTitleCardsCount.setText(" (" + String(iViewportLayout.getCardsCount()) + ")", NotificationType::dontSendNotification);
+	iTitle.setText(iColumnTitle, NotificationType::dontSendNotification);
+
+//	iTitleCardsCount.setText("[" + String(iViewportLayout.getCardsCount()) +"]", NotificationType::dontSendNotification);
+//	iTitle.setText(iColumnTitle + " | " + String(iViewportLayout.getCardsCount()) + "", NotificationType::dontSendNotification);
 }
 
 void CKanbanColumnComponent::scrollBarMoved(ScrollBar * scrollBarThatHasMoved, double newRangeStart)

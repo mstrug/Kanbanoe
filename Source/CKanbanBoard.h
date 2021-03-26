@@ -46,6 +46,10 @@ public:
 	bool saveFile(String& aReturnErrorMessage);
 	void setFile(File& aFile);
 	File& getFile();
+	bool isFileSet();
+
+	const Array< CKanbanCardComponent* > getCardsForColumn(CKanbanColumnComponent* aColumn);
+
 
 private:
 

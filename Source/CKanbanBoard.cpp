@@ -612,3 +612,22 @@ File& CKanbanBoardComponent::getFile()
 	return iFile;
 }
 
+bool CKanbanBoardComponent::isFileSet()
+{
+	return iFile.exists();
+}
+
+const Array<CKanbanCardComponent*> CKanbanBoardComponent::getCardsForColumn(CKanbanColumnComponent * aColumn)
+{
+	Array<CKanbanCardComponent*> ret;
+
+	for (int i = 0; i < iKanbanCards.size(); i++)
+	{
+		if (iKanbanCards[i]->getOwnerColumnId() == aColumn->getColumnId())
+		{
+			ret.add(iKanbanCards[i]);
+		}
+	}
+	return ret;
+}
+

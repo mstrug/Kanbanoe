@@ -35,6 +35,7 @@ public:
 
 	void setActiveFrame(bool aActive);
 	void contentUpdated();
+	void cardsCoutUpdated();
 	CKanbanBoardComponent& kanbanBoard();
 	CKanbanColumnContentComponent& cardsLayout();
 	void addCard(CKanbanCardComponent* aCard); // takes ownership of the pointer
@@ -55,6 +56,11 @@ public:
 private:
 
 	void showSetupMenu();
+
+	void archive();
+
+	void updateColumnTitle();
+
 
 public: // from ScrollBar::Listener
 
@@ -80,7 +86,9 @@ private:
 
 	bool iDueDateDone;
 
+	String iColumnTitle;
 	Label iTitle;
+	Label iTitleCardsCount;
 
 	ScrollBar iScrollBar;
 
