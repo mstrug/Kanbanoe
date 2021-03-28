@@ -31,7 +31,8 @@ CConfiguration::CConfiguration()
 	for (int i = 0; i < cc; i++)
 	{
 		auto s = iFile->getValue("Colour_" + String(i));
-		iPalette->setColor(i, Colour::fromString(s));
+		auto sname = iFile->getValue("ColourName_" + String(i));
+		iPalette->setColor(i, Colour::fromString(s), sname);
 	}
 
 	for (int i = 0; i < KRecentlyOpenedMenuItemIdCount; i++)
@@ -55,6 +56,7 @@ CConfiguration::CConfiguration()
 
 CConfiguration::~CConfiguration()
 {
+	iFile->saveIfNeeded();
 	delete iFile;
 	delete iPalette;
 }
@@ -143,6 +145,12 @@ int CConfiguration::getIntValue(StringRef aPropertyName)
 {
 	CConfiguration& c = getInstance();
 	return c.iFile->getIntValue(aPropertyName);
+}
+
+bool CConfiguration::getBoolValue(StringRef aPropertyName)
+{
+	CConfiguration& c = getInstance();
+	return c.iFile->getBoolValue(aPropertyName);
 }
 
 ColourPalette& CConfiguration::getColourPalette()

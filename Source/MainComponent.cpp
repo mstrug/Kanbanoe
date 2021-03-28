@@ -1,7 +1,7 @@
 #include "MainComponent.h"
 #include "CConfiguration.h"
 
-const String AppVersion("v0.30");
+const String AppVersion("v0.31");
 
 
 
@@ -25,24 +25,23 @@ MainComponent::MainComponent() : iMdiPanel(*this), iTimer24h(*this)
 	iTextSearch.setSelectAllWhenFocused(true);
 	iTextSearch.onEscapeKey = [this]
 	{
-		iTextSearch.setText("");
-		auto mdi = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
-		if (mdi)
+		if (iTextSearch.getText().isEmpty())
 		{
-			mdi->setSearchText("");
-			auto kb = mdi->getKanbanBoard();
-			if (kb) kb->searchClear();
+			this->unfocusAllComponents();
+		}
+		else
+		{
+			iTextSearch.setText("");
+			auto mdi = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+			if (mdi)
+			{
+				mdi->setSearchText("");
+				auto kb = mdi->getKanbanBoard();
+				if (kb) kb->searchClear();
+			}
 		}
 	};
-	iTextSearch.onReturnKey = [this]
-	{
-		auto mdi = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
-		if (mdi)
-		{
-			mdi->setSearchText(iTextSearch.getText());
-			setSearchText(iTextSearch.getText(), false);
-		}
-	};
+	updateFindCallbacks();
 
 	addAndMakeVisible(iMdiPanel);
 	iMdiPanel.setLayoutMode(MultiDocumentPanel::MaximisedWindowsWithTabs);
@@ -154,7 +153,7 @@ ApplicationCommandManager & MainComponent::getApplicationCommandManager()
 
 StringArray MainComponent::getMenuBarNames()
 {
-	return { "File", "Edit", "Help" };
+	return { "File", "View", "Config", "Help" };
 }
 
 PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
@@ -181,12 +180,16 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 		menu.addSeparator();
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuFileExit);
 	}
-	else if (topLevelMenuIndex == 1) // edit
+	else if (topLevelMenuIndex == 1) // view
 	{
-		menu.addCommandItem(&iCommandManager, CommandIDs::menuEditAddCard);
-		menu.addCommandItem(&iCommandManager, CommandIDs::menuEditViewArchive);		
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuViewArchive);
 	}
-	else if (topLevelMenuIndex == 2) // help
+	else if (topLevelMenuIndex == 2) // config
+	{
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuConfigSearchCaseInsensitive);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuConfigSearchDynamic);
+	}
+	else if (topLevelMenuIndex == 3) // help
 	{
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuHelpAbout);
 	}
@@ -229,7 +232,7 @@ void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 {
 	Array<CommandID> commands{ CommandIDs::menuFile, CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
 		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileSaveGroup, CommandIDs::menuFileSaveGroupAs, CommandIDs::menuFileOpenRecent, CommandIDs::menuFileExit,
-		CommandIDs::menuEditAddCard, CommandIDs::menuEditViewArchive, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
+		CommandIDs::menuViewArchive, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
 		CommandIDs::menubarSearchClear, CommandIDs::mdiNextDoc, CommandIDs::mdiPrevDoc };
 	aCommands.addArray(commands);
 }
@@ -287,12 +290,14 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 	case menuFileExit:
 			result.setInfo("Exit", "Exit from application", "Menu", 0);
 		break;
-	case menuEditAddCard:
-			result.setInfo("Add card", "", "Menu", 0);
-			//result.addDefaultKeypress('A', ModifierKeys::ctrlModifier);
+	case menuViewArchive:
+		result.setInfo("View archives", "", "Menu", 0);
 		break;
-	case menuEditViewArchive:
-			result.setInfo("View archives", "", "Menu", 0);
+	case menuConfigSearchCaseInsensitive:
+			result.setInfo("Search tags/date/assigne case insensitive", "Configure search case insensitive", "Menu", (CConfiguration::getBoolValue(KConfigSearchCase) ? ApplicationCommandInfo::isTicked : 0) );
+		break;
+	case menuConfigSearchDynamic:
+			result.setInfo("Search doesn't require return key", "Configure dynmic search", "Menu", (CConfiguration::getBoolValue(KConfigSearchDynamic) ? ApplicationCommandInfo::isTicked : 0));
 		break;
 	case menuHelpAbout:
 			result.setInfo("About", "", "Menu", 0);
@@ -461,25 +466,27 @@ bool MainComponent::perform(const InvocationInfo& info)
 	case menuFileExit:
 			JUCEApplicationBase::quit();
 		break;
-	case menuEditAddCard:
-		{
-//		static std::unique_ptr<LookAndFeel> lf(new LookAndFeel_V4(LookAndFeel_V4::getLightColourScheme()));
-//		for (auto* child : getChildren())
-//			child->setLookAndFeel(lf.get());
-
-		/*	static int t = 0;
-			auto c = new CKanbanCardComponent(nullptr);
-			c->setTopLeftPosition(10, 20);
-			c->setText("Card " + String(t++));
-			iKanbanCards.add(c);
-			addAndMakeVisible(c);*/
-		}
-		break;
-	case menuEditViewArchive:
+	case menuViewArchive:
 		{
 			if (!iMdiPanel.getActiveDocument()) break;
 			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
 			kb->logArchives();
+		}
+		break;
+	case menuConfigSearchCaseInsensitive:
+		{
+			bool b = CConfiguration::getBoolValue(KConfigSearchCase);
+			auto pf = CConfiguration::getInstance().getPropertiesFile();
+			pf->setValue(KConfigSearchCase, !b);
+			textFindCallbackFcn();
+		}
+		break;
+	case menuConfigSearchDynamic:
+		{
+			bool b = CConfiguration::getBoolValue(KConfigSearchDynamic);
+			auto pf = CConfiguration::getInstance().getPropertiesFile();
+			pf->setValue(KConfigSearchDynamic, !b);
+			updateFindCallbacks();
 		}
 		break;
 	case menuHelpAbout:
@@ -599,5 +606,29 @@ bool MainComponent::openGroupFile(File & aFn)
 bool MainComponent::saveGroupFile(File & aFn)
 {
 	return iMdiPanel.saveFile(aFn);
+}
+
+void MainComponent::textFindCallbackFcn()
+{
+	auto mdi = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+	if (mdi)
+	{
+		mdi->setSearchText(iTextSearch.getText());
+		setSearchText(iTextSearch.getText(), false);
+	}
+}
+
+void MainComponent::updateFindCallbacks()
+{
+	if (CConfiguration::getBoolValue(KConfigSearchDynamic))
+	{
+		iTextSearch.onTextChange = [this] { textFindCallbackFcn(); };
+		iTextSearch.onReturnKey = nullptr;
+	}
+	else
+	{
+		iTextSearch.onReturnKey = [this] { textFindCallbackFcn(); };
+		iTextSearch.onTextChange = nullptr;
+	}
 }
 

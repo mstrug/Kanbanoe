@@ -20,6 +20,11 @@ const int KRecentlyOpenedMenuItemIdCount = 8;
 const int KRecentlyOpenedGroupMenuItemIdBase = 0xff011;
 const int KRecentlyOpenedGroupMenuItemIdCount = 4;
 
+const String KConfigSearchCase = "ConfigSearchCaseInsensitive";
+const String KConfigSearchDynamic = "ConfigSearchDynamic";
+
+
+
 class CConfiguration
 {
 private:
@@ -43,6 +48,8 @@ public:
 	static String getValue(StringRef aPropertyName);
 
 	static int getIntValue(StringRef aPropertyName);
+
+	static bool getBoolValue(StringRef aPropertyName);
 
 	static ColourPalette& getColourPalette();
 

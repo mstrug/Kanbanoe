@@ -15,7 +15,7 @@
 
 
 
-CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iIsFrameActive(false), iDueDateDone(false), iColumnTitle(aTitle), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw)
+CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iIsFrameActive(false), iDueDateDone(false), iSortedAsc(false), iColumnTitle(aTitle), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw)
 {
 	iViewportLayout.addMouseListener(this, false);
 	addAndMakeVisible(iViewportLayout);
@@ -246,9 +246,9 @@ void CKanbanColumnComponent::duplicateCard(const CKanbanCardComponent* aCard)
 	iViewportLayout.createNewCard(aCard);
 }
 
-void CKanbanColumnComponent::addCard(CKanbanCardComponent* aCard)
+void CKanbanColumnComponent::addCard(CKanbanCardComponent* aCard, bool aLoadFromFile)
 {
-	iViewportLayout.addCard(aCard);
+	iViewportLayout.addCard(aCard, aLoadFromFile);
 }
 
 void CKanbanColumnComponent::removeCard(CKanbanCardComponent* aCard)
@@ -307,19 +307,6 @@ void CKanbanColumnComponent::scrollEnsureVisible(CKanbanCardComponent * aCard)
 	}
 }
 
-void CKanbanColumnComponent::search(const String & aString)
-{
-	if (aString.startsWith("tag:"))
-	{
-		String s = aString.substring(4);
-		s = s.trim();
-		if (s.length() == 0) return;
-		Logger::outputDebugString("search tag: " + s);
-
-		//for ( auto c : iOwner.getcar)
-	}
-}
-
 String CKanbanColumnComponent::getTitle()
 {
 	return iTitle.getText();
@@ -348,9 +335,15 @@ void CKanbanColumnComponent::showSetupMenu()
 	{
 		this->duplicateCard(CKanbanCardComponent::getClipboardCard());
 	});
-	menu.addItem("Sort by colour", iViewportLayout.getCardsCount() > 0, false, [&]()
+	menu.addItem("Sort by colour", iViewportLayout.getCardsCount() > 1, false, [&]()
 	{
-
+		this->iViewportLayout.sortCardsByColour(iSortedAsc);
+		iSortedAsc = !iSortedAsc;
+	});
+	menu.addItem("Sort by due date", iViewportLayout.getCardsCount() > 1, false, [&]()
+	{
+		this->iViewportLayout.sortCardsByDueDate(iSortedAsc);
+		iSortedAsc = !iSortedAsc;
 	});
 	menu.addItem("Remove all cards", iViewportLayout.getCardsCount() > 0, false, [&]()
 	{
@@ -361,10 +354,10 @@ void CKanbanColumnComponent::showSetupMenu()
 		this->archive();
 	});
 	menu.addSeparator();
-	menu.addItem("Edit name",  [&]()
+	/*menu.addItem("Edit name",  [&]()
 	{
 		
-	});
+	});*/
 	menu.addItem("Due date done", true, iDueDateDone, [&]()
 	{
 		this->setColumnDueDateDone(!iDueDateDone);

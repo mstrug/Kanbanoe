@@ -119,3 +119,5 @@ private:
 };
 
 const String KanbanCardComponentDragDescription = "KanbanCard";
+const String KanbanCardComponentLoadFromFileDescription = "KanbanCard2";
+

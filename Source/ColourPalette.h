@@ -30,7 +30,7 @@ public:
 
 	int getColourIndex(const Colour& aColor);
 
-	void setColor(int aIdx, const Colour& aColor);
+	void setColor(int aIdx, const Colour& aColor, const String& aName = "");
 
 	Colour getColorActive(int aIdx);
 
@@ -38,10 +38,15 @@ public:
 
 	void setColorsActiveBrighter(float aValue);
 
+	String getColourName(const Colour& aColor);
+
+	String getColourName(int aIdx);
+
 private:
 
 	Array< Colour > iColors;
 	Array< Colour > iColorsActive;
+	StringArray iColorsNames;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ColourPalette)
 };

@@ -90,12 +90,12 @@ void CKanbanColumnContentComponent::removeCard(CKanbanCardComponent * aCard)
 	}
 }
 
-void CKanbanColumnContentComponent::addCard(CKanbanCardComponent* aCard)
+void CKanbanColumnContentComponent::addCard(CKanbanCardComponent* aCard, bool aLoadFromFile)
 {
-	Logger::outputDebugString("add card");
+	//Logger::outputDebugString("add card");
 	iPlaceholderIndex = -1;
 
-	DragAndDropTarget::SourceDetails s(KanbanCardComponentDragDescription, aCard, Point<int>());
+	DragAndDropTarget::SourceDetails s(aLoadFromFile ? KanbanCardComponentLoadFromFileDescription : KanbanCardComponentDragDescription, aCard, Point<int>());
 	itemDropped(s);
 }
 
@@ -229,6 +229,47 @@ void CKanbanColumnContentComponent::updateDueDateDoneOnCards(bool aDone)
 	repaint();
 }
 
+void CKanbanColumnContentComponent::sortCardsByColour(bool aAscending)
+{
+	std::sort( iLayout.items.begin(), iLayout.items.end(), [aAscending](const auto& lhs, const auto& rhs)
+	{ 
+		auto &pal = CConfiguration::getColourPalette();
+
+		Colour c1 = static_cast<CKanbanCardComponent*>(lhs.associatedComponent)->getColour();
+		Colour c2 = static_cast<CKanbanCardComponent*>(rhs.associatedComponent)->getColour();
+
+		int idx1 = pal.getColourIndex(c1);
+		int idx2 = pal.getColourIndex(c2);
+
+		return (aAscending ? idx1 > idx2 : idx1 < idx2);
+	}
+	);
+
+	resized();
+	iOwner.scrollToTop();
+}
+
+void CKanbanColumnContentComponent::sortCardsByDueDate(bool aAscending)
+{
+	std::sort(iLayout.items.begin(), iLayout.items.end(), [aAscending](const auto& lhs, const auto& rhs)
+	{
+		auto d1 = static_cast<CKanbanCardComponent*>(lhs.associatedComponent)->getDueDate();
+		auto d2 = static_cast<CKanbanCardComponent*>(rhs.associatedComponent)->getDueDate();
+
+		auto t1 = d1.toMilliseconds();
+		auto t2 = d2.toMilliseconds();
+
+		if (!aAscending && t1 == 0) t1 = INT64_MAX;
+		if (!aAscending && t2 == 0) t2 = INT64_MAX;
+
+		return (aAscending ? t1 > t2 : t1 < t2);
+	}
+	);
+
+	resized();
+	iOwner.scrollToTop();
+}
+
 bool CKanbanColumnContentComponent::isInterestedInDragSource(const SourceDetails & dragSourceDetails)
 {
 	int j = 0;
@@ -329,9 +370,9 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 	*/
 
 	CKanbanCardComponent* card = nullptr;
+	card = static_cast<CKanbanCardComponent*>(dragSourceDetails.sourceComponent.get());
 	if (dragSourceDetails.description == KanbanCardComponentDragDescription)
 	{
-		card = static_cast<CKanbanCardComponent*>(dragSourceDetails.sourceComponent.get());
 		CKanbanColumnContentComponent* col = card->getOwner();
 
 		if (col)
@@ -345,11 +386,12 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 			}
 			if (iDraggedCardIndex != -1 && iPlaceholderIndex > iDraggedCardIndex) iPlaceholderIndex--;
 		}
-		card->setOwner(this);
+	} 
+	// else KanbanCardComponentLoadFromFileDescription
+	card->setOwner(this);
 
-		if (getOwner().isColumnDueDateDone()) card->setDone(true);
-		else card->setDone(false);
-	}
+	if (getOwner().isColumnDueDateDone()) card->setDone(true);
+	else card->setDone(false);
 
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -374,14 +416,18 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 	//auto& flexItem = iLayout.items.getReference(iLayout.items.size() - 1);
 
 	addAndMakeVisible(dragSourceDetails.sourceComponent);
-	resized();
 
-	iDragTargetActive = false;
-	iOwner.setActiveFrame(false);
-	iOwner.scrollEnsureVisible(card);
-	iDragTargetPlaceholderActive = false;
-	iDraggedCardIndex = -1;
+	if (dragSourceDetails.description != KanbanCardComponentLoadFromFileDescription)
+	{
+		resized();
 
-	repaint();
+		iDragTargetActive = false;
+		iOwner.setActiveFrame(false);
+		iOwner.scrollEnsureVisible(card);
+		iDragTargetPlaceholderActive = false;
+		iDraggedCardIndex = -1;
+
+		repaint();
+	}
 }
 

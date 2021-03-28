@@ -116,7 +116,8 @@ void CKanbanBoardComponent::search(const String & aString)
 {
 	String s = aString.trim();
 	String stag;
-	bool tagmode = false, colormode = false;
+	bool tagmode = false, colormode = false, assignemode = false;
+	bool caseInsensitive = CConfiguration::getBoolValue(KConfigSearchCase);
 
 	if (s.isQuotedString())
 	{
@@ -149,6 +150,16 @@ void CKanbanBoardComponent::search(const String & aString)
 			stag = s.substring(2);
 			colormode = true;
 		}
+		else if (s.startsWith("assignee:"))
+		{
+			stag = s.substring(9);
+			assignemode = true;
+		}
+		else if (s.startsWith("a:"))
+		{
+			stag = s.substring(2);
+			assignemode = true;
+		}
 		stag = stag.trim();
 	}
 
@@ -161,7 +172,7 @@ void CKanbanBoardComponent::search(const String & aString)
 			for (auto c : iKanbanCards)
 			{
 				String tgs = c->getProperties()["tags"];
-				if (!tgs.contains(stag))
+				if (caseInsensitive ? !tgs.containsIgnoreCase(stag) : !tgs.contains(stag))
 				{
 					c->getOwner()->hideCard(c);
 				}
@@ -181,7 +192,81 @@ void CKanbanBoardComponent::search(const String & aString)
 	}
 	else if (colormode)
 	{
-		// todo
+		if (stag.length() != 0)
+		{
+			auto& pal = CConfiguration::getColourPalette();
+
+			if (stag.length() == 1)
+			{
+				int val = stag.getIntValue();
+				if (val >= 1 && val <= 6)
+				{
+					for (auto c : iKanbanCards)
+					{
+						Colour col = c->getColour();
+						int idx = pal.getColourIndex(col);
+						idx++; // 0..5 -> 1..6
+
+						if ( idx != val )
+						{
+							c->getOwner()->hideCard(c);
+						}
+					}
+				}
+			}
+			else
+			{
+				for (auto c : iKanbanCards)
+				{
+					Colour col = c->getColour();
+					String name = pal.getColourName(col);
+
+					if (caseInsensitive ? !name.containsIgnoreCase(stag) : !name.contains(stag))
+					{
+						c->getOwner()->hideCard(c);
+					}
+				}
+			}
+		}
+		else // empty search
+		{
+			auto& pal = CConfiguration::getColourPalette();
+			for (auto c : iKanbanCards)
+			{
+				Colour col = c->getColour();
+				String name = pal.getColourName(col);
+
+				if (!name.contains("none") && !name.isEmpty())
+				{
+					c->getOwner()->hideCard(c);
+				}
+			}
+		}
+	}
+	else if (assignemode)
+	{
+		if (stag.length() != 0)
+		{
+			for (auto c : iKanbanCards)
+			{
+				String as = c->getAssigne();
+				if (caseInsensitive ? !as.containsIgnoreCase(stag) : !as.contains(stag))
+				{
+					c->getOwner()->hideCard(c);
+				}
+			}
+		}
+		else // empty search
+		{
+			for (auto c : iKanbanCards)
+			{
+				String as = c->getAssigne();
+				if (!as.isEmpty())
+				{
+					c->getOwner()->hideCard(c);
+				}
+			}
+		}
 	}
 	else
 	{
@@ -189,7 +274,7 @@ void CKanbanBoardComponent::search(const String & aString)
 
 		for (auto c : iKanbanCards)
 		{
-			if (!c->getText().containsIgnoreCase(s) && !c->getNotes().containsIgnoreCase(s))
+			if (!c->getText().containsIgnoreCase(s) && !c->getNotes().containsIgnoreCase(s) && !c->getAssigne().containsIgnoreCase(s))
 			{
 				c->getOwner()->hideCard(c);
 			}
@@ -437,8 +522,11 @@ bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardCompo
 	if (cards.isArray())
 	{
 		auto ar = cards.getArray();
+		int cnt = ar->size();
 		for (auto& i : *ar)
 		{
+			cnt--;
+			
 			auto obj2 = i.getDynamicObject();
 			var text = obj2->getProperty("text");
 			var notes = obj2->getProperty("notes"); // opt
@@ -496,7 +584,7 @@ bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardCompo
 					{
 						if (j->getColumnId() == (int)columnId)
 						{
-							j->addCard(card);
+							j->addCard(card, cnt > 0);
 							break;
 						}
 					}

@@ -14,8 +14,12 @@
 
 ColourPalette::ColourPalette(int aCount)
 {
-	for (int i = 0; i < aCount; i++) iColors.add(Colour());
-	for (int i = 0; i < aCount; i++) iColorsActive.add(Colour());
+	for (int i = 0; i < aCount; i++)
+	{
+		iColors.add(Colour());
+		iColorsActive.add(Colour());
+		iColorsNames.add(String());
+	}
 }
 
 int ColourPalette::getColorCount()
@@ -44,9 +48,10 @@ int ColourPalette::getColourIndex(const Colour& aColor)
 	return iColors.indexOf(aColor);
 }
 
-void ColourPalette::setColor(int aIdx, const Colour& aColor)
+void ColourPalette::setColor(int aIdx, const Colour& aColor, const String& aName)
 {
 	iColors.set( aIdx, aColor );
+	iColorsNames.set(aIdx, aName);
 }
 
 Colour ColourPalette::getColorActive(int aIdx)
@@ -66,4 +71,16 @@ void ColourPalette::setColorsActiveBrighter(float aValue)
 	{
 		setColorActive(i, iColors[i].brighter(aValue));
 	}
+}
+
+String ColourPalette::getColourName(const Colour & aColor)
+{
+	int idx = iColors.indexOf(aColor);
+	return getColourName(idx);
+}
+
+String ColourPalette::getColourName(int aIdx)
+{
+	if (aIdx >= iColorsNames.size()) return iColorsNames[aIdx % iColorsNames.size()];
+	return iColorsNames[aIdx];
 }

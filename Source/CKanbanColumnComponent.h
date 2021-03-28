@@ -38,15 +38,13 @@ public:
 	void cardsCoutUpdated();
 	CKanbanBoardComponent& kanbanBoard();
 	CKanbanColumnContentComponent& cardsLayout();
-	void addCard(CKanbanCardComponent* aCard); // takes ownership of the pointer
+	void addCard(CKanbanCardComponent* aCard, bool aLoadFromFile = false); // takes ownership of the pointer
 	void duplicateCard(const CKanbanCardComponent* aCard);
 	void removeCard(CKanbanCardComponent* aCard);
 	void removeAllCards();
 	void scrollToBottom();
 	void scrollToTop();
 	void scrollEnsureVisible(CKanbanCardComponent* aCard);
-
-	void search(const String& aString);
 
 	String getTitle();
 	int getColumnId() const;
@@ -85,6 +83,8 @@ private:
 	bool iIsFrameActive;
 
 	bool iDueDateDone;
+
+	bool iSortedAsc;
 
 	String iColumnTitle;
 	Label iTitle;

@@ -135,8 +135,8 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 					g.setColour(Colours::whitesmoke);
 					s = "tooday";
 				}
-				else if (dval == 1) s = "tomorrow";
-				else if (dval == -1)
+				else if (dval > 0 && dval <= 1) s = "tomorrow";
+				else if (dval < 0 && dval >= -1)
 				{
 					g.setColour(Colours::tomato);
 					s = "yesterday";

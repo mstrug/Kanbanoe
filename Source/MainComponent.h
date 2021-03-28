@@ -31,8 +31,9 @@ public:
 		menuFileSaveGroupAs,
 		menuFileOpenRecent,
 		menuFileExit,
-		menuEditAddCard,
-		menuEditViewArchive,
+		menuViewArchive,
+		menuConfigSearchDynamic,
+		menuConfigSearchCaseInsensitive,
 		menuHelpAbout,
 		menubarSearch,
 		menubarSearchClear,
@@ -74,6 +75,9 @@ private:
 
 	bool openGroupFile(File& aFn);
 	bool saveGroupFile(File& aFn);
+
+	void textFindCallbackFcn();
+	void updateFindCallbacks();
 
 private:
 	class testc : public Component

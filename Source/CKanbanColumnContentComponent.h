@@ -31,7 +31,7 @@ public:
 	void resized() override;
 
 	void removeCard(CKanbanCardComponent* aCard);
-	void addCard(CKanbanCardComponent* aCard);
+	void addCard(CKanbanCardComponent* aCard, bool aLoadFromFile = false);
 	void hideCard(CKanbanCardComponent* aCard);
 	void unhideAllCards();
 	void createNewCard(const CKanbanCardComponent* aCardToCopyDataFrom = nullptr);
@@ -43,6 +43,8 @@ public:
 	void moveCardTop(CKanbanCardComponent* aCard);
 	void moveCardBottom(CKanbanCardComponent* aCard);
 	void updateDueDateDoneOnCards(bool aDone);
+	void sortCardsByColour(bool aAscending);
+	void sortCardsByDueDate(bool aAscending);
 
 public: // from DragAndDropTarget
 
