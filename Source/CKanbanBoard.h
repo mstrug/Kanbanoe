@@ -33,6 +33,7 @@ public:
     void resized() override;
 
 	void updateSize();
+	void updateColumnSize(CKanbanColumnComponent* aColumn, bool aMinimized);
 
 	void search(const String& aString);
 	void searchClear();
@@ -50,7 +51,6 @@ public:
 
 	const Array< CKanbanCardComponent* > getCardsForColumn(CKanbanColumnComponent* aColumn);
 
-
 private:
 
 	struct SArchive
@@ -61,6 +61,8 @@ private:
 	};
 
 	static bool fromJsonCardList(juce::var& aObject, CKanbanBoardComponent* aKanbanBoard, String& aReturnErrorMessage, SArchive* aArchiveObject);
+
+	int updateGridWidth();
 
 private:
 
@@ -74,9 +76,7 @@ private:
 	
 	OwnedArray< SArchive > iArchive;
 
-	Component iContent;
-
-	Viewport iViewport;
+	int iGridWidth;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanBoardComponent)
 };

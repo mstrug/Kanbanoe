@@ -50,6 +50,13 @@ public:
 	int getColumnId() const;
 	bool isColumnDueDateDone() const;
 	void setColumnDueDateDone(bool aDueDateDone);
+	
+	bool isMinimized() const;
+	void setMinimized(bool aMinimized, bool aUpdateOwner);
+
+	void setGridItem(const GridItem& aGridItem);
+	const GridItem& getGridItem();
+	bool isGridColumn(int aStartCol, int aEndCol);
 
 private:
 
@@ -63,7 +70,7 @@ private:
 public: // from ScrollBar::Listener
 
 	void scrollBarMoved(ScrollBar* scrollBarThatHasMoved, double newRangeStart) override;
-
+	
 private: // from ModalComponentManager::Callback
 
 	class BtnMenuHandler : public ModalComponentManager::Callback
@@ -80,11 +87,15 @@ private:
 
 	int iColumnId;
 
+	bool iMinimizedState;
+
 	bool iIsFrameActive;
 
 	bool iDueDateDone;
 
 	bool iSortedAsc;
+
+	GridItem iGridItem;
 
 	String iColumnTitle;
 	Label iTitle;

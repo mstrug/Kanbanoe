@@ -116,6 +116,8 @@ private:
 	std::unique_ptr<FileChooser> iFileDialog;
 
 	CTimer iTimer24h;
+	
+	SharedResourcePointer<TooltipWindow> iTooltipWindow;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

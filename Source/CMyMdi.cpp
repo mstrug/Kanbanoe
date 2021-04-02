@@ -11,27 +11,68 @@
 #include "CMyMdi.h"
 #include "MainComponent.h"
 #include "CKanbanBoard.h"
+#include "CKanbanBoardArchive.h"
 
 
-CMyMdiDoc::CMyMdiDoc(CKanbanBoardComponent* board) :iNext(nullptr), iPrev(nullptr) 
+
+/**********************************************************************************************************/
+//
+//		CMyMdiDocBase
+//
+/**********************************************************************************************************/
+
+
+CMyMdiDocBase::CMyMdiDocBase() :iNext(nullptr), iPrev(nullptr)
+{
+	addAndMakeVisible(iViewport);
+	setName("name");
+}
+
+CMyMdiDocBase::~CMyMdiDocBase()
+{
+	if (iPrev) iPrev->iNext = iNext;
+	if (iNext) iNext->iPrev = iPrev;
+}
+
+void CMyMdiDocBase::resized()
+{
+	auto c = iViewport.getViewedComponent();
+	if (c)
+	{
+		auto r(getLocalBounds());
+		iViewport.setBounds(r);
+		r.removeFromBottom(8);
+		c->setBounds(r);
+	}
+}
+
+void CMyMdiDocBase::setSearchText(const String& aText)
+{
+	iSearchText = aText;
+}
+
+String& CMyMdiDocBase::getSearchText()
+{
+	return iSearchText;
+}
+
+
+
+/**********************************************************************************************************/
+//
+//		CMyMdiDoc
+//
+/**********************************************************************************************************/
+
+
+CMyMdiDoc::CMyMdiDoc(CKanbanBoardComponent* board)
 { 
-	addAndMakeVisible(iViewport); 
 	iViewport.setViewedComponent(board, false); 
 	setName(board->getName());
 }
 
 CMyMdiDoc::~CMyMdiDoc() 
 { 
-	if (iPrev) iPrev->iNext = iNext; 
-	if (iNext) iNext->iPrev = iPrev; 
-}
-
-void CMyMdiDoc::resized()
-{ 
-	auto r(getLocalBounds()); 
-	iViewport.setBounds(r);
-	r.removeFromBottom(8); 
-	iViewport.getViewedComponent()->setBounds(r); 
 }
 
 CMyMdiDoc::operator CKanbanBoardComponent*() const 
@@ -44,20 +85,32 @@ CKanbanBoardComponent* CMyMdiDoc::getKanbanBoard()
 	return static_cast<CKanbanBoardComponent*>(iViewport.getViewedComponent()); 
 }
 
-void CMyMdiDoc::setSearchText(const String& aText) 
-{ 
-	iSearchText = aText; 
+
+
+/**********************************************************************************************************/
+//
+//		CMdiDocArchives
+//
+/**********************************************************************************************************/
+
+
+CMdiDocArchives::CMdiDocArchives(CKanbanBoardArchive* archive)
+{
+	iViewport.setViewedComponent(archive, true);
 }
 
-String& CMyMdiDoc::getSearchText() 
-{ 
-	return iSearchText;
+CMdiDocArchives::~CMdiDocArchives()
+{
 }
 
 
 
 
-
+/**********************************************************************************************************/
+//
+//		CMyMdi
+//
+/**********************************************************************************************************/
 
 
 CMyMdi::CMyMdi(MainComponent& aOwner) : iOwner(aOwner) 
@@ -72,6 +125,13 @@ bool CMyMdi::tryToCloseDocument(Component* component)
 	return true;
 }
 
+bool CMyMdi::addDocument(CMyMdiDocBase * doc)
+{
+	doc->iPrev = getLastDocument();
+	if (doc->iPrev) doc->iPrev->iNext = doc;
+	return MultiDocumentPanel::addDocument(doc, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), true);
+}
+
 bool CMyMdi::addDocument(CKanbanBoardComponent* board)
 {
 	CMyMdiDoc* doc = new CMyMdiDoc(board);
@@ -82,16 +142,16 @@ bool CMyMdi::addDocument(CKanbanBoardComponent* board)
 
 void CMyMdi::activeDocumentChanged()
 {
-	auto mdi = static_cast<CMyMdiDoc*>(getActiveDocument());
+	auto mdi = dynamic_cast<CMyMdiDocBase*>(getActiveDocument());
 	if (mdi) iOwner.setSearchText(mdi->getSearchText(), true);
 }
 
-CMyMdiDoc* CMyMdi::getLastDocument()
+CMyMdiDocBase* CMyMdi::getLastDocument()
 {
-	CMyMdiDoc* ad = (CMyMdiDoc*)getActiveDocument();
+	CMyMdiDocBase* ad = (CMyMdiDocBase*)getActiveDocument();
 	if (ad && ad->iNext != nullptr)
 	{
-		CMyMdiDoc* i = ad;
+		CMyMdiDocBase* i = ad;
 		while (i->iNext) i = i->iNext;
 		return i;
 	}
@@ -100,12 +160,13 @@ CMyMdiDoc* CMyMdi::getLastDocument()
 
 void CMyMdi::activateNextPrevDocument(bool aNext)
 {
-	CMyMdiDoc* ad = (CMyMdiDoc*)getActiveDocument();
+	CMyMdiDocBase* ad = (CMyMdiDocBase*)getActiveDocument();
+	if (!ad) return;
 	if (aNext)
 	{
 		if (ad->iNext == nullptr)
 		{
-			CMyMdiDoc* i = ad;
+			CMyMdiDocBase* i = ad;
 			while (i->iPrev) i = i->iPrev;
 			setActiveDocument(i);
 		}
@@ -115,7 +176,7 @@ void CMyMdi::activateNextPrevDocument(bool aNext)
 	{
 		if (ad->iPrev == nullptr)
 		{
-			CMyMdiDoc* i = ad;
+			CMyMdiDocBase* i = ad;
 			while (i->iNext) i = i->iNext;
 			setActiveDocument(i);
 		}

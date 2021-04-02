@@ -32,7 +32,8 @@ CKanbanColumnContentComponent::~CKanbanColumnContentComponent()
 
 void CKanbanColumnContentComponent::paint(juce::Graphics& g)
 {
-	g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
+	g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));   // clear the background
+	//g.fillAll(Colours::red);
 
 	int ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
 
@@ -55,7 +56,7 @@ void CKanbanColumnContentComponent::paint(juce::Graphics& g)
 	//g.drawText ("CKanbanColumnComponent", getLocalBounds(), juce::Justification::centred, true);   // draw some placeholder text
 
 	//int ps = CConfiguration::getIntValue("KanbanPlaceholderCardFrameSize");
-	if (iDragTargetPlaceholderActive)
+	if (iDragTargetPlaceholderActive && !iOwner.isMinimized())
 	{
 		Rectangle<int> r(iPlaceholderActiveRect);
 		//r += Point<int>(0, iViewport.getY());
@@ -114,6 +115,17 @@ void CKanbanColumnContentComponent::hideCard(CKanbanCardComponent * aCard)
 	}
 }
 
+void CKanbanColumnContentComponent::hideAllCards()
+{
+	for (auto& i : iLayout.items)
+	{
+		i.height = 0;
+		i.minHeight = 0;
+		i.margin = 0;
+	}
+	resized();
+}
+
 void CKanbanColumnContentComponent::unhideAllCards()
 {
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -148,6 +160,7 @@ void CKanbanColumnContentComponent::createNewCard(const CKanbanCardComponent* aC
 
 void CKanbanColumnContentComponent::updateSize()
 {
+	if (iOwner.isMinimized()) return;
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
 
@@ -401,6 +414,13 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 	fi.associatedComponent = dragSourceDetails.sourceComponent.get();
 	fi.margin = m / 2;
 
+	if (iOwner.isMinimized())
+	{
+		fi.height = 0;
+		fi.minHeight = 0;
+		fi.margin = 0;
+	}
+
 	if (iPlaceholderIndex == -1 && iDraggedCardIndex != -1) iPlaceholderIndex = iDraggedCardIndex;
 
 	if (iPlaceholderIndex == -1)
@@ -417,7 +437,7 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 
 	addAndMakeVisible(dragSourceDetails.sourceComponent);
 
-	if (dragSourceDetails.description != KanbanCardComponentLoadFromFileDescription)
+	if (dragSourceDetails.description != KanbanCardComponentLoadFromFileDescription )
 	{
 		resized();
 

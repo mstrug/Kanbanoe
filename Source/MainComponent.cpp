@@ -1,7 +1,8 @@
 #include "MainComponent.h"
 #include "CConfiguration.h"
+#include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.31");
+const String AppVersion("v0.32");
 
 
 
@@ -32,7 +33,7 @@ MainComponent::MainComponent() : iMdiPanel(*this), iTimer24h(*this)
 		else
 		{
 			iTextSearch.setText("");
-			auto mdi = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+			auto mdi = dynamic_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
 			if (mdi)
 			{
 				mdi->setSearchText("");
@@ -243,6 +244,22 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 
 	switch (commandID)
 	{
+	case mdiNextDoc:
+			result.setInfo("Next Tab", "", "Mdi", 0);
+			result.addDefaultKeypress(KeyPress::tabKey, ModifierKeys::ctrlModifier);
+		break;
+	case mdiPrevDoc:
+			result.setInfo("Previous Tab", "", "Mdi", 0);
+			result.addDefaultKeypress(KeyPress::tabKey, ModifierKeys::ctrlModifier | ModifierKeys::shiftModifier);
+		break;
+	case menubarSearch:
+			result.setInfo("Search", "", "Menubar", 0);
+			result.addDefaultKeypress('F', ModifierKeys::ctrlModifier);
+		break;
+	case menubarSearchClear:
+			result.setInfo("Search Clear", "", "Menubar", 0);
+			result.addDefaultKeypress(KeyPress::escapeKey, ModifierKeys::noModifiers);
+		break;
 	case menuFile:
 			result.setInfo("File", "", "Menu Bar", 0);
 			result.addDefaultKeypress('F', ModifierKeys::altModifier);
@@ -264,8 +281,8 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 			bool enabled = false;
 			if (isDocOpened)
 			{
-				CMyMdiDoc* d = static_cast<CMyMdiDoc*>( iMdiPanel.getActiveDocument() );
-				enabled = d->getKanbanBoard()->isFileSet();
+				CMyMdiDoc* d = dynamic_cast<CMyMdiDoc*>( iMdiPanel.getActiveDocument() );
+				enabled = (d ? d->getKanbanBoard()->isFileSet() : false);
 			}
 			result.setInfo("Save", "", "Menu", (!enabled ? ApplicationCommandInfo::isDisabled : 0));
 			result.addDefaultKeypress('S', ModifierKeys::ctrlModifier);
@@ -291,7 +308,8 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 			result.setInfo("Exit", "Exit from application", "Menu", 0);
 		break;
 	case menuViewArchive:
-		result.setInfo("View archives", "", "Menu", 0);
+		result.setInfo("View archives", "", "Menu", ApplicationCommandInfo::isDisabled );
+//		result.setInfo("View archives", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));
 		break;
 	case menuConfigSearchCaseInsensitive:
 			result.setInfo("Search tags/date/assigne case insensitive", "Configure search case insensitive", "Menu", (CConfiguration::getBoolValue(KConfigSearchCase) ? ApplicationCommandInfo::isTicked : 0) );
@@ -301,22 +319,6 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		break;
 	case menuHelpAbout:
 			result.setInfo("About", "", "Menu", 0);
-		break;
-	case menubarSearch:
-			result.setInfo("Search", "", "Menubar", 0);
-			result.addDefaultKeypress('F', ModifierKeys::ctrlModifier );
-		break;
-	case menubarSearchClear:
-			result.setInfo("Search Clear", "", "Menubar", 0);
-			result.addDefaultKeypress(KeyPress::escapeKey, ModifierKeys::noModifiers);
-		break;
-	case mdiNextDoc:
-			result.setInfo("Next Tab", "", "Mdi", 0);
-			result.addDefaultKeypress(KeyPress::tabKey, ModifierKeys::ctrlModifier);
-		break;
-	case mdiPrevDoc:
-			result.setInfo("Previous Tab", "", "Mdi", 0);
-			result.addDefaultKeypress(KeyPress::tabKey, ModifierKeys::ctrlModifier | ModifierKeys::shiftModifier);
 		break;
 	default:
 		break;
@@ -368,21 +370,40 @@ bool MainComponent::perform(const InvocationInfo& info)
 		{
 			if (!iMdiPanel.getActiveDocument()) break;
 
-			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
-			iMdiPanel.closeDocument(iMdiPanel.getActiveDocument(), true);
-			iKanbanBoards.removeObject(kb, true);
+			auto mdi = dynamic_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+			if (mdi)
+			{
+				auto kb = mdi->getKanbanBoard();
+				if (kb)
+				{
+					iMdiPanel.closeDocument(iMdiPanel.getActiveDocument(), true);
+					iKanbanBoards.removeObject(kb, true);
+				}
+			}
+			else
+			{
+				auto mdib = dynamic_cast<CMyMdiDocBase*>(iMdiPanel.getActiveDocument());
+				if (mdib)
+				{
+					iMdiPanel.closeDocument(iMdiPanel.getActiveDocument(), true);
+				}
+			}
 		}
 		break;
 	case menuFileSave:
 		{
 			if (!iMdiPanel.getActiveDocument()) break;
-			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
-			if (saveFile(kb))
+			auto mdi = dynamic_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+			if (mdi)
 			{
-				CConfiguration::getInstance().addRecentlyOpened(kb->getFile().getFullPathName()); // todo
+				auto kb = mdi->getKanbanBoard();
+				if (kb && saveFile(kb))
+				{
+					CConfiguration::getInstance().addRecentlyOpened(kb->getFile().getFullPathName()); // todo
 
-				iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
-				Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+					iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
+					Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+				}
 			}
 		}
 		break;
@@ -398,18 +419,21 @@ bool MainComponent::perform(const InvocationInfo& info)
 					f = f.withFileExtension("kbf");
 				}
 
-				auto md = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
-				auto kb = md->getKanbanBoard();
-				if (kb)
+				auto md = dynamic_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+				if (md)
 				{
-					kb->setFile(f);
-					md->setName(f.getFileName());
-					if (saveFile(kb))
+					auto kb = md->getKanbanBoard();
+					if (kb)
 					{
-						CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName()); // todo
+						kb->setFile(f);
+						md->setName(f.getFileName());
+						if (saveFile(kb))
+						{
+							CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName()); // todo
 
-						iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
-						Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+							iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
+							Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+						}
 					}
 				}
 			}
@@ -469,8 +493,14 @@ bool MainComponent::perform(const InvocationInfo& info)
 	case menuViewArchive:
 		{
 			if (!iMdiPanel.getActiveDocument()) break;
-			auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
-			kb->logArchives();
+
+			CKanbanBoardArchive * arch = new CKanbanBoardArchive();
+			CMdiDocArchives *cmp = new CMdiDocArchives(arch);
+			iMdiPanel.addDocument(cmp);
+
+
+			//auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
+			//kb->logArchives();
 		}
 		break;
 	case menuConfigSearchCaseInsensitive:
@@ -514,7 +544,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 
 void MainComponent::setSearchText(const String & aString, bool aUpdateSearchField)
 {
-	auto mdi = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+	auto mdi = dynamic_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
 	if (mdi)
 	{
 		auto kb = mdi->getKanbanBoard();
@@ -610,7 +640,7 @@ bool MainComponent::saveGroupFile(File & aFn)
 
 void MainComponent::textFindCallbackFcn()
 {
-	auto mdi = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+	auto mdi = dynamic_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
 	if (mdi)
 	{
 		mdi->setSearchText(iTextSearch.getText());

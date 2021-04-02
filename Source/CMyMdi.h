@@ -18,23 +18,44 @@ using namespace juce;
 
 class MainComponent;
 class CKanbanBoardComponent;
+class CKanbanBoardArchive;
 
-class CMyMdiDoc : public Component
+
+class CMyMdiDocBase : public Component
 {
-	Viewport iViewport;
+protected:
 	String iSearchText;
+	Viewport iViewport;
 public:
-	CMyMdiDoc(CKanbanBoardComponent* board);
-	virtual ~CMyMdiDoc();
+	CMyMdiDocBase();
+	virtual ~CMyMdiDocBase();
 	void resized() override;
-	operator CKanbanBoardComponent*() const;
-	CKanbanBoardComponent* getKanbanBoard();
 	void setSearchText(const String& aText);
 	String& getSearchText();
 
 public:
-	CMyMdiDoc *iNext, *iPrev;
+	CMyMdiDocBase *iNext, *iPrev;
 };
+
+
+class CMyMdiDoc : public CMyMdiDocBase
+{
+public:
+	CMyMdiDoc(CKanbanBoardComponent* board);
+	~CMyMdiDoc();
+	operator CKanbanBoardComponent*() const;
+	CKanbanBoardComponent* getKanbanBoard();
+};
+
+
+
+class CMdiDocArchives : public CMyMdiDocBase
+{
+public:
+	CMdiDocArchives(CKanbanBoardArchive* archive);
+	~CMdiDocArchives();
+};
+
 
 
 class CMyMdi : public MultiDocumentPanel
@@ -49,11 +70,13 @@ public:
 
 	CMyMdi(MainComponent& aOwner);
 
-	bool addDocument(CKanbanBoardComponent* board) ;
-	
+	bool addDocument(CMyMdiDocBase* cmp) ;
+
+	bool addDocument(CKanbanBoardComponent* board);
+
 	void activeDocumentChanged() override;
 	
-	CMyMdiDoc* getLastDocument();
+	CMyMdiDocBase* getLastDocument();
 	
 	void activateNextPrevDocument(bool aNext);
 

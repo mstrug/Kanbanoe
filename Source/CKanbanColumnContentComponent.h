@@ -33,6 +33,7 @@ public:
 	void removeCard(CKanbanCardComponent* aCard);
 	void addCard(CKanbanCardComponent* aCard, bool aLoadFromFile = false);
 	void hideCard(CKanbanCardComponent* aCard);
+	void hideAllCards();
 	void unhideAllCards();
 	void createNewCard(const CKanbanCardComponent* aCardToCopyDataFrom = nullptr);
 	void updateSize();
