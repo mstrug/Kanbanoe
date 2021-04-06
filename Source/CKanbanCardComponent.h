@@ -41,6 +41,7 @@ public:
 	void setOwner(CKanbanColumnContentComponent* aOwner);
 
 	void openPropertiesWindow();
+	void setupFromArchive(const juce::var & aArchive);
 	void setupFromJson(const NamedValueSet& aValues); // const String& aLabel, const String& aNotes, const String& aColour);
 
 	void setText(const String& aString);
@@ -70,6 +71,8 @@ public:
 	String toJson();
 
 	int getOwnerColumnId() const;
+
+	void setReadOnly(bool aReadOnly);
 
 public: // clipboard
 
@@ -112,6 +115,8 @@ private:
 
 	Label iAssigne;
 	Rectangle<int> iRectAssigne;
+
+	bool iReadOnly;
 
 	CKanbanColumnContentComponent* iOwner;
 

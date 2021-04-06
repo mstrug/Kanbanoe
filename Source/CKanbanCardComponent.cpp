@@ -20,7 +20,7 @@
 static CKanbanCardComponent* clipboardCard = nullptr;
 
 //==============================================================================
-CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iIsDone(false), iCreationDate(juce::Time::getCurrentTime())
+CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iIsDone(false), iCreationDate(juce::Time::getCurrentTime()), iReadOnly(false)
 {
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -191,7 +191,7 @@ void CKanbanCardComponent::mouseDown(const MouseEvent& event)
 
 void CKanbanCardComponent::mouseDrag(const MouseEvent& event)
 {
-	if ( !iIsDragging && event.mods.isLeftButtonDown())
+	if ( !iIsDragging && event.mods.isLeftButtonDown() && !iReadOnly )
 	{
 		if (auto* dragContainer = DragAndDropContainer::findParentDragContainerFor(this))
 		{
@@ -333,6 +333,14 @@ void CKanbanCardComponent::setOwner(CKanbanColumnContentComponent* aOwner)
 void CKanbanCardComponent::openPropertiesWindow()
 {
 	showProperties();
+}
+
+void CKanbanCardComponent::setupFromArchive(const juce::var & aArchive)
+{
+	auto obj = aArchive.getDynamicObject();
+
+	String ret;
+	CKanbanBoardComponent::fromJsonCard(obj, nullptr, ret, nullptr, false, this);
 }
 
 void CKanbanCardComponent::setupFromJson(const NamedValueSet& aValues) //const String& aLabel, const String& aNotes, const String& aColour)
@@ -546,6 +554,11 @@ int CKanbanCardComponent::getOwnerColumnId() const
 	return iOwner->getOwner().getColumnId();
 }
 
+void CKanbanCardComponent::setReadOnly(bool aReadOnly)
+{
+	iReadOnly = aReadOnly;
+}
+
 CKanbanCardComponent * CKanbanCardComponent::getClipboardCard()
 {
 	return clipboardCard;
@@ -562,6 +575,7 @@ void CKanbanCardComponent::showProperties()
 	iMouseActive = true;
 	auto comp = std::make_unique<CKanbanCardPropertiesComponent>(*this);
 	CallOutBox* box = &CallOutBox::launchAsynchronously(std::move(comp), this->getScreenBounds(), nullptr);
+	box->setEnabled(!iReadOnly);
 	box->setAlwaysOnTop(true);
 }
 

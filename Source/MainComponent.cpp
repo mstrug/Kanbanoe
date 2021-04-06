@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.32");
+const String AppVersion("v0.33");
 
 
 
@@ -308,8 +308,9 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 			result.setInfo("Exit", "Exit from application", "Menu", 0);
 		break;
 	case menuViewArchive:
-		result.setInfo("View archives", "", "Menu", ApplicationCommandInfo::isDisabled );
-//		result.setInfo("View archives", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));
+//			result.setInfo("View archives", "", "Menu", ApplicationCommandInfo::isDisabled );
+			result.setInfo("View archives", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));
+			result.addDefaultKeypress('A', ModifierKeys::altModifier);
 		break;
 	case menuConfigSearchCaseInsensitive:
 			result.setInfo("Search tags/date/assigne case insensitive", "Configure search case insensitive", "Menu", (CConfiguration::getBoolValue(KConfigSearchCase) ? ApplicationCommandInfo::isTicked : 0) );
@@ -492,10 +493,15 @@ bool MainComponent::perform(const InvocationInfo& info)
 		break;
 	case menuViewArchive:
 		{
-			if (!iMdiPanel.getActiveDocument()) break;
+			auto doc = iMdiPanel.getActiveDocument();
+			if (!doc) break;
+			CMyMdiDoc* mdoc = dynamic_cast<CMyMdiDoc*>(doc);
+			if (!mdoc) break;
+			auto kb = mdoc->getKanbanBoard();
 
-			CKanbanBoardArchive * arch = new CKanbanBoardArchive();
+			CKanbanBoardArchive * arch = new CKanbanBoardArchive(*kb);
 			CMdiDocArchives *cmp = new CMdiDocArchives(arch);
+			cmp->setName(mdoc->getName() + "\\archives");
 			iMdiPanel.addDocument(cmp);
 
 

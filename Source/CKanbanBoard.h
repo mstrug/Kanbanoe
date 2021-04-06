@@ -22,6 +22,15 @@ using namespace juce;
 class CKanbanBoardComponent  : public juce::Component
 {
 public:
+
+	struct SArchive
+	{
+		int iId;
+		String iName;
+		StringArray iKanbanCards;
+	};
+
+public:
 	CKanbanBoardComponent();
     ~CKanbanBoardComponent() override;
 
@@ -51,16 +60,15 @@ public:
 
 	const Array< CKanbanCardComponent* > getCardsForColumn(CKanbanColumnComponent* aColumn);
 
+	const OwnedArray< CKanbanColumnComponent >& getColumns();
+
+	const OwnedArray< CKanbanBoardComponent::SArchive >& getArchives();
+
+	static bool fromJsonCardList(juce::var& aObject, CKanbanBoardComponent* aKanbanBoard, String& aReturnErrorMessage, SArchive* aArchiveObject, CKanbanCardComponent* aCard = nullptr);
+
+	static bool fromJsonCard(const juce::DynamicObject* aObject, CKanbanBoardComponent* aKanbanBoard, String& aReturnErrorMessage, SArchive* aArchiveObject, bool aLoadFromFile, CKanbanCardComponent* aCard = nullptr);
+
 private:
-
-	struct SArchive
-	{
-		int iId;
-		String iName;
-		StringArray iKanbanCards;
-	};
-
-	static bool fromJsonCardList(juce::var& aObject, CKanbanBoardComponent* aKanbanBoard, String& aReturnErrorMessage, SArchive* aArchiveObject);
 
 	int updateGridWidth();
 

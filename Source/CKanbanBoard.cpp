@@ -577,7 +577,8 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 	return ret;
 }
 
-bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardComponent* aKanbanBoard, String& aReturnErrorMessage, SArchive* aArchiveObject)
+
+bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardComponent* aKanbanBoard, String& aReturnErrorMessage, SArchive* aArchiveObject, CKanbanCardComponent* aCard)
 {
 	if (cards.isArray())
 	{
@@ -586,73 +587,11 @@ bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardCompo
 		for (auto& i : *ar)
 		{
 			cnt--;
-			
+
 			auto obj2 = i.getDynamicObject();
-			var text = obj2->getProperty("text");
-			var notes = obj2->getProperty("notes"); // opt
-			var colour = obj2->getProperty("colour");
-			var columnId = obj2->getProperty("columnId");
-			var url = obj2->getProperty("url"); // opt
-			var tags = obj2->getProperty("tags"); // opt
-			var assigne = obj2->getProperty("assignee"); // opt
-			var dueDateSet = obj2->getProperty("dueDateSet");
-			var isDone = obj2->getProperty("isDone");
-			var crDate = obj2->getProperty("creationDate");
-			var dueDate = obj2->getProperty("dueDate");
-			var luDate = obj2->getProperty("lastUpdateDate");
-			if (text.isString() && colour.isString() && columnId.isInt())
+			if (!CKanbanBoardComponent::fromJsonCard(obj2, aKanbanBoard, aReturnErrorMessage, aArchiveObject, cnt > 0, aCard))
 			{
-				String s = colour;
-
-				if (aArchiveObject)
-				{
-					String _t = text;
-					String _n = notes;
-					String _tg = tags;
-					String _as = assigne;
-					String _u = url;
-					bool _dds = dueDateSet;
-					bool _id = isDone;
-					String _crd(((juce::int64)crDate));
-					String _dd(((juce::int64)dueDate));
-					String _ld(((juce::int64)luDate));
-					String ss("{ \"text\":\"" + _t + "\", \"colour\":\"" + s + "\", \"columnId\":" + String((int)columnId) + ", \"notes\":\"" + _n + "\", \"url\":\"" + _u + "\", \"tags\":\"" + _tg + "\", \"assignee\":\"" + _as + "\", \"dueDateSet\":" + (_dds ? "true" : "false") + ", \"isDone\":" + (_id ? "true" : "false") + ", \"creationDate\":" + _crd + "\, \"dueDate\":" + _dd +
-						", \"lastUpdateDate\":" + _ld + "}");
-					aArchiveObject->iKanbanCards.add(ss);
-				}
-				else
-				{
-					NamedValueSet vs;
-					vs.set("text", text);
-					vs.set("notes", notes);
-					vs.set("colour", s);
-					vs.set("url", url);
-					vs.set("tags", tags);
-					vs.set("assignee", assigne);
-					vs.set("dueDateSet", dueDateSet);
-					vs.set("isDone", isDone);
-					vs.set("creationDate", crDate);
-					vs.set("dueDate", dueDate);
-					vs.set("lastUpdateDate", luDate);
-					//card->setText(text);
-					//card->setNotes(notes);				
-					//card->setColour(Colour::fromString(s));
-
-					CKanbanCardComponent* card = aKanbanBoard->createCard();
-					card->setupFromJson(vs);
-					for (auto j : aKanbanBoard->iKanbanColumns)
-					{
-						if (j->getColumnId() == (int)columnId)
-						{
-							j->addCard(card, cnt > 0);
-							break;
-						}
-					}
-				}
-			}
-			else
-			{
-				aReturnErrorMessage = "Not supported file type [cards]";
+				aReturnErrorMessage = "Not supported file type [card]";
 				return false;
 			}
 		}
@@ -660,6 +599,90 @@ bool CKanbanBoardComponent::fromJsonCardList(juce::var& cards, CKanbanBoardCompo
 	else
 	{
 		aReturnErrorMessage = "Not supported file type [cards array]";
+		return false;
+	}
+	return true;
+}
+
+
+bool CKanbanBoardComponent::fromJsonCard(const juce::DynamicObject* obj2, CKanbanBoardComponent* aKanbanBoard, String& aReturnErrorMessage, SArchive* aArchiveObject, bool aLoadFromFile, CKanbanCardComponent* aCard)
+{
+	var text = obj2->getProperty("text");
+	var notes = obj2->getProperty("notes"); // opt
+	var colour = obj2->getProperty("colour");
+	var columnId = obj2->getProperty("columnId");
+	var url = obj2->getProperty("url"); // opt
+	var tags = obj2->getProperty("tags"); // opt
+	var assigne = obj2->getProperty("assignee"); // opt
+	var dueDateSet = obj2->getProperty("dueDateSet");
+	var isDone = obj2->getProperty("isDone");
+	var crDate = obj2->getProperty("creationDate");
+	var dueDate = obj2->getProperty("dueDate");
+	var luDate = obj2->getProperty("lastUpdateDate");
+	if (text.isString() && colour.isString() && columnId.isInt())
+	{
+		String s = colour;
+
+		if (aArchiveObject)
+		{
+			String _t = text;
+			String _n = notes;
+			String _tg = tags;
+			String _as = assigne;
+			String _u = url;
+			bool _dds = dueDateSet;
+			bool _id = isDone;
+			String _crd(((juce::int64)crDate));
+			String _dd(((juce::int64)dueDate));
+			String _ld(((juce::int64)luDate));
+			String ss("{ \"text\":\"" + _t + "\", \"colour\":\"" + s + "\", \"columnId\":" + String((int)columnId) + ", \"notes\":\"" + _n + "\", \"url\":\"" + _u + "\", \"tags\":\"" + _tg + "\", \"assignee\":\"" + _as + "\", \"dueDateSet\":" + (_dds ? "true" : "false") + ", \"isDone\":" + (_id ? "true" : "false") + ", \"creationDate\":" + _crd + "\, \"dueDate\":" + _dd +
+				", \"lastUpdateDate\":" + _ld + "}");
+			aArchiveObject->iKanbanCards.add(ss);
+		}
+		else
+		{
+			NamedValueSet vs;
+			vs.set("text", text);
+			vs.set("notes", notes);
+			vs.set("colour", s);
+			vs.set("url", url);
+			vs.set("tags", tags);
+			vs.set("assignee", assigne);
+			vs.set("dueDateSet", dueDateSet);
+			vs.set("isDone", isDone);
+			vs.set("creationDate", crDate);
+			vs.set("dueDate", dueDate);
+			vs.set("lastUpdateDate", luDate);
+			//card->setText(text);
+			//card->setNotes(notes);				
+			//card->setColour(Colour::fromString(s));
+
+			CKanbanCardComponent* card;
+			if (aCard) card = aCard;
+			else
+			{
+				jassert(aKanbanBoard);
+				card = aKanbanBoard->createCard();
+			}
+
+			card->setupFromJson(vs);
+
+			if (aKanbanBoard)
+			{
+				for (auto j : aKanbanBoard->iKanbanColumns)
+				{
+					if (j->getColumnId() == (int)columnId)
+					{
+						j->addCard(card, aLoadFromFile);
+						break;
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		aReturnErrorMessage = "Not supported file type [cards]";
 		return false;
 	}
 	return true;
@@ -796,5 +819,15 @@ const Array<CKanbanCardComponent*> CKanbanBoardComponent::getCardsForColumn(CKan
 		}
 	}
 	return ret;
+}
+
+const OwnedArray<CKanbanColumnComponent>& CKanbanBoardComponent::getColumns()
+{
+	return iKanbanColumns;
+}
+
+const OwnedArray<CKanbanBoardComponent::SArchive>& CKanbanBoardComponent::getArchives()
+{
+	return iArchive;
 }
 
