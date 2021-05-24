@@ -128,6 +128,11 @@ void CKanbanColumnContentComponent::hideAllCards()
 
 void CKanbanColumnContentComponent::unhideAllCards()
 {
+	if (iOwner.isMinimized())
+	{
+		return;
+	}
+
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 

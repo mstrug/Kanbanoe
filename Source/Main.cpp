@@ -50,6 +50,14 @@ public:
         // the other instance's command-line arguments were.
     }
 
+	void resumed() override
+	{
+		if (mainWindow)
+		{
+			mainWindow->applicationResumed();
+		}
+	}
+
     //==============================================================================
     /*
         This class implements the desktop window that contains an instance of
@@ -68,7 +76,7 @@ public:
 			//getLookAndFeel().setDefaultSansSerifTypefaceName("MS Mincho");
 
 			setUsingNativeTitleBar (true);
-			auto mainComponent = new MainComponent();
+			iMainComponent = new MainComponent();
             setContentOwned (mainComponent, true);
 
            #if JUCE_IOS || JUCE_ANDROID
@@ -99,7 +107,18 @@ public:
            subclass also calls the superclass's method.
         */
 
+		void applicationResumed()
+		{
+			if (iMainComponent)
+			{
+				iMainComponent->updateTimer24h();
+			}
+		}
+
     private:
+
+		MainComponent* iMainComponent; // destructed automatically by owner
+
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
 
