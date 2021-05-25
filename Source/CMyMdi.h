@@ -66,6 +66,8 @@ class CMyMdi : public MultiDocumentPanel
 
 	bool tryToCloseDocument(Component* component) override;
 
+	CMyMdiDocBase* getDocByFile(File& aFn);
+
 public:
 
 	CMyMdi(MainComponent& aOwner);
@@ -80,6 +82,8 @@ public:
 	
 	void activateNextPrevDocument(bool aNext);
 
+	void activateDocumentByFileName(File & aFn);
+
 	bool openFile(File & aFn, Array<String>& aRet);
 
 	bool isFileSet();
@@ -87,6 +91,8 @@ public:
 	File& getFile();
 
 	bool saveFile(File & aFn);
+
+	bool isAlreadyOpened(File& aFn);
 };
 	
 

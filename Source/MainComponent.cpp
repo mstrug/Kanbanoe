@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.34");
+const String AppVersion("v0.35");
 
 
 
@@ -205,7 +205,11 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 		File f(CConfiguration::getInstance().getRecentlyOpened(menuItemID - KRecentlyOpenedMenuItemIdBase));
 		if (f.exists())
 		{
-			if (openFile(f))
+			if (iMdiPanel.isAlreadyOpened(f))
+			{
+				iMdiPanel.activateDocumentByFileName(f);
+			}
+			else if (openFile(f))
 			{
 				CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName());
 			}
@@ -360,9 +364,16 @@ bool MainComponent::perform(const InvocationInfo& info)
 						CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName(), true);
 					}
 				}
-				else if (openFile(f))
+				else 
 				{
-					CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName());
+					if (iMdiPanel.isAlreadyOpened(f))
+					{
+						iMdiPanel.activateDocumentByFileName(f);
+					}
+					else if (openFile(f))
+					{
+						CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName());
+					}
 				}
 			}
 		}
@@ -630,9 +641,15 @@ bool MainComponent::openGroupFile(File & aFn)
 		for (auto fstr : files)
 		{
 			File f(fstr);
-			if (f.exists() && openFile(f))
+			if (f.exists() )
 			{
-				CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName());
+				if (!iMdiPanel.isAlreadyOpened(f))
+				{
+					if (openFile(f))
+					{
+						CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName());
+					}
+				}
 			}
 		}
 	}

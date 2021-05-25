@@ -78,6 +78,7 @@ void CKanbanBoardArchive::resized()
 	
 	iTable.setBounds(r);
 	iTable.getHeader().setColumnWidth(KColId_Cards, r.getWidth() - 40 - 150);
+	iTable.getViewport()->setSingleStepSizes(10, 10);
 }
 
 int CKanbanBoardArchive::getNumRows()
@@ -93,13 +94,17 @@ void CKanbanBoardArchive::paintRowBackground(Graphics &g, int rowNumber, int wid
 	/*if (rowIsSelected)
 		g.fillAll(Colours::lightblue);
 	else */
-		if (rowNumber % 2)
+	if (rowNumber % 2)
 		g.fillAll(alternateColour);
 }
 
 void CKanbanBoardArchive::paintCell(Graphics &g, int rowNumber, int columnId, int width, int height, bool rowIsSelected)
 {
 	auto& arch = iKanbanBoard.getArchives();
+	if (rowNumber >= arch.size())
+	{
+		return;
+	}
 
 	String text;
 
@@ -179,12 +184,30 @@ Component * CKanbanBoardArchive::refreshComponentForCell(int rowNumber, int colu
 	if (columnId == KColId_Cards)
 	{
 		auto& arch = iKanbanBoard.getArchives();
+		if (rowNumber >= arch.size())
+		{
+			return nullptr;
+		}
 
 		Viewport* v = static_cast<Viewport*> (existingComponentToUpdate);
-
+		bool updateComp = false;
 		if (v == nullptr)
 		{
 			v = new Viewport();
+			updateComp = true;
+		}
+		else
+		{
+			int id = v->getProperties()["arch_id"];
+			if (id != arch[rowNumber]->iId)
+			{
+				updateComp = true;
+				// todo: cache CTmp ?
+			}
+		}
+
+		if (updateComp)
+		{
 			CTmp* cards = new CTmp();
 
 			for (String& s : arch[rowNumber]->iKanbanCards)
@@ -197,6 +220,7 @@ Component * CKanbanBoardArchive::refreshComponentForCell(int rowNumber, int colu
 			}
 
 			cards->updateSizeFromCards();
+			v->getProperties().set("arch_id", arch[rowNumber]->iId);
 			v->setViewedComponent(cards);
 		}
 

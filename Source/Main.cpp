@@ -77,7 +77,12 @@ public:
 
 			setUsingNativeTitleBar (true);
 			iMainComponent = new MainComponent();
-            setContentOwned (mainComponent, true);
+			if (!iMainComponent)
+			{
+				JUCEApplication::getInstance()->shutdown();
+				return;
+			}
+            setContentOwned (iMainComponent, true);
 
            #if JUCE_IOS || JUCE_ANDROID
             setFullScreen (true);
@@ -89,7 +94,7 @@ public:
 
             setVisible (true);
 
-			if (mainComponent) addKeyListener(mainComponent->getApplicationCommandManager().getKeyMappings());
+			if (iMainComponent) addKeyListener(iMainComponent->getApplicationCommandManager().getKeyMappings());
         }
 
         void closeButtonPressed() override

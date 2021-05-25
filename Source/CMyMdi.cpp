@@ -125,6 +125,41 @@ bool CMyMdi::tryToCloseDocument(Component* component)
 	return true;
 }
 
+CMyMdiDocBase * CMyMdi::getDocByFile(File & aFn)
+{
+	CMyMdiDocBase* ad = (CMyMdiDocBase*)getActiveDocument();
+	if (!ad) return nullptr;
+
+	CMyMdiDoc* ptr = dynamic_cast<CMyMdiDoc*>(ad);
+	if (ptr && ptr->getKanbanBoard()->getFile() == aFn)
+	{
+		return ptr;
+	}
+
+	CMyMdiDocBase* i = ad;
+	while (i->iNext)
+	{
+		CMyMdiDoc* ptr = dynamic_cast<CMyMdiDoc*>(i->iNext);
+		if (ptr && ptr->getKanbanBoard()->getFile() == aFn)
+		{
+			return ptr;
+		}
+		i = i->iNext;
+	}
+
+	i = ad;
+	while (i->iPrev)
+	{
+		CMyMdiDoc* ptr = dynamic_cast<CMyMdiDoc*>(i->iPrev);
+		if (ptr && ptr->getKanbanBoard()->getFile() == aFn)
+		{
+			return ptr;
+		}
+		i = i->iPrev;
+	}
+	return nullptr;
+}
+
 bool CMyMdi::addDocument(CMyMdiDocBase * doc)
 {
 	doc->iPrev = getLastDocument();
@@ -181,6 +216,15 @@ void CMyMdi::activateNextPrevDocument(bool aNext)
 			setActiveDocument(i);
 		}
 		else setActiveDocument(ad->iPrev);
+	}
+}
+
+void CMyMdi::activateDocumentByFileName(File & aFn)
+{
+	auto doc = getDocByFile(aFn);
+	if (doc)
+	{
+		setActiveDocument(doc);
 	}
 }
 
@@ -276,4 +320,9 @@ bool CMyMdi::saveFile(File & aFn)
 	}
 
 	return false;
+}
+
+bool CMyMdi::isAlreadyOpened(File & aFn)
+{
+	return getDocByFile( aFn ) != nullptr;
 }

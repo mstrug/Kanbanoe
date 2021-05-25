@@ -149,9 +149,11 @@ void CKanbanColumnComponent::paintOverChildren(Graphics & g)
 void CKanbanColumnComponent::resized()
 {
 	Rectangle<int> r(getLocalBounds());
+
 	if (iMinimizedState)
 	{
-		iTitle.setSize(iTitle.getWidth(), r.getWidth());
+//		iTitle.setSize(iTitle.getWidth(), r.getWidth());
+		iTitle.setSize(r.getHeight(), r.getWidth());
 		iTitle.setJustificationType(Justification::centredRight);
 		iTitle.setTransform(AffineTransform::rotation(-MathConstants<float>::halfPi, 0, 0).translated(0, iTitle.getWidth() + KTitleHeight / 2));
 
