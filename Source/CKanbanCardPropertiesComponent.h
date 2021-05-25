@@ -41,6 +41,8 @@ public: // from KeyListener
 
 private:
 
+	void layout();
+
 	void changesApply();
 
 	void setDueDate( double aSliderVal );
@@ -69,6 +71,10 @@ private:
 	Label iLabelSlider;
 
 	std::unique_ptr<ColoursComponent> iColours;
+
+	TextButton iButtonMaximize;
+
+	bool iMaximized;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanCardPropertiesComponent)
 };

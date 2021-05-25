@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.35");
+const String AppVersion("v0.36");
 
 
 
