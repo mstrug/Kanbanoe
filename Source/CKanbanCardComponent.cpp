@@ -114,49 +114,11 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 			auto b1 = b.removeFromRight(50);
 			auto b2 = b1.removeFromTop(20);
 			b2.translate(-1, 0);
-			g.setColour(Colours::lightgrey);
 			g.setFont(juce::Font(12.0f));
 
-			
-			auto ct = Time::getCurrentTime();
-			RelativeTime d = Time( iDueDate.getYear(), iDueDate.getMonth(), iDueDate.getDayOfMonth(),0,0) - Time(ct.getYear(), ct.getMonth(), ct.getDayOfMonth(), 0, 0);
-			double dval = d.inDays();
-			String s;
-
-			if (iIsDone)
-			{
-				s = "done";
-			}
-			else
-			{
-				if (dval > 14) s = String((int)ceil(d.inWeeks())) + "wks";
-				else if (dval == 0)
-				{
-					g.setColour(Colours::whitesmoke);
-					s = "tooday";
-				}
-				else if (dval > 0 && dval <= 1) s = "tomorrow";
-				else if (dval < 0 && dval >= -1)
-				{
-					g.setColour(Colours::tomato);
-					s = "yesterday";
-				}
-				else if (dval < -365)
-				{
-					g.setColour(Colours::red);
-					s = String((int)ceil(d.inWeeks()) / 54) + "y";
-				}
-				else if (dval < -14)
-				{
-					g.setColour(Colours::red);
-					s = String((int)ceil(d.inWeeks())) + "wks";
-				}
-				else
-				{
-					if ( dval < 0 ) g.setColour(Colours::red);
-					s = String((int)ceil(dval)) + "d";
-				}
-			}
+			juce::Colour col;
+			String s = getDueDateAsString(&col);
+			g.setColour(col);
 
 			g.drawText( s, b2, Justification::topRight, false);
 		}
@@ -416,9 +378,63 @@ void CKanbanCardComponent::setDueDate(bool aIsSet, juce::Time& aDueDate)
 	else iDueDate = Time(0);
 }
 
+bool CKanbanCardComponent::isDone()
+{
+	return iIsDone;
+}
+
 void CKanbanCardComponent::setDone(bool aDone)
 {
 	iIsDone = aDone;
+}
+
+String CKanbanCardComponent::getDueDateAsString(juce::Colour* aColour)
+{
+	String s;
+	if (iIsDueDateSet)
+	{
+		auto ct = Time::getCurrentTime();
+		RelativeTime d = Time(iDueDate.getYear(), iDueDate.getMonth(), iDueDate.getDayOfMonth(), 0, 0) - Time(ct.getYear(), ct.getMonth(), ct.getDayOfMonth(), 0, 0);
+		double dval = d.inDays();
+		if (aColour) *aColour = Colours::lightgrey;
+
+		if (iIsDone)
+		{
+			s = "done";
+		}
+		else
+		{
+			if (dval > 14) s = String((int)ceil(d.inWeeks())) + "wks";
+			else if (dval == 0)
+			{
+				if (aColour) *aColour = Colours::whitesmoke;
+				s = "tooday";
+			}
+			else if (dval > 0 && dval <= 1) s = "tomorrow";
+			else if (dval < 0 && dval >= -1)
+			{
+				if (aColour) *aColour = Colours::tomato;
+				s = "yesterday";
+			}
+			else if (dval < -365)
+			{
+				if (aColour) *aColour = Colours::red;
+				s = String((int)ceil(d.inWeeks()) / 54) + "y";
+			}
+			else if (dval < -14)
+			{
+				if (aColour) *aColour = Colours::red;
+				s = String((int)ceil(d.inWeeks())) + "wks";
+			}
+			else
+			{
+				if (aColour) *aColour = Colours::red;
+				s = String((int)ceil(dval)) + "d";
+			}
+		}
+	}
+
+	return s;
 }
 
 juce::Time CKanbanCardComponent::getCreationDate()

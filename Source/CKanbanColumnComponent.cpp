@@ -37,6 +37,12 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 	iTitleCardsCount.setTooltip("Cards count");
 	addAndMakeVisible(iTitleCardsCount);
 
+	iTitleMinimalDueDate.addMouseListener(this, true);
+	iTitleMinimalDueDate.setInterceptsMouseClicks(false, false);
+	iTitleMinimalDueDate.setTooltip("Minimal due date");
+	addAndMakeVisible(iTitleMinimalDueDate);
+	iTitleMinimalDueDate.setVisible(false);
+
 	updateColumnTitle();
 
 	DrawablePath btnImg;
@@ -161,6 +167,11 @@ void CKanbanColumnComponent::resized()
 
 		iTitleCardsCount.setBounds(r.removeFromBottom(KTitleHeight));
 		iTitleCardsCount.setJustificationType(Justification::centredTop);
+
+		auto bb = iTitleCardsCount.getBounds();
+		bb.translate(0, -KTitleHeight);
+		iTitleMinimalDueDate.setBounds(bb);
+		iTitleMinimalDueDate.setJustificationType(Justification::centredTop);
 	}
 	else
 	{
@@ -204,15 +215,23 @@ void CKanbanColumnComponent::resized()
 
 void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 {
-	if (!iMinimizedState && event.mods.isRightButtonDown() && getLocalBounds().contains( event.getPosition() ) )
+	if ( event.mods.isRightButtonDown() && getLocalBounds().contains( event.getPosition() ) )
 	{
 		PopupMenu menu;
 		menu.addItem("Add card", [&]() 
-		{ 
+		{
+			if (iMinimizedState)
+			{
+				this->setMinimized(false, true);
+			}
 			this->iViewportLayout.createNewCard();
 		});
 		menu.addItem("Paste card", CKanbanCardComponent::getClipboardCard(), false, [&]()
 		{
+			if (iMinimizedState)
+			{
+				this->setMinimized(false, true);
+			}
 			duplicateCard(CKanbanCardComponent::getClipboardCard());
 		});
 		/*menu.addSeparator();
@@ -380,8 +399,10 @@ void CKanbanColumnComponent::setMinimized(bool aMinimized, bool aUpdateOwner)
 		iAddCardButton.setVisible(true);
 		iSetupButton.setVisible(true);
 		iScrollBar.setVisible(true);
+		iTitleMinimalDueDate.setVisible(false);
 		//iTitle.addMouseListener(this, true);
 		//iTitleCardsCount.addMouseListener(this, true);
+		iOwner.updateSearch();
 	}
 	else
 	{
@@ -391,11 +412,13 @@ void CKanbanColumnComponent::setMinimized(bool aMinimized, bool aUpdateOwner)
 		iAddCardButton.setVisible(false);
 		iSetupButton.setVisible(false);
 		iScrollBar.setVisible(false);
+		iTitleMinimalDueDate.setVisible(true);
 		//iTitle.removeMouseListener(this);
 		//iTitleCardsCount.removeMouseListener(this);
 
 		//Rectangle<int> r(getLocalBounds());
 		//iViewportLayout.setBounds(r);
+		updateColumnTitle();
 	}
 
 	if ( aUpdateOwner ) iOwner.updateColumnSize(this, iMinimizedState);
@@ -502,10 +525,47 @@ void CKanbanColumnComponent::archive()
 	//this->iViewportLayout.createNewCard();
 }
 
+String CKanbanColumnComponent::getMinimalDueDate(juce::Colour* aColour)
+{
+	auto ar = iOwner.getCardsForColumn(this);
+
+	juce::int64 min = INT64_MAX;
+	String dd;
+
+	if (ar.size() > 0)
+	{
+		for (int i = ar.size() - 1; i >= 0; --i)
+		{
+			if (ar[i]->isDueDateSet() && !ar[i]->isDone())
+			{
+				auto t = ar[i]->getDueDate().toMilliseconds();
+				if (t < min)
+				{
+					dd = ar[i]->getDueDateAsString(aColour);
+					min = t;
+				}
+			}
+		}
+	}
+
+	return dd;
+}
+
 void CKanbanColumnComponent::updateColumnTitle()
 {
-	iTitleCardsCount.setText(" (" + String(iViewportLayout.getCardsCount()) + ")", NotificationType::dontSendNotification);
+	iTitleCardsCount.setText(" (" + String(iViewportLayout.getUnhiddenCardsCount() /*getCardsCount()*/) + ")", NotificationType::dontSendNotification);
 	iTitle.setText(iColumnTitle, NotificationType::dontSendNotification);
+
+	if (iTitleMinimalDueDate.isVisible())
+	{
+		juce::Colour c;
+		auto s = getMinimalDueDate(&c);
+		if (!s.isEmpty())
+		{
+			iTitleMinimalDueDate.setColour(Label::textColourId, c.darker(0.3));
+			iTitleMinimalDueDate.setText(s, NotificationType::dontSendNotification);
+		}
+	}
 
 //	iTitleCardsCount.setText("[" + String(iViewportLayout.getCardsCount()) +"]", NotificationType::dontSendNotification);
 //	iTitle.setText(iColumnTitle + " | " + String(iViewportLayout.getCardsCount()) + "", NotificationType::dontSendNotification);

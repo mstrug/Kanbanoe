@@ -72,9 +72,9 @@ public:
 
 	CMyMdi(MainComponent& aOwner);
 
-	bool addDocument(CMyMdiDocBase* cmp) ;
+	bool addDocument(CMyMdiDocBase* cmp, CMyMdiDocBase * docAfter = nullptr);
 
-	bool addDocument(CKanbanBoardComponent* board);
+	bool addDocument(CKanbanBoardComponent* board, CMyMdiDocBase * docAfter = nullptr);
 
 	void activeDocumentChanged() override;
 	
@@ -83,6 +83,8 @@ public:
 	void activateNextPrevDocument(bool aNext);
 
 	void activateDocumentByFileName(File & aFn);
+
+	void activateDocumentByTabName(const String& aTabName);
 
 	bool openFile(File & aFn, Array<String>& aRet);
 
@@ -93,6 +95,8 @@ public:
 	bool saveFile(File & aFn);
 
 	bool isAlreadyOpened(File& aFn);
+
+	bool isAlreadyOpened(const String& aTabName);
 };
 	
 

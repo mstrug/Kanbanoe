@@ -26,6 +26,7 @@ public:
 	struct SArchive
 	{
 		int iId;
+		juce::Time iDate;
 		String iName;
 		StringArray iKanbanCards;
 	};
@@ -43,9 +44,11 @@ public:
 
 	void updateSize();
 	void updateColumnSize(CKanbanColumnComponent* aColumn, bool aMinimized);
+	void updateComunsTitles();
 
 	void search(const String& aString);
 	void searchClear();
+	void updateSearch();
 
 	CKanbanCardComponent* createCard();
 	void removeCard(CKanbanCardComponent* aCard);
@@ -85,6 +88,8 @@ private:
 	OwnedArray< SArchive > iArchive;
 
 	int iGridWidth;
+
+	String iSearchText;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanBoardComponent)
 };

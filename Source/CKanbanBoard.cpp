@@ -171,8 +171,18 @@ void CKanbanBoardComponent::updateColumnSize(CKanbanColumnComponent * aColumn, b
 	repaint();
 }
 
+void CKanbanBoardComponent::updateComunsTitles()
+{
+	for (auto c : iKanbanColumns)
+	{
+		c->updateColumnTitle();
+	}
+}
+
 void CKanbanBoardComponent::search(const String & aString)
 {
+	iSearchText = aString;
+
 	String s = aString.trim();
 	String stag;
 	bool tagmode = false, colormode = false, assignemode = false;
@@ -339,14 +349,27 @@ void CKanbanBoardComponent::search(const String & aString)
 			}
 		}
 	}
+
+	updateComunsTitles();
 }
 
 void CKanbanBoardComponent::searchClear()
 {
+	iSearchText.clear();
+
 	for (auto c : iKanbanColumns)
 	{
 		c->cardsLayout().unhideAllCards();
 	}
+
+	updateComunsTitles();
+}
+
+void CKanbanBoardComponent::updateSearch()
+{
+	String tmp = iSearchText;
+	searchClear();
+	if (!tmp.isEmpty()) search(tmp); // this way we handle proper hidden cards count
 }
 
 CKanbanCardComponent* CKanbanBoardComponent::createCard()
@@ -371,6 +394,7 @@ bool CKanbanBoardComponent::archiveColumn(CKanbanColumnComponent * aColumn, cons
 	iArchive.add(arch);
 	arch->iId = archiveId;
 	arch->iName = aArchiveName;
+	arch->iDate = juce::Time::getCurrentTime();
 
 	for (auto& c : iKanbanCards)
 	{
@@ -545,12 +569,17 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 			var name = obj2->getProperty("name");
 			var id = obj2->getProperty("id"); 
 			var cards = obj2->getProperty("cards");
+			var date = obj2->getProperty("date");
 			if (name.isString() && id.isInt() && cards.isArray())
 			{
 				SArchive* archiveObject = new SArchive();
 				ret->iArchive.add(archiveObject);
 				archiveObject->iId = (int)id;
 				archiveObject->iName = URL::removeEscapeChars(name);
+				if (date.isInt64())
+				{
+					archiveObject->iDate = juce::Time((juce::int64)date);
+				}
 
 				if (!fromJsonCardList(cards, ret, aReturnErrorMessage, archiveObject))
 				{
@@ -772,7 +801,7 @@ bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 		for (auto l : iArchive)
 		{
 			if (j > 0) f << ",\n";
-			f << "{ \"id\":" + String(l->iId) + ", \"name\":\"" + URL::addEscapeChars( l->iName, false ) + "\", \"cards\": [\n";
+			f << "{ \"id\":" + String(l->iId) + ", \"name\":\"" + URL::addEscapeChars( l->iName, false ) + "\", \"date\":" + String(l->iDate.toMilliseconds()) + ", \"cards\": [\n";
 
 			for (int i = 0; i < l->iKanbanCards.size(); i++)
 			{

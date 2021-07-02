@@ -160,17 +160,34 @@ CMyMdiDocBase * CMyMdi::getDocByFile(File & aFn)
 	return nullptr;
 }
 
-bool CMyMdi::addDocument(CMyMdiDocBase * doc)
+bool CMyMdi::addDocument(CMyMdiDocBase * doc, CMyMdiDocBase * docAfter)
 {
-	doc->iPrev = getLastDocument();
+	if (docAfter)
+	{
+		doc->iPrev = getLastDocument();
+		//doc->iPrev = docAfter; // todo: requires refactorizatino of MultiDocumentPanel and adding insert document at index function
+	}
+	else
+	{
+		doc->iPrev = getLastDocument();
+	}
 	if (doc->iPrev) doc->iPrev->iNext = doc;
 	return MultiDocumentPanel::addDocument(doc, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), true);
 }
 
-bool CMyMdi::addDocument(CKanbanBoardComponent* board)
+bool CMyMdi::addDocument(CKanbanBoardComponent* board, CMyMdiDocBase * docAfter)
 {
 	CMyMdiDoc* doc = new CMyMdiDoc(board);
-	doc->iPrev = getLastDocument();
+
+	if (docAfter)
+	{
+		doc->iPrev = getLastDocument();
+		//doc->iPrev = docAfter; // todo: requires refactorizatino of MultiDocumentPanel and adding insert document at index function
+	}
+	else
+	{
+		doc->iPrev = getLastDocument();
+	}
 	if (doc->iPrev) doc->iPrev->iNext = doc;
 	return MultiDocumentPanel::addDocument(doc, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), true);
 }
@@ -225,6 +242,18 @@ void CMyMdi::activateDocumentByFileName(File & aFn)
 	if (doc)
 	{
 		setActiveDocument(doc);
+	}
+}
+
+void CMyMdi::activateDocumentByTabName(const String & aTabName)
+{
+	for (int i = 0; i < getNumDocuments(); i++)
+	{
+		CMyMdiDoc* ad = (CMyMdiDoc*)getDocument(i);
+		if (ad->getName().compare(aTabName) == 0)
+		{
+			setActiveDocument(ad);
+		}
 	}
 }
 
@@ -325,4 +354,17 @@ bool CMyMdi::saveFile(File & aFn)
 bool CMyMdi::isAlreadyOpened(File & aFn)
 {
 	return getDocByFile( aFn ) != nullptr;
+}
+
+bool CMyMdi::isAlreadyOpened(const String & aTabName)
+{
+	for (int i = 0; i < getNumDocuments(); i++)
+	{
+		CMyMdiDoc* ad = (CMyMdiDoc*)getDocument(i);
+		if (ad->getName().compare(aTabName) == 0)
+		{
+			return true;
+		}
+	}
+	return false;
 }

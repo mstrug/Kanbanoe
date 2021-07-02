@@ -17,8 +17,11 @@
 
 const int KColId_Id = 1;
 const int KColId_Name = 2;
-const int KColId_Cards = 3;
+const int KColId_Date = 3;
+const int KColId_Count = 4;
+const int KColId_Cards = 5;
 
+const int KColsWidth[KColId_Cards + 1] = { 0, 35,150,120, 40, 500 };
 
 
 //==============================================================================
@@ -29,9 +32,11 @@ CKanbanBoardArchive::CKanbanBoardArchive(CKanbanBoardComponent &aKanbanBoard) : 
 
 	addAndMakeVisible(iTable);
 	iTable.setModel(this);
-	iTable.getHeader().addColumn("ID", KColId_Id, 40);
-	iTable.getHeader().addColumn("Name", KColId_Name, 150);
-	iTable.getHeader().addColumn("Cards", KColId_Cards, 500);
+	iTable.getHeader().addColumn("ID", KColId_Id, KColsWidth[KColId_Id]);
+	iTable.getHeader().addColumn("Name", KColId_Name, KColsWidth[KColId_Name]);
+	iTable.getHeader().addColumn("Creation date", KColId_Date, KColsWidth[KColId_Date]);
+	iTable.getHeader().addColumn("Count", KColId_Count, KColsWidth[KColId_Count]);
+	iTable.getHeader().addColumn("Cards", KColId_Cards, KColsWidth[KColId_Cards]);
 	iTable.getHeader().setSortColumnId(1, true);
 
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -77,7 +82,7 @@ void CKanbanBoardArchive::resized()
 	r.reduce(m, m);
 	
 	iTable.setBounds(r);
-	iTable.getHeader().setColumnWidth(KColId_Cards, r.getWidth() - 40 - 150);
+	iTable.getHeader().setColumnWidth(KColId_Cards, r.getWidth() - KColsWidth[KColId_Id] - KColsWidth[KColId_Name] - KColsWidth[KColId_Date] - KColsWidth[KColId_Count]);
 	iTable.getViewport()->setSingleStepSizes(10, 10);
 }
 
@@ -115,6 +120,12 @@ void CKanbanBoardArchive::paintCell(Graphics &g, int rowNumber, int columnId, in
 		break;
 	case KColId_Name:
 		text = arch[rowNumber]->iName;
+		break;
+	case KColId_Date:
+		if (arch[rowNumber]->iDate.toMilliseconds() != 0) text = arch[rowNumber]->iDate.toString(true, true, false, true);
+		break;
+	case KColId_Count:
+		text = String(arch[rowNumber]->iKanbanCards.size());
 		break;
 	case KColId_Cards:
 		break;

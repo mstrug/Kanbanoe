@@ -116,6 +116,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	addAndMakeVisible(iLabelCreationDate);
 
 	iButtonMaximize.setButtonText("=");
+	iButtonMaximize.setWantsKeyboardFocus(false);
 	iButtonMaximize.onClick = [this]
 	{
 		if (this->iMaximized)

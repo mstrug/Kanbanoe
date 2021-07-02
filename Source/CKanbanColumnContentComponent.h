@@ -41,6 +41,7 @@ public:
 	CKanbanColumnComponent& getOwner();
 	const FlexBox& getLayout();
 	int getCardsCount();
+	int getUnhiddenCardsCount();
 	void moveCardTop(CKanbanCardComponent* aCard);
 	void moveCardBottom(CKanbanCardComponent* aCard);
 	void updateDueDateDoneOnCards(bool aDone);
@@ -78,6 +79,8 @@ private:
 	int iMinimumHeight;
 
 	int iScrollPos;
+
+	int iHiddenCardsFromSearchCount;
 
 	friend class CKanbanColumnComponent;
 

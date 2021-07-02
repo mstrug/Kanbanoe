@@ -52,7 +52,9 @@ public:
 	
 	bool isDueDateSet();
 	void setDueDate(bool aIsSet, juce::Time& aDueDate);
+	bool isDone();
 	void setDone(bool aDone);
+	String getDueDateAsString( juce::Colour* aColour = nullptr);
 	juce::Time getCreationDate();
 	juce::Time getLastUpdateDate();
 	juce::Time getDueDate();

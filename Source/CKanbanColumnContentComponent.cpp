@@ -15,7 +15,7 @@
 #include "CConfiguration.h"
 
 //==============================================================================
-CKanbanColumnContentComponent::CKanbanColumnContentComponent(CKanbanColumnComponent& aOwner) : iOwner(aOwner), iDragTargetActive(false), iDragTargetPlaceholderActive(false), iPlaceholderIndex(-1), iDraggedCardIndex(-1), iScrollPos(0)
+CKanbanColumnContentComponent::CKanbanColumnContentComponent(CKanbanColumnComponent& aOwner) : iOwner(aOwner), iDragTargetActive(false), iDragTargetPlaceholderActive(false), iPlaceholderIndex(-1), iDraggedCardIndex(-1), iScrollPos(0), iHiddenCardsFromSearchCount(0)
 {
 	iLayout.alignContent = FlexBox::AlignContent::center;
 	iLayout.alignItems = FlexBox::AlignItems::flexStart;
@@ -102,6 +102,8 @@ void CKanbanColumnContentComponent::addCard(CKanbanCardComponent* aCard, bool aL
 
 void CKanbanColumnContentComponent::hideCard(CKanbanCardComponent * aCard)
 {
+	iHiddenCardsFromSearchCount++;
+
 	for (auto& i : iLayout.items)
 	{
 		if (i.associatedComponent == aCard)
@@ -128,6 +130,7 @@ void CKanbanColumnContentComponent::hideAllCards()
 
 void CKanbanColumnContentComponent::unhideAllCards()
 {
+	iHiddenCardsFromSearchCount = 0;
 	if (iOwner.isMinimized())
 	{
 		return;
@@ -201,6 +204,16 @@ const FlexBox& CKanbanColumnContentComponent::getLayout()
 int CKanbanColumnContentComponent::getCardsCount()
 {
 	return iLayout.items.size();
+}
+
+int CKanbanColumnContentComponent::getUnhiddenCardsCount()
+{
+	int ret = iLayout.items.size() - iHiddenCardsFromSearchCount;
+/*	for (auto& i : iLayout.items)
+	{
+		if (i.height == 0) ret--;
+	}*/
+	return ret;
 }
 
 void CKanbanColumnContentComponent::moveCardTop(CKanbanCardComponent * aCard)

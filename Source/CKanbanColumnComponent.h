@@ -58,14 +58,15 @@ public:
 	const GridItem& getGridItem();
 	bool isGridColumn(int aStartCol, int aEndCol);
 
+	void updateColumnTitle();
+
 private:
 
 	void showSetupMenu();
 
 	void archive();
 
-	void updateColumnTitle();
-
+	String getMinimalDueDate( juce::Colour* aColour = nullptr);
 
 public: // from ScrollBar::Listener
 
@@ -100,6 +101,7 @@ private:
 	String iColumnTitle;
 	Label iTitle;
 	Label iTitleCardsCount;
+	Label iTitleMinimalDueDate;
 
 	ScrollBar iScrollBar;
 

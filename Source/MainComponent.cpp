@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.36");
+const String AppVersion("v0.37");
 
 
 
@@ -509,11 +509,17 @@ bool MainComponent::perform(const InvocationInfo& info)
 			CMyMdiDoc* mdoc = dynamic_cast<CMyMdiDoc*>(doc);
 			if (!mdoc) break;
 			auto kb = mdoc->getKanbanBoard();
+			String tabName = mdoc->getName() + "\\archives";
+			if (iMdiPanel.isAlreadyOpened(tabName))
+			{
+				iMdiPanel.activateDocumentByTabName(tabName);
+				break;
+			}
 
 			CKanbanBoardArchive * arch = new CKanbanBoardArchive(*kb);
 			CMdiDocArchives *cmp = new CMdiDocArchives(arch);
-			cmp->setName(mdoc->getName() + "\\archives");
-			iMdiPanel.addDocument(cmp);
+			cmp->setName(tabName);
+			iMdiPanel.addDocument(cmp, mdoc);
 
 
 			//auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
