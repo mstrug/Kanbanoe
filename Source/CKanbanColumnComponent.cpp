@@ -16,11 +16,13 @@
 const int KTitleHeight = 25;
 
 
-CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iMinimizedState(false), iIsFrameActive(false), iDueDateDone(false), iSortedAsc(false), iColumnTitle(aTitle), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw)
+CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iMinimizedState(false), iIsFrameActive(false), iDueDateDone(false), iSortedAsc(false), iColumnTitle(aTitle), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw), iMouseTitleIsActive(false)
 {
 	//setInterceptsMouseClicks(false, true);
+	//setRepaintsOnMouseActivity(true);
+	setComponentID("1");
 
-	iViewportLayout.addMouseListener(this, false);
+	iViewportLayout.addMouseListener(this, true);
 	addAndMakeVisible(iViewportLayout);
 
 	//iTitle.setText(aTitle, NotificationType::dontSendNotification);
@@ -28,6 +30,7 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 	iTitle.setInterceptsMouseClicks(false, false);
 	//iTitle.setColour(Label::backgroundColourId, Colours::red);
 	addAndMakeVisible(iTitle);
+	iTitle.setComponentID("2");
 
 	iTitleCardsCount.addMouseListener(this, true);
 	iTitleCardsCount.setInterceptsMouseClicks(false, false);
@@ -127,8 +130,18 @@ void CKanbanColumnComponent::paint(juce::Graphics& g)
 {
 	g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));   // clear the background
 
-	//g.fillAll(Colours::red);
-
+	if (iMouseTitleIsActive )
+	{
+		if (iMinimizedState)
+		{
+			g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.08f));   // clear the background
+		}
+		else
+		{
+			g.setColour(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.08f));   // clear the background)
+			g.fillRect(iTitle.getBoundsInParent());
+		}
+	}
 }
 
 void CKanbanColumnComponent::paintOverChildren(Graphics & g)
@@ -260,6 +273,45 @@ void CKanbanColumnComponent::mouseWheelMove(const MouseEvent & event, const Mous
 		auto e = event.getEventRelativeTo(&iScrollBar);
 		iScrollBar.mouseWheelMove(e, details);
 	}
+}
+
+
+void CKanbanColumnComponent::mouseMove(const MouseEvent & event)
+{
+	if ( iMinimizedState || ( !iMinimizedState && event.eventComponent == (juce::Component*)this) )
+	{
+		if (!iMouseTitleIsActive && iTitle.getBoundsInParent().contains(event.getPosition()))
+		{
+			iMouseTitleIsActive = true;
+			repaint();
+		}
+		else if (iMouseTitleIsActive && !iTitle.getBoundsInParent().contains(event.getPosition()))
+		{
+			iMouseTitleIsActive = false;
+			repaint();
+		}
+	}
+}
+
+void CKanbanColumnComponent::mouseExit(const MouseEvent & event)
+{
+	iMouseTitleIsActive = false;
+	repaint();
+}
+
+bool CKanbanColumnComponent::keyPressed(const KeyPress & key)
+{
+	if (key.getKeyCode() == key.pageDownKey)
+	{
+		iScrollBar.moveScrollbarInPages(1);
+		return true;
+	}
+	else if (key.getKeyCode() == key.pageUpKey) 
+	{
+		iScrollBar.moveScrollbarInPages(-1);
+		return true;
+	}
+	return false;
 }
 
 void CKanbanColumnComponent::setActiveFrame(bool aActive)
@@ -395,7 +447,7 @@ void CKanbanColumnComponent::setMinimized(bool aMinimized, bool aUpdateOwner)
 	{
 		iMinimizedState = false;
 		iViewportLayout.unhideAllCards();
-		//iViewportLayout.setVisible(true);
+		iViewportLayout.setAlpha(1);
 		iAddCardButton.setVisible(true);
 		iSetupButton.setVisible(true);
 		iScrollBar.setVisible(true);
@@ -408,7 +460,7 @@ void CKanbanColumnComponent::setMinimized(bool aMinimized, bool aUpdateOwner)
 	{
 		iMinimizedState = true;
 		iViewportLayout.hideAllCards();
-		//iViewportLayout.setVisible(false);
+		iViewportLayout.setAlpha(0);
 		iAddCardButton.setVisible(false);
 		iSetupButton.setVisible(false);
 		iScrollBar.setVisible(false);
@@ -461,6 +513,10 @@ void CKanbanColumnComponent::showSetupMenu()
 	menu.addItem("Minimize", true, false, [&]()
 	{
 		setMinimized(true, true);
+	});
+	menu.addItem("Set max WIP", [&]()
+	{
+
 	});
 	menu.addItem("Remove all cards", iViewportLayout.getCardsCount() > 0, false, [&]()
 	{
@@ -553,7 +609,15 @@ String CKanbanColumnComponent::getMinimalDueDate(juce::Colour* aColour)
 
 void CKanbanColumnComponent::updateColumnTitle()
 {
-	iTitleCardsCount.setText(" (" + String(iViewportLayout.getUnhiddenCardsCount() /*getCardsCount()*/) + ")", NotificationType::dontSendNotification);
+	if (iViewportLayout.isMaxWipSet())
+	{
+		iTitleCardsCount.setText(" (" + String(iViewportLayout.getUnhiddenCardsCount() /*getCardsCount()*/) + "/" + String(iViewportLayout.getCardsMaxWip()) + ")", NotificationType::dontSendNotification);
+	}
+	else
+	{
+		iTitleCardsCount.setText(" (" + String(iViewportLayout.getUnhiddenCardsCount() /*getCardsCount()*/) + ")", NotificationType::dontSendNotification);
+	}
+
 	iTitle.setText(iColumnTitle, NotificationType::dontSendNotification);
 
 	if (iTitleMinimalDueDate.isVisible())
@@ -562,7 +626,7 @@ void CKanbanColumnComponent::updateColumnTitle()
 		auto s = getMinimalDueDate(&c);
 		if (!s.isEmpty())
 		{
-			iTitleMinimalDueDate.setColour(Label::textColourId, c.darker(0.3));
+			iTitleMinimalDueDate.setColour(Label::textColourId, c.darker(0));
 			iTitleMinimalDueDate.setText(s, NotificationType::dontSendNotification);
 		}
 	}

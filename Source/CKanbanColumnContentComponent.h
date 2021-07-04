@@ -41,7 +41,9 @@ public:
 	CKanbanColumnComponent& getOwner();
 	const FlexBox& getLayout();
 	int getCardsCount();
+	int getCardsMaxWip();
 	int getUnhiddenCardsCount();
+	bool isMaxWipSet();
 	void moveCardTop(CKanbanCardComponent* aCard);
 	void moveCardBottom(CKanbanCardComponent* aCard);
 	void updateDueDateDoneOnCards(bool aDone);
@@ -81,6 +83,8 @@ private:
 	int iScrollPos;
 
 	int iHiddenCardsFromSearchCount;
+
+	bool iMaxWip;
 
 	friend class CKanbanColumnComponent;
 

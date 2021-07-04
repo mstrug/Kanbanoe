@@ -15,7 +15,7 @@
 #include "CConfiguration.h"
 
 //==============================================================================
-CKanbanColumnContentComponent::CKanbanColumnContentComponent(CKanbanColumnComponent& aOwner) : iOwner(aOwner), iDragTargetActive(false), iDragTargetPlaceholderActive(false), iPlaceholderIndex(-1), iDraggedCardIndex(-1), iScrollPos(0), iHiddenCardsFromSearchCount(0)
+CKanbanColumnContentComponent::CKanbanColumnContentComponent(CKanbanColumnComponent& aOwner) : iOwner(aOwner), iDragTargetActive(false), iDragTargetPlaceholderActive(false), iPlaceholderIndex(-1), iDraggedCardIndex(-1), iScrollPos(0), iHiddenCardsFromSearchCount(0), iMaxWip(0)
 {
 	iLayout.alignContent = FlexBox::AlignContent::center;
 	iLayout.alignItems = FlexBox::AlignItems::flexStart;
@@ -206,6 +206,12 @@ int CKanbanColumnContentComponent::getCardsCount()
 	return iLayout.items.size();
 }
 
+int CKanbanColumnContentComponent::getCardsMaxWip()
+{
+	if (iMaxWip == 0) return INT_MAX;
+	else return iMaxWip;
+}
+
 int CKanbanColumnContentComponent::getUnhiddenCardsCount()
 {
 	int ret = iLayout.items.size() - iHiddenCardsFromSearchCount;
@@ -214,6 +220,11 @@ int CKanbanColumnContentComponent::getUnhiddenCardsCount()
 		if (i.height == 0) ret--;
 	}*/
 	return ret;
+}
+
+bool CKanbanColumnContentComponent::isMaxWipSet()
+{
+	return iMaxWip > 0;
 }
 
 void CKanbanColumnContentComponent::moveCardTop(CKanbanCardComponent * aCard)
@@ -303,6 +314,8 @@ void CKanbanColumnContentComponent::sortCardsByDueDate(bool aAscending)
 
 bool CKanbanColumnContentComponent::isInterestedInDragSource(const SourceDetails & dragSourceDetails)
 {
+	if (getCardsCount() >= getCardsMaxWip()) return false;
+
 	int j = 0;
 	iDraggedCardIndex = -1;
 	for (auto& i : iLayout.items)

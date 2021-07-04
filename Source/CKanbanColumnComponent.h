@@ -32,6 +32,9 @@ public:
 	void resized() override;
 	void mouseUp(const MouseEvent& event) override;
 	void mouseWheelMove(const MouseEvent & event, const MouseWheelDetails & details) override;
+	void mouseMove(const MouseEvent& event)  override;
+	void mouseExit(const MouseEvent& event) override;
+	bool keyPressed(const KeyPress& key) override;
 
 	void setActiveFrame(bool aActive);
 	void contentUpdated();
@@ -110,6 +113,8 @@ private:
 	DrawableButton iSetupButton;
 
 	CKanbanColumnContentComponent iViewportLayout;
+
+	bool iMouseTitleIsActive;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CKanbanColumnComponent)
 };

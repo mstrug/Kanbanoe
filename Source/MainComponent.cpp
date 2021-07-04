@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.37");
+const String AppVersion("v0.38");
 
 
 
@@ -139,6 +139,28 @@ void MainComponent::resized()
 	iKanbanColumns[0]->setBounds(200, 40, w + m, 400);
 	iKanbanColumns[1]->setBounds(500, 40, w + m, 400);
 	iA->setBounds(30, 200, 110, 70);*/
+}
+
+bool MainComponent::keyPressed(const KeyPress & key)
+{
+	if (key.getKeyCode() == key.pageDownKey || key.getKeyCode() == key.pageUpKey)
+	{ // handle pgup/pgdown from mouse on any column
+		//Logger::outputDebugString("key: " + String(key.getKeyCode()));
+		auto cmp = getComponentAt(getMouseXYRelative());
+		while (cmp)
+		{
+			auto cmp1 = dynamic_cast<CKanbanColumnComponent*>(cmp);
+			if (cmp1)
+			{
+				return cmp1->keyPressed(key);
+			}
+			else
+			{
+				cmp = cmp->getParentComponent();
+			}
+		}
+	}
+	return false;
 }
 
 void MainComponent::updateTimer24h()
