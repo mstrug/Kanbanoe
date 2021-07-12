@@ -476,12 +476,14 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 			var id = obj2->getProperty("id");
 			var dueDateDone = obj2->getProperty("dueDateDone");
 			var minimized = obj2->getProperty("minimized");
+			var wip = obj2->getProperty("wip");
 			if (title.isString() && id.isInt())
 			{
 				auto col = new CKanbanColumnComponent(id, URL::removeEscapeChars(title), *ret);
 				ret->iKanbanColumns.add( col );
 				if (dueDateDone.isBool()) col->setColumnDueDateDone(true);
 				if (minimized.isBool()) col->setMinimized(true, false);
+				if (wip.isInt()) col->setMaxWip(wip);
 				ret->addAndMakeVisible(ret->iKanbanColumns.getLast());
 			}
 			else
@@ -771,6 +773,7 @@ bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 			f << "{ \"title\":\"" + URL::addEscapeChars( i->getTitle(), false ) + "\", \"id\":" + String(i->getColumnId());
 			if (i->isColumnDueDateDone()) f << ", \"dueDateDone\":true ";
 			if (i->isMinimized()) f << ", \"minimized\":true ";
+			if (i->getMaxWip() > 0) f << ", \"wip\":" + String(i->getMaxWip());
 			f << " }";
 			j++;
 		}

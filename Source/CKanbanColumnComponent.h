@@ -57,6 +57,9 @@ public:
 	bool isMinimized() const;
 	void setMinimized(bool aMinimized, bool aUpdateOwner);
 
+	int getMaxWip() const;
+	void setMaxWip(int aWip);
+
 	void setGridItem(const GridItem& aGridItem);
 	const GridItem& getGridItem();
 	bool isGridColumn(int aStartCol, int aEndCol);

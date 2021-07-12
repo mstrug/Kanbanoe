@@ -22,7 +22,7 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 	//setRepaintsOnMouseActivity(true);
 	setComponentID("1");
 
-	iViewportLayout.addMouseListener(this, true);
+	iViewportLayout.addMouseListener(this, false);
 	addAndMakeVisible(iViewportLayout);
 
 	//iTitle.setText(aTitle, NotificationType::dontSendNotification);
@@ -476,6 +476,17 @@ void CKanbanColumnComponent::setMinimized(bool aMinimized, bool aUpdateOwner)
 	if ( aUpdateOwner ) iOwner.updateColumnSize(this, iMinimizedState);
 }
 
+int CKanbanColumnComponent::getMaxWip() const
+{
+	if (iViewportLayout.isMaxWipSet()) return iViewportLayout.getCardsMaxWip();
+	else return 0;
+}
+
+void CKanbanColumnComponent::setMaxWip(int aWip)
+{
+	iViewportLayout.setMaxWip(aWip);
+}
+
 void CKanbanColumnComponent::setGridItem(const GridItem & aGridItem)
 {
 	iGridItem = aGridItem;
@@ -516,7 +527,33 @@ void CKanbanColumnComponent::showSetupMenu()
 	});
 	menu.addItem("Set max WIP", [&]()
 	{
+		AlertWindow w("Set max WIP", "Provide maximum cards count for this column (Work In Progress)", AlertWindow::QuestionIcon);
 
+		w.addTextEditor("text", (this->iViewportLayout.isMaxWipSet() ? String(this->iViewportLayout.getCardsMaxWip()) : "" ), "Max WIP:");
+		w.addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
+		w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+
+		if (w.runModalLoop() != 0) // is they picked 'ok'
+		{
+			auto text = w.getTextEditorContents("text");
+			int ti = text.getIntValue();
+			if ( ti < 0 || ti >= 100 || ( ti == 0 && text.length() > 0 ) )
+			{
+				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Max WIP", "Wrong Max WIP value", "OK");
+			}
+			else
+			{ // set wip
+				if ( ti > 0 && ti < this->iViewportLayout.getCardsCount())
+				{
+					AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Max WIP", "Column cards count is larger than specified WIP value. Firstly reduce cards count.", "OK");
+				}
+				else
+				{
+					this->iViewportLayout.setMaxWip(ti);
+					this->updateColumnTitle();
+				}
+			}
+		}
 	});
 	menu.addItem("Remove all cards", iViewportLayout.getCardsCount() > 0, false, [&]()
 	{

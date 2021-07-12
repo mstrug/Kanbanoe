@@ -428,7 +428,6 @@ String CKanbanCardComponent::getDueDateAsString(juce::Colour* aColour)
 			}
 			else
 			{
-				if (aColour) *aColour = Colours::red;
 				s = String((int)ceil(dval)) + "d";
 			}
 		}
@@ -590,9 +589,15 @@ void CKanbanCardComponent::showProperties()
 {
 	iMouseActive = true;
 	auto comp = std::make_unique<CKanbanCardPropertiesComponent>(*this);
-	CallOutBox* box = &CallOutBox::launchAsynchronously(std::move(comp), this->getScreenBounds(), nullptr);
+	CallOutBox* box = new CallOutBox((juce::Component&)std::move(*comp), this->getScreenBounds(), nullptr);
 	box->setEnabled(!iReadOnly);
-	box->setAlwaysOnTop(true);
+	box->runModalLoop();
+	delete box;
+
+	// this was disabled to let stay the callout window on the screen when changing to another app
+	//CallOutBox* box = &CallOutBox::launchAsynchronously(std::move(comp), this->getScreenBounds(), nullptr);
+	//box->setEnabled(!iReadOnly);
+	//box->setAlwaysOnTop(true);
 }
 
 void CKanbanCardComponent::setChildrenVisibility(bool aHidden)

@@ -201,12 +201,12 @@ const FlexBox& CKanbanColumnContentComponent::getLayout()
 	return iLayout;
 }
 
-int CKanbanColumnContentComponent::getCardsCount()
+int CKanbanColumnContentComponent::getCardsCount() const
 {
 	return iLayout.items.size();
 }
 
-int CKanbanColumnContentComponent::getCardsMaxWip()
+int CKanbanColumnContentComponent::getCardsMaxWip() const
 {
 	if (iMaxWip == 0) return INT_MAX;
 	else return iMaxWip;
@@ -222,9 +222,14 @@ int CKanbanColumnContentComponent::getUnhiddenCardsCount()
 	return ret;
 }
 
-bool CKanbanColumnContentComponent::isMaxWipSet()
+bool CKanbanColumnContentComponent::isMaxWipSet() const
 {
 	return iMaxWip > 0;
+}
+
+void CKanbanColumnContentComponent::setMaxWip(unsigned int aValue)
+{
+	iMaxWip = aValue;
 }
 
 void CKanbanColumnContentComponent::moveCardTop(CKanbanCardComponent * aCard)

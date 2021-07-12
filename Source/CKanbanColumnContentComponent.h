@@ -40,10 +40,11 @@ public:
 	void setMinimumHeight(int aHeight);
 	CKanbanColumnComponent& getOwner();
 	const FlexBox& getLayout();
-	int getCardsCount();
-	int getCardsMaxWip();
+	int getCardsCount() const;
+	int getCardsMaxWip() const;
 	int getUnhiddenCardsCount();
-	bool isMaxWipSet();
+	bool isMaxWipSet() const;
+	void setMaxWip(unsigned int aValue);
 	void moveCardTop(CKanbanCardComponent* aCard);
 	void moveCardBottom(CKanbanCardComponent* aCard);
 	void updateDueDateDoneOnCards(bool aDone);
@@ -84,7 +85,7 @@ private:
 
 	int iHiddenCardsFromSearchCount;
 
-	bool iMaxWip;
+	int iMaxWip;
 
 	friend class CKanbanColumnComponent;
 
