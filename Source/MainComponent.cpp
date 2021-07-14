@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.39");
+const String AppVersion("v0.40");
 
 
 
@@ -565,7 +565,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 		}
 		break;
 	case menuHelpAbout:
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", AppVersion + "\nM.Strug", "OK");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "Kanbanoe " + AppVersion + "\nMichal Strug", "OK");
 		break;
 	case menubarSearch:
 			iTextSearch.grabKeyboardFocus();

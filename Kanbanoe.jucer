@@ -4,10 +4,32 @@
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="eFGWQm" name="Kanbanoe">
     <GROUP id="{DCD7CA3B-5F03-F757-21DF-FE39914D5902}" name="Source">
+      <FILE id="AokuQm" name="CMyMdi.cpp" compile="1" resource="0" file="Source/CMyMdi.cpp"/>
+      <FILE id="Ej5Ewx" name="CMyMdi.h" compile="0" resource="0" file="Source/CMyMdi.h"/>
+      <FILE id="WyJnxs" name="CTimer.cpp" compile="1" resource="0" file="Source/CTimer.cpp"/>
+      <FILE id="s9uf3Y" name="CTimer.h" compile="0" resource="0" file="Source/CTimer.h"/>
+      <FILE id="NBNfQW" name="CKanbanCardPropertiesComponent.cpp" compile="1"
+            resource="0" file="Source/CKanbanCardPropertiesComponent.cpp"/>
+      <FILE id="hRG0Of" name="CKanbanCardPropertiesComponent.h" compile="0"
+            resource="0" file="Source/CKanbanCardPropertiesComponent.h"/>
+      <FILE id="k7X7yO" name="ColourPalette.cpp" compile="1" resource="0"
+            file="Source/ColourPalette.cpp"/>
+      <FILE id="oKWHFB" name="ColourPalette.h" compile="0" resource="0" file="Source/ColourPalette.h"/>
+      <FILE id="MTNFkZ" name="ColoursComponent.cpp" compile="1" resource="0"
+            file="Source/ColoursComponent.cpp"/>
+      <FILE id="YvjM4V" name="ColoursComponent.h" compile="0" resource="0"
+            file="Source/ColoursComponent.h"/>
       <FILE id="pB05Cm" name="CKanbanColumnContentComponent.cpp" compile="1"
             resource="0" file="Source/CKanbanColumnContentComponent.cpp"/>
       <FILE id="Z2KYpt" name="CKanbanColumnContentComponent.h" compile="0"
             resource="0" file="Source/CKanbanColumnContentComponent.h"/>
+      <FILE id="wCFBEy" name="CKanbanBoard.cpp" compile="1" resource="0"
+            file="Source/CKanbanBoard.cpp"/>
+      <FILE id="WZgV87" name="CKanbanBoard.h" compile="0" resource="0" file="Source/CKanbanBoard.h"/>
+      <FILE id="tnlz7X" name="CKanbanBoardArchive.cpp" compile="1" resource="0"
+            file="Source/CKanbanBoardArchive.cpp"/>
+      <FILE id="gx6hNx" name="CKanbanBoardArchive.h" compile="0" resource="0"
+            file="Source/CKanbanBoardArchive.h"/>
       <FILE id="dzSunv" name="CConfiguration.cpp" compile="1" resource="0"
             file="Source/CConfiguration.cpp"/>
       <FILE id="jns91l" name="CConfiguration.h" compile="0" resource="0"
