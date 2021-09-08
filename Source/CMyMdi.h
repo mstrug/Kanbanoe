@@ -66,6 +66,8 @@ class CMyMdi : public MultiDocumentPanel
 
 	bool tryToCloseDocument(Component* component) override;
 
+	void tryToCloseDocumentAsync(Component* component, std::function<void(bool)> callback) override;
+
 	CMyMdiDocBase* getDocByFile(File& aFn);
 
 public:

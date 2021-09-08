@@ -17,7 +17,7 @@
 #include "CKanbanCardPropertiesComponent.h"
 
 // clipboard card
-static CKanbanCardComponent* clipboardCard = nullptr;
+static std::unique_ptr<CKanbanCardComponent> clipboardCard; // = nullptr;
 
 //==============================================================================
 CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iIsDone(false), iCreationDate(juce::Time::getCurrentTime()), iReadOnly(false)
@@ -238,6 +238,7 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 			this->repaint();
 		});
 		menu.show();
+		deselect();
 	}
 }
 
@@ -428,6 +429,7 @@ String CKanbanCardComponent::getDueDateAsString(juce::Colour* aColour)
 			}
 			else
 			{
+				if ( dval < 0 ) *aColour = Colours::tomato;
 				s = String((int)ceil(dval)) + "d";
 			}
 		}
@@ -576,12 +578,18 @@ void CKanbanCardComponent::setReadOnly(bool aReadOnly)
 
 CKanbanCardComponent * CKanbanCardComponent::getClipboardCard()
 {
-	return clipboardCard;
+	return clipboardCard.get();
 }
 
 void CKanbanCardComponent::setClipboardCard(CKanbanCardComponent * aCard)
 {
-	clipboardCard = aCard;
+	clipboardCard = std::make_unique<CKanbanCardComponent>(nullptr);
+	clipboardCard->duplicateDataFrom(*aCard);
+}
+
+void CKanbanCardComponent::cleanupClipboardCard()
+{
+	clipboardCard.reset();
 }
 
 

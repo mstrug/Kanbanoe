@@ -10,11 +10,11 @@
 #include "MainComponent.h"
 
 //==============================================================================
-class proj03Application  : public juce::JUCEApplication
+class KanbanoeApplication  : public juce::JUCEApplication
 {
 public:
     //==============================================================================
-    proj03Application() {}
+	KanbanoeApplication() {}
 
     const juce::String getApplicationName() override       { return ProjectInfo::projectName; }
     const juce::String getApplicationVersion() override    { return ProjectInfo::versionString; }
@@ -133,4 +133,4 @@ private:
 
 //==============================================================================
 // This macro generates the main() routine that launches the app.
-START_JUCE_APPLICATION (proj03Application)
+START_JUCE_APPLICATION (KanbanoeApplication)

@@ -63,8 +63,11 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	iTextUrl.addKeyListener(this);
 	//iTextUrl.setSelectAllWhenFocused(true);
 	iTextUrl.setText(aOwner.getProperties()["url"]);
+	iTextUrl.setSelectAllWhenFocused(true);
+	iTextUrl.setScrollToShowCursor(true);
 	iTextUrl.onTextChange = [this]
 	{
+		//iTextUrl.scroll
 		this->changesApply();
 	};
 

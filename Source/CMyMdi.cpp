@@ -125,6 +125,11 @@ bool CMyMdi::tryToCloseDocument(Component* component)
 	return true;
 }
 
+void CMyMdi::tryToCloseDocumentAsync(Component * component, std::function<void(bool)> callback)
+{
+	callback(tryToCloseDocument(component));
+}
+
 CMyMdiDocBase * CMyMdi::getDocByFile(File & aFn)
 {
 	CMyMdiDocBase* ad = (CMyMdiDocBase*)getActiveDocument();

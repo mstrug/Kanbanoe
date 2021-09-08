@@ -116,6 +116,7 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 	iScrollBar.addListener(this);
 	iScrollBar.setAlwaysOnTop(true);
 	iScrollBar.setSingleStepSize( (h + m + m ) / 4);
+	iScrollBar.addMouseListener(this, false);
 	addAndMakeVisible(iScrollBar);
 
 	setOpaque(true);
@@ -228,6 +229,8 @@ void CKanbanColumnComponent::resized()
 
 void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 {
+	if (event.eventComponent == &iScrollBar || event.originalComponent == &iScrollBar) return;
+
 	if ( event.mods.isRightButtonDown() && getLocalBounds().contains( event.getPosition() ) )
 	{
 		PopupMenu menu;
@@ -239,7 +242,7 @@ void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 			}
 			this->iViewportLayout.createNewCard();
 		});
-		menu.addItem("Paste card", CKanbanCardComponent::getClipboardCard(), false, [&]()
+		menu.addItem("Paste card", CKanbanCardComponent::getClipboardCard() != nullptr, false, [&]()
 		{
 			if (iMinimizedState)
 			{
@@ -267,17 +270,27 @@ void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 void CKanbanColumnComponent::mouseWheelMove(const MouseEvent & event, const MouseWheelDetails & details)
 {
 	static juce::int64 ms = 0;
-	if (iScrollBar.isVisible() && ms < event.eventTime.toMilliseconds() )
+	if ( ms < event.eventTime.toMilliseconds() )
 	{		
 		ms = event.eventTime.toMilliseconds();
-		auto e = event.getEventRelativeTo(&iScrollBar);
-		iScrollBar.mouseWheelMove(e, details);
+		if (event.mods.isShiftDown())
+		{
+			auto e = event.getEventRelativeTo(&kanbanBoard());
+			kanbanBoard().mouseWheelMove(e, details);
+		}
+		else if (iScrollBar.isVisible())
+		{
+			auto e = event.getEventRelativeTo(&iScrollBar);
+			iScrollBar.mouseWheelMove(e, details);
+		}
 	}
 }
 
 
 void CKanbanColumnComponent::mouseMove(const MouseEvent & event)
 {
+	if (event.eventComponent == &iScrollBar || event.originalComponent == &iScrollBar) return;
+
 	if ( iMinimizedState || ( !iMinimizedState && event.eventComponent == (juce::Component*)this) )
 	{
 		if (!iMouseTitleIsActive && iTitle.getBoundsInParent().contains(event.getPosition()))
@@ -295,6 +308,8 @@ void CKanbanColumnComponent::mouseMove(const MouseEvent & event)
 
 void CKanbanColumnComponent::mouseExit(const MouseEvent & event)
 {
+	if (event.eventComponent == &iScrollBar || event.originalComponent == &iScrollBar) return;
+
 	iMouseTitleIsActive = false;
 	repaint();
 }
@@ -464,7 +479,10 @@ void CKanbanColumnComponent::setMinimized(bool aMinimized, bool aUpdateOwner)
 		iAddCardButton.setVisible(false);
 		iSetupButton.setVisible(false);
 		iScrollBar.setVisible(false);
-		iTitleMinimalDueDate.setVisible(true);
+		if (!iDueDateDone)
+		{
+			iTitleMinimalDueDate.setVisible(true);
+		}
 		//iTitle.removeMouseListener(this);
 		//iTitleCardsCount.removeMouseListener(this);
 
@@ -664,8 +682,8 @@ void CKanbanColumnComponent::updateColumnTitle()
 		if (!s.isEmpty())
 		{
 			iTitleMinimalDueDate.setColour(Label::textColourId, c.darker(0));
-			iTitleMinimalDueDate.setText(s, NotificationType::dontSendNotification);
 		}
+		iTitleMinimalDueDate.setText(s, NotificationType::dontSendNotification);
 	}
 
 //	iTitleCardsCount.setText("[" + String(iViewportLayout.getCardsCount()) +"]", NotificationType::dontSendNotification);

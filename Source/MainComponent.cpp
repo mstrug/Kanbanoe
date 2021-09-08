@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.40");
+const String AppVersion("v0.43");
 
 
 
@@ -81,6 +81,8 @@ MainComponent::MainComponent() : iMdiPanel(*this), iTimer24h(*this)
 
 MainComponent::~MainComponent()
 {
+	CKanbanCardComponent::cleanupClipboardCard();
+
 	iMdiPanel.closeAllDocuments(false);
 	CConfiguration::getInstance().Destroy();
 }

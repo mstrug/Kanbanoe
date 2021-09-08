@@ -80,6 +80,7 @@ public: // clipboard
 
 	static CKanbanCardComponent* getClipboardCard();
 	static void setClipboardCard(CKanbanCardComponent* aCard);
+	static void cleanupClipboardCard();
 
 private:
 
