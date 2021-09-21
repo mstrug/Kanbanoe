@@ -12,11 +12,46 @@
 #include "CKanbanColumnComponent.h"
 #include "CConfiguration.h"
 #include "CKanbanBoard.h"
+#include "CKanbanHttpClient.h"
 
 const int KTitleHeight = 25;
+const int KEditModeMargin = 30;
+
+void CKanbanColumnComponent::ComponentListenerEditButton::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized)
+{
+	if (wasResized)
+	{
+		DrawablePath btnImg3;
+		{
+			Path p;
+			int w = component.getWidth();
+			int h = component.getHeight();
+			int m = 4;
+			p.addLineSegment(Line<float>(m, h / 2, w - m, h / 2), 1);
+			p.addLineSegment(Line<float>(w / 2, h / 2 - (w - 2 * m) / 2, w / 2, h / 2 + (w - 2 * m) / 2 ), 1);
+			p.addRectangle(-5, -5, w + 10, h + 10);
+			btnImg3.setPath(p);
+			PathStrokeType pt(1, PathStrokeType::curved);
+			btnImg3.setStrokeType(pt);
+//			btnImg3.setStrokeFill(FillType(component.getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.1)));
+			btnImg3.setStrokeFill(FillType(component.getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId)));
+			btnImg3.setFill(component.getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.04));
+		}
+		DrawablePath btnImgOver3(btnImg3);
+//		btnImgOver3.setStrokeFill(FillType(Colours::whitesmoke));
+		btnImgOver3.setStrokeFill(FillType(component.getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.2)));
+		btnImgOver3.setFill(component.getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.08f));
+		DrawablePath btnImgPushed3(btnImgOver3);
+		btnImgPushed3.setFill(component.getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).darker());
+
+		DrawableButton& b = static_cast<DrawableButton&>(component);
+		b.setImages(&btnImg3, &btnImgOver3, &btnImgPushed3);
+
+	}
+}
 
 
-CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iMinimizedState(false), iIsFrameActive(false), iDueDateDone(false), iSortedAsc(false), iColumnTitle(aTitle), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw), iMouseTitleIsActive(false)
+CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iMinimizedState(false), iIsFrameActive(false), iDueDateDone(false), iSortedAsc(false), iColumnTitle(aTitle), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw), iMouseTitleIsActive(false), iEditMode(false), iEditButtonRightVisible(false), iEditModeLeft("+", DrawableButton::ImageRaw), iEditModeRight("+", DrawableButton::ImageRaw)
 {
 	//setInterceptsMouseClicks(false, true);
 	//setRepaintsOnMouseActivity(true);
@@ -80,7 +115,6 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 	iSetupButton.setTooltip("Column menu");
 	addAndMakeVisible(iSetupButton);
 
-
 	DrawablePath btnImg2;
 	{
 		Path p;
@@ -89,7 +123,7 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 		p.addLineSegment(Line<float>(w/2, 0, w/2, w), 1);
 		AffineTransform af = AffineTransform::translation(7, 7);
 		p.applyTransform(af);
-		p.addRectangle(-5, -5, 35, 35);
+		p.addRectangle(-w, -w, 4 * w, 4 * w);
 		btnImg2.setPath(p);
 		PathStrokeType pt(1, PathStrokeType::curved);
 		btnImg2.setStrokeType(pt);
@@ -110,6 +144,18 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 	iAddCardButton.setTooltip("Add card");
 	addAndMakeVisible(iAddCardButton);
 
+	iEditModeLeft.addComponentListener(&iEditModeButtonListener);
+	addAndMakeVisible(iEditModeLeft);
+	iEditModeLeft.onClick = [this]
+	{
+		this->kanbanBoard().addColumn(this, true);
+	};
+	iEditModeRight.addComponentListener(&iEditModeButtonListener);
+	addAndMakeVisible(iEditModeRight);
+	iEditModeRight.onClick = [this]
+	{
+		this->kanbanBoard().addColumn(this, false);
+	};
 
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
@@ -135,7 +181,8 @@ void CKanbanColumnComponent::paint(juce::Graphics& g)
 	{
 		if (iMinimizedState)
 		{
-			g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.08f));   // clear the background
+			g.setColour(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.08f));   // clear the background
+			g.fillRect(getLocalBoundsForCardsSection());
 		}
 		else
 		{
@@ -147,10 +194,13 @@ void CKanbanColumnComponent::paint(juce::Graphics& g)
 
 void CKanbanColumnComponent::paintOverChildren(Graphics & g)
 {
+	auto r = getLocalBoundsForCardsSection();
+
 	if (!iMinimizedState)
 	{
 		g.setColour(juce::Colours::grey);
-		g.drawLine(0, iTitle.getBottom(), getWidth(), iTitle.getBottom(), 1);
+
+		g.drawLine( r.getTopLeft().x, iTitle.getBottom(), r.getRight(), iTitle.getBottom(), 1);
 	}
 
 	int ps = 1;
@@ -163,19 +213,45 @@ void CKanbanColumnComponent::paintOverChildren(Graphics & g)
 	{
 		g.setColour(juce::Colours::grey);
 	}
-	g.drawRect(getLocalBounds(), ps);   // draw an outline around the component
+
+	// draw an outline around the component
+	g.drawRect(r, ps);
+
+	if (iEditMode)
+	{
+		g.setColour(juce::Colours::gold);
+		g.setColour(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.04f));   // clear the background
+
+		//g.fillRoundedRectangle(getLocalBoundsForEditLeft().toFloat(), 2);
+		//g.fillRoundedRectangle(getLocalBoundsForEditRight().toFloat(), 2);
+	}
 }
 
 void CKanbanColumnComponent::resized()
 {
-	Rectangle<int> r(getLocalBounds());
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
+
+	if (iEditMode)
+	{
+		auto r2 = getLocalBoundsForEditLeft();
+		r2.removeFromRight(m);
+		iEditModeLeft.setBounds(r2);
+		r2 = getLocalBoundsForEditRight();
+		r2.removeFromLeft(m);
+		iEditModeRight.setBounds(r2);
+	}
+	iEditModeLeft.setVisible(iEditMode);
+	if (iEditButtonRightVisible || !iEditMode) iEditModeRight.setVisible(iEditMode);
+
+	Rectangle<int> r(getLocalBoundsForCardsSection());
 
 	if (iMinimizedState)
 	{
-//		iTitle.setSize(iTitle.getWidth(), r.getWidth());
-		iTitle.setSize(r.getHeight(), r.getWidth());
+		int a = 0;
+		if (iEditMode) a = KEditModeMargin;
+		iTitle.setBounds( a, 0, r.getHeight(), r.getWidth());
 		iTitle.setJustificationType(Justification::centredRight);
-		iTitle.setTransform(AffineTransform::rotation(-MathConstants<float>::halfPi, 0, 0).translated(0, iTitle.getWidth() + KTitleHeight / 2));
+		iTitle.setTransform(AffineTransform::rotation(-MathConstants<float>::halfPi, 0, 0).translated(a, iTitle.getWidth() + KTitleHeight / 2 + a));
 
 		iViewportLayout.setBounds(r);
 
@@ -212,11 +288,10 @@ void CKanbanColumnComponent::resized()
 		iTitleCardsCount.setJustificationType(Justification::right);
 
 		Rectangle<int> r2(r);
-		r2.setLeft(r2.getWidth() - 8);
-		r2.setWidth(r2.getWidth() - 1);
+		r2.setLeft(r2.getRight() - 8);
+		r2.setWidth(7);
 		iScrollBar.setBounds(r2);
 
-		int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 		r.removeFromTop(m / 2);
 
 		iViewportLayout.setMinimumHeight(r.getHeight());
@@ -225,6 +300,8 @@ void CKanbanColumnComponent::resized()
 		//Logger::outputDebugString("CminH: " + String(iViewportLayout.iMinimumHeight));
 		//Logger::outputDebugString("CH: " + String(iViewportLayout.getHeight()));
 	}
+
+
 }
 
 void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
@@ -250,11 +327,10 @@ void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 			}
 			duplicateCard(CKanbanCardComponent::getClipboardCard());
 		});
-		/*menu.addSeparator();
-		menu.addItem("Archive column", [&]()
+		menu.addSeparator();
+		menu.addItem("Refresh", [&]()
 		{
-			this->archive();
-		});*/
+		});
 		menu.show();
 	}
 	else if (event.mods.isLeftButtonDown() )
@@ -291,7 +367,7 @@ void CKanbanColumnComponent::mouseMove(const MouseEvent & event)
 {
 	if (event.eventComponent == &iScrollBar || event.originalComponent == &iScrollBar) return;
 
-	if ( iMinimizedState || ( !iMinimizedState && event.eventComponent == (juce::Component*)this) )
+	if ( ( !iMinimizedState && event.eventComponent == (juce::Component*)this) )
 	{
 		if (!iMouseTitleIsActive && iTitle.getBoundsInParent().contains(event.getPosition()))
 		{
@@ -299,6 +375,21 @@ void CKanbanColumnComponent::mouseMove(const MouseEvent & event)
 			repaint();
 		}
 		else if (iMouseTitleIsActive && !iTitle.getBoundsInParent().contains(event.getPosition()))
+		{
+			iMouseTitleIsActive = false;
+			repaint();
+		}
+	}
+	else if (iMinimizedState)
+	{
+		auto ev = event.getEventRelativeTo(this);
+		auto r = getLocalBoundsForCardsSection();
+		if (!iMouseTitleIsActive && r.contains(ev.getPosition()))
+		{
+			iMouseTitleIsActive = true;
+			repaint();
+		}
+		else if (iMouseTitleIsActive && !r.contains(ev.getPosition()))
 		{
 			iMouseTitleIsActive = false;
 			repaint();
@@ -510,7 +601,7 @@ void CKanbanColumnComponent::setGridItem(const GridItem & aGridItem)
 	iGridItem = aGridItem;
 }
 
-const GridItem & CKanbanColumnComponent::getGridItem()
+const GridItem & CKanbanColumnComponent::getGridItem() const
 {
 	return iGridItem;
 }
@@ -520,6 +611,47 @@ bool CKanbanColumnComponent::isGridColumn(int aStartCol, int aEndCol)
 	int s = iGridItem.column.start.getNumber();
 	int e = iGridItem.column.end.getNumber();
 	return ( s == aStartCol && e == aEndCol);
+}
+
+bool CKanbanColumnComponent::isColumnSameSize(const CKanbanColumnComponent & aColumn)
+{
+	auto g = aColumn.getGridItem();
+	return (g.row.start.getNumber() == iGridItem.row.start.getNumber()) && (g.row.end.getNumber() == iGridItem.row.end.getNumber());
+}
+
+void CKanbanColumnComponent::moveGridItemRight()
+{
+	iGridItem.setArea((int)iGridItem.row.start.getNumber(), (int)iGridItem.column.start.getNumber() + 1, (int)iGridItem.row.end.getNumber(), (int)iGridItem.column.end.getNumber() + 1);
+}
+
+
+Rectangle<int> CKanbanColumnComponent::getLocalBoundsForCardsSection()
+{
+	auto r = getLocalBounds();
+	if (iEditMode)
+	{
+		if ( iEditButtonRightVisible ) r.reduce(KEditModeMargin, 0);
+		else r.setLeft(r.getTopLeft().x + KEditModeMargin);
+	}
+	return r;
+}
+
+Rectangle<int> CKanbanColumnComponent::getLocalBoundsForEditLeft()
+{
+	if (!iEditMode) return Rectangle<int>();
+	
+	auto r = getLocalBounds();
+	r.removeFromRight(r.getWidth() - KEditModeMargin);
+	return r;
+}
+
+Rectangle<int> CKanbanColumnComponent::getLocalBoundsForEditRight()
+{
+	if (!iEditMode || !iEditButtonRightVisible) return Rectangle<int>();
+
+	auto r = getLocalBounds();
+	r.removeFromLeft(r.getWidth() - KEditModeMargin);
+	return r;
 }
 
 void CKanbanColumnComponent::showSetupMenu()
@@ -539,15 +671,30 @@ void CKanbanColumnComponent::showSetupMenu()
 		this->iViewportLayout.sortCardsByDueDate(iSortedAsc);
 		iSortedAsc = !iSortedAsc;
 	});
+
+	menu.addItem("Remove all cards", iViewportLayout.getCardsCount() > 0, false, [&]()
+	{
+		this->removeAllCards();
+	});
+	menu.addSeparator();
 	menu.addItem("Minimize", true, false, [&]()
 	{
 		setMinimized(true, true);
+	});
+	menu.addItem("Archive column", iViewportLayout.getCardsCount() > 0, false, [&]()
+	{
+		this->archive();
+	});
+	menu.addSeparator();
+	menu.addItem("Due date done", true, iDueDateDone, [&]()
+	{
+		this->setColumnDueDateDone(!iDueDateDone);
 	});
 	menu.addItem("Set max WIP", [&]()
 	{
 		AlertWindow w("Set max WIP", "Provide maximum cards count for this column (Work In Progress)", AlertWindow::QuestionIcon);
 
-		w.addTextEditor("text", (this->iViewportLayout.isMaxWipSet() ? String(this->iViewportLayout.getCardsMaxWip()) : "" ), "Max WIP:");
+		w.addTextEditor("text", (this->iViewportLayout.isMaxWipSet() ? String(this->iViewportLayout.getCardsMaxWip()) : ""), "Max WIP:");
 		w.addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
 		w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
 
@@ -555,13 +702,13 @@ void CKanbanColumnComponent::showSetupMenu()
 		{
 			auto text = w.getTextEditorContents("text");
 			int ti = text.getIntValue();
-			if ( ti < 0 || ti >= 100 || ( ti == 0 && text.length() > 0 ) )
+			if (ti < 0 || ti >= 100 || (ti == 0 && text.length() > 0))
 			{
 				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Max WIP", "Wrong Max WIP value", "OK");
 			}
 			else
 			{ // set wip
-				if ( ti > 0 && ti < this->iViewportLayout.getCardsCount())
+				if (ti > 0 && ti < this->iViewportLayout.getCardsCount())
 				{
 					AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Max WIP", "Column cards count is larger than specified WIP value. Firstly reduce cards count.", "OK");
 				}
@@ -573,22 +720,27 @@ void CKanbanColumnComponent::showSetupMenu()
 			}
 		}
 	});
-	menu.addItem("Remove all cards", iViewportLayout.getCardsCount() > 0, false, [&]()
+	menu.addItem("Edit name", [&]()
 	{
-		this->removeAllCards();
-	});
-	menu.addItem("Archive column", iViewportLayout.getCardsCount() > 0, false, [&]()
-	{
-		this->archive();
-	});
-	menu.addSeparator();
-	/*menu.addItem("Edit name",  [&]()
-	{
-		
-	});*/
-	menu.addItem("Due date done", true, iDueDateDone, [&]()
-	{
-		this->setColumnDueDateDone(!iDueDateDone);
+		AlertWindow w("Rename column", "Provide new name for this column", AlertWindow::QuestionIcon);
+
+		w.addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
+		w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+		w.addTextEditor("text", this->iColumnTitle);
+
+		if (w.runModalLoop() != 0) // is they picked 'ok'
+		{
+			auto text = w.getTextEditorContents("text");
+			if (text.length() == 0)
+			{
+				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Column", "Bad column name.", "OK");
+			}
+			else
+			{
+				this->iColumnTitle = text;
+				this->updateColumnTitle();
+			}
+		}
 	});
 	menu.show(0,0,0,0, new BtnMenuHandler(*this));
 }
@@ -662,6 +814,72 @@ String CKanbanColumnComponent::getMinimalDueDate(juce::Colour* aColour)
 	return dd;
 }
 
+void CKanbanColumnComponent::decodeGitlabRsp(const String & aData)
+{
+	var d = JSON::parse(aData);
+	if (d != var())
+	{
+		String errorMessage;
+		auto ar = d.getArray();
+		if (!ar->isEmpty())
+		{
+			for (auto& i : *ar)
+			{
+				auto dd = i.getDynamicObject();
+				auto id = dd->getProperty("id");
+				auto pid = dd->getProperty("project_id");
+				auto title = dd->getProperty("title");
+				auto duedate = dd->getProperty("due_date");
+				auto state = dd->getProperty("state");
+				auto cr = dd->getProperty("created_at");
+				auto up = dd->getProperty("updated_at");
+				auto labels = dd->getProperty("labels"); //tab
+				auto assobj = dd->getProperty("assignee"); //obj
+				auto url = dd->getProperty("web_url");
+
+				auto da = assobj.getDynamicObject();
+				auto assingee = da->getProperty("username"); // name?
+
+				auto dl = labels.getArray();
+				String tags;
+				for (auto& j : *dl) tags += j.toString() + " ";
+
+				CKanbanCardComponent c(&iViewportLayout);
+				c.setText(title);
+				c.getProperties().set("pid", pid.toString());
+				c.getProperties().set("id", id.toString());
+				c.setUrl(url);
+				c.setTags(tags);
+				c.setAssigne(assingee);
+				// c.setNotes(dd->getProperty("description")); // too large?
+				if (duedate.isString()) c.setDueDate(true, Time::fromISO8601(duedate.toString()));
+				c.setDates(Time::fromISO8601(cr.toString()), Time::fromISO8601(up.toString()));
+
+				decodeGitlabNotifier(c);
+			}
+		}
+	}
+}
+
+void CKanbanColumnComponent::decodeGitlabNotifier(CKanbanCardComponent & aCard)
+{
+	auto ar = iOwner.getCardsForColumn(this);
+	for (int i = ar.size() - 1; i >= 0; --i)
+	{
+		if (ar[i]->getProperties()["pid"] == aCard.getProperties()["pid"] &&
+			ar[i]->getProperties()["id"] == aCard.getProperties()["id"])
+		{
+			ar[i]->setDueDate(aCard.isDueDateSet(), aCard.getDueDate());
+			ar[i]->setDates(aCard.getCreationDate(), aCard.getLastUpdateDate());
+			ar[i]->setAssigne(aCard.getAssigne());
+
+			return;
+		}
+	}
+
+	iViewportLayout.createNewCard(&aCard, true, false);
+}
+
 void CKanbanColumnComponent::updateColumnTitle()
 {
 	if (iViewportLayout.isMaxWipSet())
@@ -688,6 +906,28 @@ void CKanbanColumnComponent::updateColumnTitle()
 
 //	iTitleCardsCount.setText("[" + String(iViewportLayout.getCardsCount()) +"]", NotificationType::dontSendNotification);
 //	iTitle.setText(iColumnTitle + " | " + String(iViewportLayout.getCardsCount()) + "", NotificationType::dontSendNotification);
+}
+
+void CKanbanColumnComponent::setEditMode(bool aLeftEnabled, bool aRightEnabled)
+{
+	iEditMode = aLeftEnabled || aRightEnabled;
+	iEditButtonRightVisible = aRightEnabled;
+}
+
+bool CKanbanColumnComponent::isEditModeRightVisible()
+{
+	return iEditButtonRightVisible;
+}
+
+void CKanbanColumnComponent::setEditModeRightVisible(bool aVisible)
+{
+	iEditButtonRightVisible = aVisible;
+	iEditModeRight.setVisible(iEditButtonRightVisible);
+}
+
+int CKanbanColumnComponent::getEditModeMargin()
+{
+	return KEditModeMargin;
 }
 
 void CKanbanColumnComponent::scrollBarMoved(ScrollBar * scrollBarThatHasMoved, double newRangeStart)

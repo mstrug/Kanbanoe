@@ -13,7 +13,7 @@
 #include "CConfiguration.h"
 
 //==============================================================================
-CKanbanBoardComponent::CKanbanBoardComponent() : iGridWidth(0)
+CKanbanBoardComponent::CKanbanBoardComponent() : iGridWidth(0), iColumnsEditorEnabled(false)
 {
 	setOpaque(true);
 }
@@ -22,7 +22,7 @@ CKanbanBoardComponent::~CKanbanBoardComponent()
 {
 }
 
-void CKanbanBoardComponent::createDefaultBoard()
+/*void CKanbanBoardComponent::createDefaultBoard()
 {
 	iKanbanColumns.add(new CKanbanColumnComponent(1, "Backlog", *this));
 	addAndMakeVisible(iKanbanColumns[0]);
@@ -77,6 +77,35 @@ void CKanbanBoardComponent::createDefaultBoard()
 	iKanbanColumns[4]->setGridItem(gi5);
 
 	updateSize();
+}*/
+
+void CKanbanBoardComponent::createDefaultBoard()
+{
+	iKanbanColumns.add(new CKanbanColumnComponent(1, "Backlog", *this));
+	addAndMakeVisible(iKanbanColumns[0]);
+
+	int w = CConfiguration::getIntValue("KanbanCardWidth");
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
+
+	Grid::Px wpx(w + 2 * m);
+	Grid::Px wpx2(w / 2 + 2 * m);
+
+	iGrid.rowGap = Grid::Px(m);
+	iGrid.columnGap = Grid::Px(m);
+
+	iGrid.templateColumns.add(Grid::TrackInfo(wpx));
+
+	iGrid.templateRows.add(Grid::TrackInfo(50_fr));
+	iGrid.templateRows.add(Grid::TrackInfo(50_fr));
+
+	iGrid.autoFlow = Grid::AutoFlow::column;
+
+	GridItem gi1(iKanbanColumns[0]);
+	gi1.setArea(1, 1, 3, 1);
+	iGrid.items.add(gi1);
+	iKanbanColumns[0]->setGridItem(gi1);
+
+	updateSize();
 }
 
 void CKanbanBoardComponent::paint (juce::Graphics& g)
@@ -120,6 +149,12 @@ void CKanbanBoardComponent::updateSize()
 	Grid::Px wpx(w + 2 * m);
 	Grid::Px wpx_min(wmin + 2 * m);
 
+	/*if (iColumnsEditorEnabled)
+	{
+		wpx.pixels += CKanbanColumnComponent::getEditModeMargin();
+		wpx_min.pixels += CKanbanColumnComponent::getEditModeMargin();
+	}*/
+
 	int coln = iGrid.getNumberOfColumns();
 	if (coln == 0)
 	{
@@ -134,15 +169,23 @@ void CKanbanBoardComponent::updateSize()
 		{
 			if (iKanbanColumns[j]->isGridColumn(i, i))
 			{
+				int emadd = 0;
+				if (iColumnsEditorEnabled) emadd += CKanbanColumnComponent::getEditModeMargin();
+				if (iKanbanColumns[j]->isEditModeRightVisible()) emadd += CKanbanColumnComponent::getEditModeMargin();
+
 				if (iKanbanColumns[j]->isMinimized())
 				{
-					iGrid.templateColumns.add(Grid::TrackInfo(wpx_min));
-					ww += wpx_min.pixels + m;
+					Grid::Px wpx_min2(wpx_min);
+					wpx_min2.pixels += emadd;
+					iGrid.templateColumns.add(Grid::TrackInfo(wpx_min2));
+					ww += wpx_min2.pixels + m;
 				}
 				else
 				{
-					iGrid.templateColumns.add(Grid::TrackInfo(wpx));
-					ww += wpx.pixels + m;
+					Grid::Px wpx2(wpx);
+					wpx2.pixels += emadd;
+					iGrid.templateColumns.add(Grid::TrackInfo(wpx2));
+					ww += wpx2.pixels + m;
 				}
 				break;
 			}
@@ -652,9 +695,24 @@ bool CKanbanBoardComponent::fromJsonCard(const juce::DynamicObject* obj2, CKanba
 	var crDate = obj2->getProperty("creationDate");
 	var dueDate = obj2->getProperty("dueDate");
 	var luDate = obj2->getProperty("lastUpdateDate");
+	var customProp = obj2->getProperty("customProp");
+	StringPairArray customPropArray;
 	if (text.isString() && colour.isString() && columnId.isInt())
 	{
 		String s = colour;
+
+		if (customProp.isArray())
+		{
+			auto ar2 = customProp.getArray();
+			for (auto& cp : *ar2)
+			{
+				auto ns = cp.getDynamicObject()->getProperties();
+				if (ns.size() > 0)
+				{
+					customPropArray.set(ns.getName(0).toString(), ns.getValueAt(0).toString());
+				}
+			}
+		}
 
 		if (aArchiveObject)
 		{
@@ -686,6 +744,7 @@ bool CKanbanBoardComponent::fromJsonCard(const juce::DynamicObject* obj2, CKanba
 			vs.set("creationDate", crDate);
 			vs.set("dueDate", dueDate);
 			vs.set("lastUpdateDate", luDate);
+
 			//card->setText(text);
 			//card->setNotes(notes);				
 			//card->setColour(Colour::fromString(s));
@@ -698,7 +757,7 @@ bool CKanbanBoardComponent::fromJsonCard(const juce::DynamicObject* obj2, CKanba
 				card = aKanbanBoard->createCard();
 			}
 
-			card->setupFromJson(vs);
+			card->setupFromJson(vs, customPropArray);
 
 			if (aKanbanBoard)
 			{
@@ -738,6 +797,29 @@ int CKanbanBoardComponent::updateGridWidth()
 	r.setWidth(w);
 	r.reduce(m, m);
 	iGrid.performLayout(r);*/
+}
+
+bool CKanbanBoardComponent::isColumnLastInGrid(CKanbanColumnComponent * aColumn)
+{
+	int end = aColumn->getGridItem().column.end.getNumber();
+	return (end >= iGrid.getNumberOfColumns());
+}
+
+bool CKanbanBoardComponent::isColumnNextInGridSameSize(CKanbanColumnComponent * aColumn)
+{
+	int rs = aColumn->getGridItem().row.start.getNumber();
+	int re = aColumn->getGridItem().row.end.getNumber();
+	int ce = aColumn->getGridItem().column.end.getNumber();
+
+	for (auto& gi : iGrid.items)
+	{
+		if (gi.column.start.getNumber() == ce + 1)
+		{
+			return (gi.row.start.getNumber() == rs && gi.row.end.getNumber() == re);
+		}
+	}
+
+	return false;
 }
 
 
@@ -840,6 +922,75 @@ File& CKanbanBoardComponent::getFile()
 bool CKanbanBoardComponent::isFileSet()
 {
 	return iFile.exists();
+}
+
+void CKanbanBoardComponent::setColumnsEditor(bool aEnabled)
+{
+	iColumnsEditorEnabled = aEnabled;
+
+	for (int i = 0; i < iKanbanColumns.size(); i++)
+	{
+		bool right = false;
+		if ( isColumnLastInGrid( iKanbanColumns[i]) )
+		{
+			right = true;
+		}
+		else
+		{
+			right = !isColumnNextInGridSameSize(iKanbanColumns[i]);
+		}
+		iKanbanColumns[i]->setEditMode(aEnabled, right && aEnabled);
+	}
+	updateSize();
+}
+
+bool CKanbanBoardComponent::isColumnsEditorEnabled()
+{
+	return iColumnsEditorEnabled;
+}
+
+void CKanbanBoardComponent::addColumn(CKanbanColumnComponent * aColumn, bool aBefore)
+{
+	int gi1col = aColumn->getGridItem().column.start.getNumber();
+	int gi1rows = aColumn->getGridItem().row.start.getNumber();
+	int gi1rowe = aColumn->getGridItem().row.end.getNumber();
+
+	int maxid = 0;
+	for (auto k : iKanbanColumns)
+	{
+		if (k->getColumnId() >= maxid) maxid = k->getColumnId() + 1;
+	}
+
+	CKanbanColumnComponent* col = new CKanbanColumnComponent(maxid, "Column " + String(maxid), *this);
+	col->setEditMode(iColumnsEditorEnabled, !aBefore && ( isColumnLastInGrid(aColumn) || !isColumnNextInGridSameSize(aColumn)) );
+	iKanbanColumns.add(col);
+	addAndMakeVisible(col);
+
+	int w = CConfiguration::getIntValue("KanbanCardWidth");
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
+	Grid::Px wpx(w + 2 * m);
+	iGrid.templateColumns.add(Grid::TrackInfo(wpx));
+
+	if (!aBefore) gi1col++;
+
+	for (auto& gi : iGrid.items)
+	{
+		int gi2col = gi.column.start.getNumber();
+		if (gi2col >= gi1col)
+		{
+			gi.setArea(gi.row.start, gi.column.start.getNumber() + 1, gi.row.end, gi.column.end.getNumber() + 1);
+			static_cast<CKanbanColumnComponent*>(gi.associatedComponent)->setGridItem(gi);
+		}
+	}
+
+	GridItem gi(col);
+	gi.setArea(gi1rows, gi1col, gi1rowe, gi1col);
+	iGrid.items.add(gi);
+	col->setGridItem(gi);
+
+	aColumn->setEditModeRightVisible(isColumnLastInGrid(aColumn));
+
+	updateSize();
 }
 
 const Array<CKanbanCardComponent*> CKanbanBoardComponent::getCardsForColumn(CKanbanColumnComponent * aColumn)

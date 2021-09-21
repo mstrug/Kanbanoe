@@ -14,6 +14,7 @@
 #include "CKanbanCardComponent.h"
 #include "CKanbanColumnComponent.h"
 
+
 using namespace juce;
 
 //==============================================================================
@@ -61,6 +62,10 @@ public:
 	File& getFile();
 	bool isFileSet();
 
+	void setColumnsEditor(bool aEnabled);
+	bool isColumnsEditorEnabled();
+	void addColumn(CKanbanColumnComponent* aColumn, bool aBefore);
+
 	const Array< CKanbanCardComponent* > getCardsForColumn(CKanbanColumnComponent* aColumn);
 
 	const OwnedArray< CKanbanColumnComponent >& getColumns();
@@ -75,9 +80,15 @@ private:
 
 	int updateGridWidth();
 
+	bool isColumnLastInGrid(CKanbanColumnComponent* aColumn);
+
+	bool isColumnNextInGridSameSize(CKanbanColumnComponent* aColumn);
+
 private:
 
 	Grid iGrid;
+
+	Grid iEditGrid;
 
 	File iFile;
 
@@ -90,6 +101,8 @@ private:
 	int iGridWidth;
 
 	String iSearchText;
+
+	bool iColumnsEditorEnabled;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanBoardComponent)
 };

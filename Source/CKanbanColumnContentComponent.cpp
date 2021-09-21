@@ -151,19 +151,19 @@ void CKanbanColumnContentComponent::unhideAllCards()
 	resized();
 }
 
-void CKanbanColumnContentComponent::createNewCard(const CKanbanCardComponent* aCardToCopyDataFrom )
+void CKanbanColumnContentComponent::createNewCard(const CKanbanCardComponent* aCardToCopyDataFrom, bool aDuplicateDates, bool aOpenPropertyWindow)
 {
 	CKanbanCardComponent* c = iOwner.kanbanBoard().createCard();
 
 	if (aCardToCopyDataFrom)
 	{
-		c->duplicateDataFrom(*aCardToCopyDataFrom);
+		c->duplicateDataFrom(*aCardToCopyDataFrom, aDuplicateDates);
 	}
 
 	addCard(c);
 	iOwner.scrollToBottom();
 	repaint();
-	c->openPropertiesWindow();
+	if (aOpenPropertyWindow) c->openPropertiesWindow();
 }
 
 void CKanbanColumnContentComponent::updateSize()

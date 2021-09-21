@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.43");
+const String AppVersion("v0.46");
 
 
 
@@ -208,6 +208,7 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 	else if (topLevelMenuIndex == 1) // view
 	{
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuViewArchive);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuViewColumnsEdit);
 	}
 	else if (topLevelMenuIndex == 2) // config
 	{
@@ -261,7 +262,7 @@ void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 {
 	Array<CommandID> commands{ CommandIDs::menuFile, CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
 		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileSaveGroup, CommandIDs::menuFileSaveGroupAs, CommandIDs::menuFileOpenRecent, CommandIDs::menuFileExit,
-		CommandIDs::menuViewArchive, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
+		CommandIDs::menuViewArchive, CommandIDs::menuViewColumnsEdit, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
 		CommandIDs::menubarSearchClear, CommandIDs::mdiNextDoc, CommandIDs::mdiPrevDoc };
 	aCommands.addArray(commands);
 }
@@ -336,9 +337,29 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 			result.setInfo("Exit", "Exit from application", "Menu", 0);
 		break;
 	case menuViewArchive:
-//			result.setInfo("View archives", "", "Menu", ApplicationCommandInfo::isDisabled );
 			result.setInfo("View archives", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));
 			result.addDefaultKeypress('A', ModifierKeys::altModifier);
+		break;
+	case menuViewColumnsEdit:
+		{
+			if (isDocOpened)
+			{
+				CMyMdiDoc* d = dynamic_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+				if (d && d->getKanbanBoard()->isColumnsEditorEnabled())
+				{
+					result.setInfo("Close add column mode", "", "Menu", 0);
+				}
+				else
+				{
+					result.setInfo("Open add column mode", "", "Menu", 0);
+				}
+			}
+			else
+			{
+				result.setInfo("Open add column mode", "", "Menu", ApplicationCommandInfo::isDisabled );
+			}
+			result.addDefaultKeypress('C', ModifierKeys::altModifier);
+		}
 		break;
 	case menuConfigSearchCaseInsensitive:
 			result.setInfo("Search tags/date/assigne case insensitive", "Configure search case insensitive", "Menu", (CConfiguration::getBoolValue(KConfigSearchCase) ? ApplicationCommandInfo::isTicked : 0) );
@@ -548,6 +569,16 @@ bool MainComponent::perform(const InvocationInfo& info)
 
 			//auto kb = static_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument())->getKanbanBoard();
 			//kb->logArchives();
+		}
+		break;
+	case menuViewColumnsEdit:
+		{
+			auto doc = iMdiPanel.getActiveDocument();
+			if (!doc) break;
+			CMyMdiDoc* mdoc = dynamic_cast<CMyMdiDoc*>(doc);
+			if (!mdoc) break;
+			auto kb = mdoc->getKanbanBoard();
+			kb->setColumnsEditor(!kb->isColumnsEditorEnabled());
 		}
 		break;
 	case menuConfigSearchCaseInsensitive:

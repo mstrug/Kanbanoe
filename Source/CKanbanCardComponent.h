@@ -14,6 +14,7 @@
 
 //==============================================================================
 /*
+    properties: url, tags, assignee
 */
 using namespace juce;
 
@@ -25,7 +26,7 @@ public:
     CKanbanCardComponent(CKanbanColumnContentComponent* aOwner);
     ~CKanbanCardComponent() override;
 
-	void duplicateDataFrom(const CKanbanCardComponent& aCard);
+	void duplicateDataFrom(const CKanbanCardComponent& aCard, bool aDuplicateDates = false);
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -42,7 +43,7 @@ public:
 
 	void openPropertiesWindow();
 	void setupFromArchive(const juce::var & aArchive);
-	void setupFromJson(const NamedValueSet& aValues); // const String& aLabel, const String& aNotes, const String& aColour);
+	void setupFromJson(const NamedValueSet& aValues, const StringPairArray& aCustomProps );
 
 	void setText(const String& aString);
 	String getText();
@@ -55,6 +56,7 @@ public:
 	bool isDone();
 	void setDone(bool aDone);
 	String getDueDateAsString( juce::Colour* aColour = nullptr);
+	void setDates(Time& aCreateionDate, Time& aLastUpdateDate);
 	juce::Time getCreationDate();
 	juce::Time getLastUpdateDate();
 	juce::Time getDueDate();
@@ -94,7 +96,7 @@ private:
 	ComponentDragger iDragger;
 
 	bool iIsDragging;
-
+	
 	bool iMouseActive;
 
 	Label iLabel;

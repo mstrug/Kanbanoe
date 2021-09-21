@@ -19,6 +19,9 @@
 // clipboard card
 static std::unique_ptr<CKanbanCardComponent> clipboardCard; // = nullptr;
 
+const int KAssigneeLength = 3;
+
+
 //==============================================================================
 CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iIsDone(false), iCreationDate(juce::Time::getCurrentTime()), iReadOnly(false)
 {
@@ -49,7 +52,7 @@ CKanbanCardComponent::~CKanbanCardComponent()
 {
 }
 
-void CKanbanCardComponent::duplicateDataFrom(const CKanbanCardComponent & aCard)
+void CKanbanCardComponent::duplicateDataFrom(const CKanbanCardComponent & aCard, bool aDuplicateDates )
 {
 	iLabel.setText(aCard.iLabel.getText(), NotificationType::dontSendNotification);
 	iColorBar = aCard.iColorBar;
@@ -59,6 +62,11 @@ void CKanbanCardComponent::duplicateDataFrom(const CKanbanCardComponent & aCard)
 	iIsUrlSet = aCard.iIsUrlSet;
 	iIsDueDateSet = aCard.iIsDueDateSet;
 	iDueDate = aCard.iDueDate;
+	if (aDuplicateDates)
+	{
+		iCreationDate = aCard.iCreationDate;
+		iLastUpdateDate = aCard.iLastUpdateDate;
+	}
 
 	for ( int i = 0; i < aCard.getProperties().size(); i++)
 	{
@@ -97,7 +105,7 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 		{
 			g.setColour(Colours::lightgrey);
 			g.setFont(juce::Font(12.0f));
-			g.drawText(iAssigne.getText().substring(0,2), iRectAssigne, Justification::centredRight, false);
+			g.drawText(iAssigne.getText().substring(0, KAssigneeLength), iRectAssigne, Justification::centredRight, false);
 		}
 
 		if (iIsUrlSet)
@@ -149,12 +157,14 @@ void CKanbanCardComponent::resized()
 
 void CKanbanCardComponent::mouseDown(const MouseEvent& event)
 {
+	Logger::outputDebugString("entered mouseDown");
 }
 
 void CKanbanCardComponent::mouseDrag(const MouseEvent& event)
 {
 	if ( !iIsDragging && event.mods.isLeftButtonDown() && !iReadOnly )
 	{
+		Logger::outputDebugString("entered mouseDrag");
 		if (auto* dragContainer = DragAndDropContainer::findParentDragContainerFor(this))
 		{
 			dragContainer->startDragging(KanbanCardComponentDragDescription, this);
@@ -169,6 +179,7 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 {
 	if (iIsDragging)
 	{
+		Logger::outputDebugString("entered iisdragging");
 		iIsDragging = false;
 		setChildrenVisibility(iIsDragging);
 		repaint();
@@ -185,6 +196,7 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 		}
 		else
 		{
+			Logger::outputDebugString("entered showProperties");
 			showProperties();
 		}
 
@@ -206,7 +218,13 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 		menu.addItem("Remove", [&]()
 		{
 			int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Confirmation", "Do you really want to remove this card?");
-			if ( ret == 1 ) this->getOwner()->getOwner().removeCard(this);
+			if (ret == 1)
+			{
+				MessageManager::callAsync([&]()
+				{
+					this->getOwner()->getOwner().removeCard(this);
+				});				
+			}
 		});
 		menu.addItem("Duplicate", [&]()
 		{
@@ -306,7 +324,7 @@ void CKanbanCardComponent::setupFromArchive(const juce::var & aArchive)
 	CKanbanBoardComponent::fromJsonCard(obj, nullptr, ret, nullptr, false, this);
 }
 
-void CKanbanCardComponent::setupFromJson(const NamedValueSet& aValues) //const String& aLabel, const String& aNotes, const String& aColour)
+void CKanbanCardComponent::setupFromJson(const NamedValueSet& aValues, const StringPairArray& aCustomProps)
 {
 	iLabel.setText(URL::removeEscapeChars(aValues["text"]), NotificationType::dontSendNotification);
 	iColorBar = Colour::fromString(URL::removeEscapeChars(aValues["colour"]));
@@ -319,6 +337,11 @@ void CKanbanCardComponent::setupFromJson(const NamedValueSet& aValues) //const S
 	iCreationDate = Time(aValues["creationDate"].toString().getLargeIntValue());
 	iDueDate = Time(aValues["dueDate"].toString().getLargeIntValue());
 	iLastUpdateDate = Time(aValues["lastUpdateDate"].toString().getLargeIntValue());
+	
+	for (auto &k : aCustomProps.getAllKeys())
+	{
+		getProperties().set(k, aCustomProps[k]);
+	}
 
 	// todo:  wa for versions prev 0.25: (remove in future)
 	if (iCreationDate.toMilliseconds() == 0) iCreationDate = Time(2021, 0, 1, 12, 00);
@@ -438,6 +461,12 @@ String CKanbanCardComponent::getDueDateAsString(juce::Colour* aColour)
 	return s;
 }
 
+void CKanbanCardComponent::setDates(Time& aCreateionDate, Time& aLastUpdateDate)
+{
+	iCreationDate = aCreateionDate;
+	iLastUpdateDate = aLastUpdateDate;
+}
+
 juce::Time CKanbanCardComponent::getCreationDate()
 {
 	return iCreationDate;
@@ -493,19 +522,30 @@ void CKanbanCardComponent::setAssigne(const String & aString)
 
 	String out = s1.substring(0, 1);
 
+	int len = KAssigneeLength - 2; // for len=2 set to 0, for len=3 set to 1;
+
 	int spidx = s1.indexOfChar(' ');
+	if (spidx == -1) spidx = s1.indexOfChar('.');		
 	if (spidx != -1)
 	{
-		String s2 = s1.substring(spidx);
+
+		String s2 = s1.substring(spidx + 1);
 		s2 = s2.trim();
-		if ( s2.isEmpty() ) out += s1.substring(1, 2);
-		else out += s2.substring(0, 1);
+		if ( s2.isEmpty() ) out += s1.substring(1, 2 + len);
+		else out += s2.substring(0, 1 + len);
 	}
 	else
 	{
-		out += s1.substring(1, 2);
+		out += s1.substring(1, 2 + len);
 	}
 
+	if (KAssigneeLength == 3)
+	{
+		auto c = out[2];
+		out = out.dropLastCharacters(1);
+		out = out.toUpperCase();
+		out += c;
+	}
 	iAssigne.setText(out, NotificationType::dontSendNotification);
 }
 
@@ -560,6 +600,18 @@ String CKanbanCardComponent::toJson()
 	ret += ", \"creationDate\":" + String(iCreationDate.toMilliseconds());
 	ret += ", \"dueDate\":" + String(iDueDate.toMilliseconds());
 	ret += ", \"lastUpdateDate\":" + String(iLastUpdateDate.toMilliseconds());
+
+	ret += ", \"customProp\":[";
+	bool first = true;
+	for (auto& p : getProperties())
+	{
+		String s1 = p.name.toString();
+		if (s1 == "assignee" || s1 == "tags" || s1 == "url") continue;
+		if (first) first = false;
+		else ret += ",";
+		ret += "{\"" + URL::addEscapeChars(p.name.toString(), false) + "\":\"" + URL::addEscapeChars(p.value.toString(), false) + "\"}";
+	}
+	ret += "]";
 
 	ret += " }";
 	return ret;

@@ -61,18 +61,34 @@ public:
 	void setMaxWip(int aWip);
 
 	void setGridItem(const GridItem& aGridItem);
-	const GridItem& getGridItem();
+	const GridItem& getGridItem() const;
 	bool isGridColumn(int aStartCol, int aEndCol);
+	bool isColumnSameSize(const CKanbanColumnComponent& aColumn);
+	void moveGridItemRight();
 
 	void updateColumnTitle();
 
+	void setEditMode(bool aLeftEnabled, bool aRightEnabled);
+	bool isEditModeRightVisible();
+	void setEditModeRightVisible(bool aVisible);
+	static int getEditModeMargin();
+
 private:
+
+	Rectangle<int> getLocalBoundsForCardsSection();
+
+	Rectangle<int> getLocalBoundsForEditLeft();
+	
+	Rectangle<int> getLocalBoundsForEditRight();
 
 	void showSetupMenu();
 
 	void archive();
 
 	String getMinimalDueDate( juce::Colour* aColour = nullptr);
+
+	void decodeGitlabRsp(const String& aData);
+	void decodeGitlabNotifier(CKanbanCardComponent& aCard);
 
 public: // from ScrollBar::Listener
 
@@ -87,6 +103,13 @@ private: // from ModalComponentManager::Callback
 		BtnMenuHandler(CKanbanColumnComponent& aOwner) : iOwner(aOwner) {}
 		void modalStateFinished(int returnValue) override { iOwner.iSetupButton.setState(Button::buttonNormal); }
 	};
+
+private:
+
+	class ComponentListenerEditButton : public ComponentListener
+	{
+		void componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) override;
+	} iEditModeButtonListener;
 
 private:
 
@@ -118,6 +141,13 @@ private:
 	CKanbanColumnContentComponent iViewportLayout;
 
 	bool iMouseTitleIsActive;
+
+	bool iEditMode;
+
+	bool iEditButtonRightVisible;
+
+	DrawableButton iEditModeLeft;
+	DrawableButton iEditModeRight;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CKanbanColumnComponent)
 };

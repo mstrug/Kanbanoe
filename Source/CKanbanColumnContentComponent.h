@@ -35,7 +35,7 @@ public:
 	void hideCard(CKanbanCardComponent* aCard);
 	void hideAllCards();
 	void unhideAllCards();
-	void createNewCard(const CKanbanCardComponent* aCardToCopyDataFrom = nullptr);
+	void createNewCard(const CKanbanCardComponent* aCardToCopyDataFrom = nullptr, bool aDuplicateDates = false, bool aOpenPropertyWindow = true);
 	void updateSize();
 	void setMinimumHeight(int aHeight);
 	CKanbanColumnComponent& getOwner();

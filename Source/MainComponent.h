@@ -32,6 +32,7 @@ public:
 		menuFileOpenRecent,
 		menuFileExit,
 		menuViewArchive,
+		menuViewColumnsEdit,
 		menuConfigSearchDynamic,
 		menuConfigSearchCaseInsensitive,
 		menuHelpAbout,
