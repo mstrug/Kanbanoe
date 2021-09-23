@@ -17,6 +17,59 @@
 const int KTitleHeight = 25;
 const int KEditModeMargin = 30;
 
+
+class CGitlabThread : public Thread
+{
+	CKanbanColumnComponent& iOwner;
+public:
+	CGitlabThread(CKanbanColumnComponent& aOwner) : Thread("Gitlab"), iOwner(aOwner)
+	{
+		startThread();
+	}
+
+	~CGitlabThread() override
+	{
+		stopThread(100);
+	}
+
+	void run() override
+	{
+		iOwner.decodeGitlabStarting();
+
+		StringArray a = { "michal.strug" };
+		for (auto& s : a)
+		{
+			if (threadShouldExit()) return;
+//			wait(200);
+
+			ChildProcess cp;
+			if (cp.start("curl.exe -k -v --header \"PRIVATE-TOKEN: \" \"https://url/api/v4/projects/x/issues?assignee_username=" + s + "&due_date=week&state=opened&order_by=due_date&sort=asc&scope=all\"", ChildProcess::wantStdOut))
+			{
+				String out = cp.readAllProcessOutput();
+				uint32 ec = cp.getExitCode();
+				if (ec == 0)
+				{
+					//Logger::outputDebugString(out);
+					iOwner.decodeGitlabRsp(out);
+				}
+			}
+		}
+
+		const MessageManagerLock mml(Thread::getCurrentThread());
+		if (!mml.lockWasGained()) return;
+		// ui update
+		iOwner.decodeGitlabFinished();
+
+		delete this;
+	}
+
+private:
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CGitlabThread)
+};
+
+
+
+
 void CKanbanColumnComponent::ComponentListenerEditButton::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized)
 {
 	if (wasResized)
@@ -170,7 +223,6 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 
 CKanbanColumnComponent::~CKanbanColumnComponent()
 {
-
 }
 
 void CKanbanColumnComponent::paint(juce::Graphics& g)
@@ -330,6 +382,10 @@ void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 		menu.addSeparator();
 		menu.addItem("Refresh", [&]()
 		{
+			CGitlabThread* thr = new CGitlabThread(*this);
+			//decodeGitlabStarting();			
+			//decodeGitlabFinished();
+
 		});
 		menu.show();
 	}
@@ -844,16 +900,17 @@ void CKanbanColumnComponent::decodeGitlabRsp(const String & aData)
 				String tags;
 				for (auto& j : *dl) tags += j.toString() + " ";
 
-				CKanbanCardComponent c(&iViewportLayout);
-				c.setText(title);
-				c.getProperties().set("pid", pid.toString());
-				c.getProperties().set("id", id.toString());
-				c.setUrl(url);
-				c.setTags(tags);
-				c.setAssigne(assingee);
+				CKanbanCardComponent* c = new CKanbanCardComponent(nullptr);
+				iTempCardList.add(c);
+				c->setText(title);
+				c->getProperties().set("pid", pid.toString());
+				c->getProperties().set("id", id.toString());
+				c->setUrl(url);
+				c->setTags(tags);
+				c->setAssigne(assingee);
 				// c.setNotes(dd->getProperty("description")); // too large?
-				if (duedate.isString()) c.setDueDate(true, Time::fromISO8601(duedate.toString()));
-				c.setDates(Time::fromISO8601(cr.toString()), Time::fromISO8601(up.toString()));
+				if (duedate.isString()) c->setDueDate(true, Time::fromISO8601(duedate.toString()));
+				c->setDates(Time::fromISO8601(cr.toString()), Time::fromISO8601(up.toString()));
 
 				decodeGitlabNotifier(c);
 			}
@@ -861,23 +918,61 @@ void CKanbanColumnComponent::decodeGitlabRsp(const String & aData)
 	}
 }
 
-void CKanbanColumnComponent::decodeGitlabNotifier(CKanbanCardComponent & aCard)
+void CKanbanColumnComponent::decodeGitlabStarting()
+{
+	iTempCardList.clear();
+
+	
+}
+
+void CKanbanColumnComponent::decodeGitlabNotifier(CKanbanCardComponent* aCard)
+{
+}
+
+void CKanbanColumnComponent::decodeGitlabFinished()
 {
 	auto ar = iOwner.getCardsForColumn(this);
-	for (int i = ar.size() - 1; i >= 0; --i)
-	{
-		if (ar[i]->getProperties()["pid"] == aCard.getProperties()["pid"] &&
-			ar[i]->getProperties()["id"] == aCard.getProperties()["id"])
-		{
-			ar[i]->setDueDate(aCard.isDueDateSet(), aCard.getDueDate());
-			ar[i]->setDates(aCard.getCreationDate(), aCard.getLastUpdateDate());
-			ar[i]->setAssigne(aCard.getAssigne());
 
-			return;
+	for (auto c : iTempCardList)
+	{
+		bool foundCard = false;
+		for (int i = ar.size() - 1; i >= 0; --i)
+		{
+			if (ar[i]->getProperties()["pid"] == c->getProperties()["pid"] &&
+				ar[i]->getProperties()["id"] == c->getProperties()["id"])
+			{
+				foundCard = true;
+				ar[i]->setDueDate(c->isDueDateSet(), c->getDueDate());
+				ar[i]->setDates(c->getCreationDate(), c->getLastUpdateDate());
+				ar[i]->setAssigne(c->getAssigne());
+				break;
+			}
+		}
+		if (!foundCard)
+		{
+			iViewportLayout.createNewCard(c, true, false);
 		}
 	}
 
-	iViewportLayout.createNewCard(&aCard, true, false);
+	for (int i = ar.size() - 1; i >= 0; --i)
+	{
+		bool foundCard = false;
+		for (auto c : iTempCardList)
+		{
+			if (ar[i]->getProperties()["pid"] == c->getProperties()["pid"] &&
+				ar[i]->getProperties()["id"] == c->getProperties()["id"])
+			{
+				foundCard = true;
+				break;
+			}
+		}
+		if (!foundCard)
+		{
+			removeCard(ar[i]);
+		}
+	}
+
+	iTempCardList.clear();
 }
 
 void CKanbanColumnComponent::updateColumnTitle()

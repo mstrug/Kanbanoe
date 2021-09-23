@@ -24,7 +24,7 @@ class CKanbanCardComponent  : public juce::Component
 {
 public:
     CKanbanCardComponent(CKanbanColumnContentComponent* aOwner);
-    ~CKanbanCardComponent() override;
+    ~CKanbanCardComponent();
 
 	void duplicateDataFrom(const CKanbanCardComponent& aCard, bool aDuplicateDates = false);
 

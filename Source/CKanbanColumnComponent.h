@@ -12,11 +12,11 @@
 
 #include <JuceHeader.h>
 #include "CKanbanColumnContentComponent.h"
+#include "CKanbanCardComponent.h"
 
 using namespace juce;
 
 class CKanbanBoardComponent;
-class CKanbanCardComponent;
 
 //==============================================================================
 /*
@@ -87,8 +87,11 @@ private:
 
 	String getMinimalDueDate( juce::Colour* aColour = nullptr);
 
+public:
 	void decodeGitlabRsp(const String& aData);
-	void decodeGitlabNotifier(CKanbanCardComponent& aCard);
+	void decodeGitlabStarting();
+	void decodeGitlabNotifier(CKanbanCardComponent* aCard);
+	void decodeGitlabFinished();
 
 public: // from ScrollBar::Listener
 
@@ -148,6 +151,8 @@ private:
 
 	DrawableButton iEditModeLeft;
 	DrawableButton iEditModeRight;
+
+	OwnedArray<CKanbanCardComponent> iTempCardList;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CKanbanColumnComponent)
 };

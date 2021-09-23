@@ -432,13 +432,13 @@ String CKanbanCardComponent::getDueDateAsString(juce::Colour* aColour)
 			else if (dval == 0)
 			{
 				if (aColour) *aColour = Colours::whitesmoke;
-				s = "tooday";
+				s = "today"; // tdy
 			}
-			else if (dval > 0 && dval <= 1) s = "tomorrow";
+			else if (dval > 0 && dval <= 1) s = "tmrw";
 			else if (dval < 0 && dval >= -1)
 			{
 				if (aColour) *aColour = Colours::tomato;
-				s = "yesterday";
+				s = "yday";
 			}
 			else if (dval < -365)
 			{
