@@ -142,7 +142,7 @@ void CKanbanBoardComponent::resized()
 }
 
 void CKanbanBoardComponent::updateSize()
-{
+{ // setting up columns sizes
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int wmin = CConfiguration::getIntValue("KanbanColumnMinimizedWidth");
@@ -715,7 +715,7 @@ bool CKanbanBoardComponent::fromJsonCard(const juce::DynamicObject* obj2, CKanba
 		}
 
 		if (aArchiveObject)
-		{
+		{ // todo: add custom properties?
 			String _t = text;
 			String _n = notes;
 			String _tg = tags;

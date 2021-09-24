@@ -398,7 +398,11 @@ void CKanbanCardComponent::setDueDate(bool aIsSet, juce::Time& aDueDate)
 {
 	updateLastUpdateDate();
 	iIsDueDateSet = aIsSet;
-	if (aIsSet) iDueDate = aDueDate;
+	if (aIsSet)
+	{
+		//Time d(aDueDate.getYear(), aDueDate.getMonth(), aDueDate.getDayOfMonth(), iCreationDate.getHours(), iCreationDate.getMinutes(), iCreationDate.getSeconds(), iCreationDate.getMilliseconds());
+		iDueDate = aDueDate;
+	}
 	else iDueDate = Time(0);
 }
 
@@ -412,7 +416,7 @@ void CKanbanCardComponent::setDone(bool aDone)
 	iIsDone = aDone;
 }
 
-String CKanbanCardComponent::getDueDateAsString(juce::Colour* aColour)
+String CKanbanCardComponent::getDueDateAsString(juce::Colour* aColour, bool aLongForm)
 {
 	String s;
 	if (iIsDueDateSet)
@@ -434,11 +438,11 @@ String CKanbanCardComponent::getDueDateAsString(juce::Colour* aColour)
 				if (aColour) *aColour = Colours::whitesmoke;
 				s = "today"; // tdy
 			}
-			else if (dval > 0 && dval <= 1) s = "tmrw";
+			else if (dval > 0 && dval <= 1) s = (aLongForm ? "tomorrow" : "tmrw" );
 			else if (dval < 0 && dval >= -1)
 			{
 				if (aColour) *aColour = Colours::tomato;
-				s = "yday";
+				s = (aLongForm ? "yesterday" : "yday" );
 			}
 			else if (dval < -365)
 			{

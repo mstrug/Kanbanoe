@@ -43,7 +43,7 @@ public:
 
 	void openPropertiesWindow();
 	void setupFromArchive(const juce::var & aArchive);
-	void setupFromJson(const NamedValueSet& aValues, const StringPairArray& aCustomProps );
+	void setupFromJson(const NamedValueSet& aValues, const StringPairArray& aCustomProps ); // todo: change to CKanbanCardData
 
 	void setText(const String& aString);
 	String getText();
@@ -55,7 +55,7 @@ public:
 	void setDueDate(bool aIsSet, juce::Time& aDueDate);
 	bool isDone();
 	void setDone(bool aDone);
-	String getDueDateAsString( juce::Colour* aColour = nullptr);
+	String getDueDateAsString( juce::Colour* aColour = nullptr, bool aLongForm = false);
 	void setDates(Time& aCreateionDate, Time& aLastUpdateDate);
 	juce::Time getCreationDate();
 	juce::Time getLastUpdateDate();
@@ -77,6 +77,12 @@ public:
 	int getOwnerColumnId() const;
 
 	void setReadOnly(bool aReadOnly);
+
+	struct CKanbanCardData
+	{
+		NamedValueSet values;
+		StringPairArray customProps;
+	};
 
 public: // clipboard
 

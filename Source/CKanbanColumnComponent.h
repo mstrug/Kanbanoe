@@ -134,12 +134,15 @@ private:
 	Label iTitle;
 	Label iTitleCardsCount;
 	Label iTitleMinimalDueDate;
-
+	
 	ScrollBar iScrollBar;
 
 	DrawableButton iAddCardButton;
 
 	DrawableButton iSetupButton;
+
+	double iProgressBarValue;
+	ProgressBar iProgressBar;
 
 	CKanbanColumnContentComponent iViewportLayout;
 
@@ -152,7 +155,8 @@ private:
 	DrawableButton iEditModeLeft;
 	DrawableButton iEditModeRight;
 
-	OwnedArray<CKanbanCardComponent> iTempCardList;
+	bool iGitlabDecodingOngoing;
+	Array<CKanbanCardComponent::CKanbanCardData> iTempCardList;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CKanbanColumnComponent)
 };
