@@ -543,7 +543,7 @@ void CKanbanCardComponent::setAssigne(const String & aString)
 		out += s1.substring(1, 2 + len);
 	}
 
-	if (KAssigneeLength == 3)
+	if (KAssigneeLength == 3 && out.length() == KAssigneeLength && spidx != -1)
 	{
 		auto c = out[2];
 		out = out.dropLastCharacters(1);

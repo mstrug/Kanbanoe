@@ -73,6 +73,8 @@ public:
 	void setEditModeRightVisible(bool aVisible);
 	static int getEditModeMargin();
 
+	String outputAsJson();
+
 private:
 
 	Rectangle<int> getLocalBoundsForCardsSection();
@@ -87,11 +89,17 @@ private:
 
 	String getMinimalDueDate( juce::Colour* aColour = nullptr);
 
-public:
-	void decodeGitlabRsp(const String& aData);
-	void decodeGitlabStarting();
-	void decodeGitlabNotifier(CKanbanCardComponent* aCard);
-	void decodeGitlabFinished();
+protected:
+
+	virtual bool showRefreshMenuEntry() { return false; }
+
+	virtual void refreshThreadWorkerFunction() {  }
+
+	virtual void refreshSetupFunction() {  }
+
+	virtual int getColumnTypeId() { return 0; }
+
+	virtual void outputAdditionalDataToJson(String& aJson) { /* start with ',' */ }
 
 public: // from ScrollBar::Listener
 
@@ -114,7 +122,7 @@ private:
 		void componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) override;
 	} iEditModeButtonListener;
 
-private:
+protected:
 
 	CKanbanBoardComponent& iOwner;
 
@@ -155,8 +163,7 @@ private:
 	DrawableButton iEditModeLeft;
 	DrawableButton iEditModeRight;
 
-	bool iGitlabDecodingOngoing;
-	Array<CKanbanCardComponent::CKanbanCardData> iTempCardList;
+	bool iRefreshOngoing;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CKanbanColumnComponent)
 };

@@ -11,6 +11,8 @@
 #include <JuceHeader.h>
 #include "CKanbanBoard.h"
 #include "CConfiguration.h"
+#include "CKanbanColumnGitlab.h"
+
 
 //==============================================================================
 CKanbanBoardComponent::CKanbanBoardComponent() : iGridWidth(0), iColumnsEditorEnabled(false)
@@ -494,7 +496,7 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 	var version = obj->getProperty("version");
 	if (version.isString())
 	{
-		if (version.toString() != "0.1" && version.toString() != "0.2")
+		if (version.toString() != "0.1" && version.toString() != "0.2" && version.toString() != "0.3")
 		{
 			aReturnErrorMessage = "Not supported file version";
 			delete ret;
@@ -520,9 +522,21 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 			var dueDateDone = obj2->getProperty("dueDateDone");
 			var minimized = obj2->getProperty("minimized");
 			var wip = obj2->getProperty("wip");
+			var type = obj2->getProperty("type");
 			if (title.isString() && id.isInt())
 			{
-				auto col = new CKanbanColumnComponent(id, URL::removeEscapeChars(title), *ret);
+				int colType = 0;
+				if (type.isInt()) colType = type;
+
+				CKanbanColumnComponent *col = nullptr;
+				if ( colType == 0 ) col = new CKanbanColumnComponent(id, URL::removeEscapeChars(title), *ret);
+				else if (colType == 1) col = CKanbanColumnGitlab::createFromJson(id, URL::removeEscapeChars(title), *ret, obj2);
+				else
+				{
+					aReturnErrorMessage = "Not supported column type [columns array]";
+					delete ret;
+					return nullptr;
+				}
 				ret->iKanbanColumns.add( col );
 				if (dueDateDone.isBool()) col->setColumnDueDateDone(true);
 				if (minimized.isBool()) col->setMinimized(true, false);
@@ -638,7 +652,7 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 	}
 	else
 	{
-		if (version.toString() == "0.2")
+		if (version.toString() == "0.2" || version.toString() == "0.3")
 		{
 			aReturnErrorMessage = "Not supported file type [archives array]";
 			delete ret;
@@ -831,7 +845,7 @@ bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 		f.setPosition(0);
 		f.truncate();
 
-		f << "{\n\"version\":\"0.2\",\n\n\"board\":\n{\n";
+		f << "{\n\"version\":\"0.3\",\n\n\"board\":\n{\n";
 
 		f << "\"rows\":" + String(iGrid.templateRows.size()) + ", \"columns\":" + String(iGrid.templateColumns.size()) + ", \n";
 
@@ -852,11 +866,12 @@ bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 		for (auto i : iKanbanColumns)
 		{
 			if (j > 0) f << ",\n";
-			f << "{ \"title\":\"" + URL::addEscapeChars( i->getTitle(), false ) + "\", \"id\":" + String(i->getColumnId());
+			f << i->outputAsJson();
+			/*f << "{ \"title\":\"" + URL::addEscapeChars( i->getTitle(), false ) + "\", \"id\":" + String(i->getColumnId());
 			if (i->isColumnDueDateDone()) f << ", \"dueDateDone\":true ";
 			if (i->isMinimized()) f << ", \"minimized\":true ";
 			if (i->getMaxWip() > 0) f << ", \"wip\":" + String(i->getMaxWip());
-			f << " }";
+			f << " }";*/
 			j++;
 		}
 
@@ -951,20 +966,68 @@ bool CKanbanBoardComponent::isColumnsEditorEnabled()
 
 void CKanbanBoardComponent::addColumn(CKanbanColumnComponent * aColumn, bool aBefore)
 {
-	int gi1col = aColumn->getGridItem().column.start.getNumber();
-	int gi1rows = aColumn->getGridItem().row.start.getNumber();
-	int gi1rowe = aColumn->getGridItem().row.end.getNumber();
-
 	int maxid = 0;
 	for (auto k : iKanbanColumns)
 	{
 		if (k->getColumnId() >= maxid) maxid = k->getColumnId() + 1;
 	}
+	String colName = "Column " + String(maxid);
 
-	CKanbanColumnComponent* col = new CKanbanColumnComponent(maxid, "Column " + String(maxid), *this);
+	// firstly choose column type
+	AlertWindow aw("Create column", "Provide new column information", AlertWindow::QuestionIcon);
+	aw.addTextEditor("text", colName, "Column name:");
+	int ct = CConfiguration::getColumnTypesCount();
+	if (ct > 1)
+	{
+		aw.addComboBox("option", CConfiguration::getColumnTypesNames(), "Column type:");
+	}
+	ToggleButton tb("Due date done column");
+	tb.setComponentID("checkbox");
+	tb.setSize(250, 36);
+	tb.setName("");
+	tb.setToggleState(false, NotificationType::dontSendNotification);
+	aw.addCustomComponent(&tb);
+	aw.addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
+	aw.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+
+	if (aw.runModalLoop() != 0) // is they picked 'ok'
+	{
+		auto text = aw.getTextEditorContents("text");
+		bool checked = tb.getToggleState();
+		if (!text.isEmpty())
+		{
+			colName = text;
+		}
+	}
+	else
+	{
+		return;
+	}
+
+	// create column object
+	auto optionIndexChosen = aw.getComboBoxComponent("option")->getSelectedItemIndex();
+	CKanbanColumnComponent* col = nullptr;
+	if (optionIndexChosen == 0)
+	{ // normal column
+		col = new CKanbanColumnComponent(maxid, colName, *this);
+	}
+	else if (optionIndexChosen == 1)
+	{ // gitlab integration
+		col = CKanbanColumnGitlab::createWithWizard(maxid, colName, *this);
+	}
+	if (col == nullptr)
+	{
+		return;
+	}
 	col->setEditMode(iColumnsEditorEnabled, !aBefore && ( isColumnLastInGrid(aColumn) || !isColumnNextInGridSameSize(aColumn)) );
 	iKanbanColumns.add(col);
 	addAndMakeVisible(col);
+
+	// update grid
+
+	int gi1col = aColumn->getGridItem().column.start.getNumber();
+	int gi1rows = aColumn->getGridItem().row.start.getNumber();
+	int gi1rowe = aColumn->getGridItem().row.end.getNumber();
 
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");

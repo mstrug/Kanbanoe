@@ -57,6 +57,10 @@ public:
 
 	static String YearAndWeekOfYear();
 
+	static int getColumnTypesCount();
+
+	static StringArray getColumnTypesNames();
+
 private:
 
 	PropertiesFile* iFile;

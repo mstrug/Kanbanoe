@@ -197,3 +197,13 @@ String CConfiguration::YearAndWeekOfYear()
 	int woy = CConfiguration::WeekOfYear();
 	return String(t.getYear()) + " " + String::formatted("wk%02d", woy);
 }
+
+int CConfiguration::getColumnTypesCount()
+{
+	return 2;
+}
+
+StringArray CConfiguration::getColumnTypesNames()
+{
+	return{ "Normal column", "Gitlab integration" };
+}
