@@ -717,6 +717,9 @@ void CKanbanColumnComponent::showSetupMenu()
 		w.addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
 		w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
 
+		auto txt = w.getTextEditor("text");
+		txt->setExplicitFocusOrder(1);
+
 		if (w.runModalLoop() != 0) // is they picked 'ok'
 		{
 			auto text = w.getTextEditorContents("text");
@@ -746,6 +749,9 @@ void CKanbanColumnComponent::showSetupMenu()
 		w.addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
 		w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
 		w.addTextEditor("text", this->iColumnTitle);
+
+		auto txt = w.getTextEditor("text");
+		txt->setExplicitFocusOrder(1);
 
 		if (w.runModalLoop() != 0) // is they picked 'ok'
 		{
@@ -793,6 +799,9 @@ void CKanbanColumnComponent::archive()
 	w.addCustomComponent(&tb);
 	w.addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
 	w.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+
+	auto txt = w.getTextEditor("text");
+	txt->setExplicitFocusOrder(1);
 
 	if (w.runModalLoop() != 0) // is they picked 'ok'
 	{

@@ -61,6 +61,9 @@ public:
 
 	static StringArray getColumnTypesNames();
 
+	static void showStatusbarMessage(StringRef aMessage); // todo: move to separate class
+	static String getStatusbarMessage();
+
 private:
 
 	PropertiesFile* iFile;
@@ -70,6 +73,10 @@ private:
 	Array<String> iRecentlyOpened;
 
 	Array<String> iRecentlyOpenedGroup;
+
+	// for statusbar message
+	String iStatusbarMsg;
+	SpinLock iStatusbarLock;
 
 };
 

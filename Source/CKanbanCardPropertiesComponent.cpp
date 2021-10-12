@@ -87,7 +87,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 
 	iSliderDueDate.setRange(-1, 365, 1);
 	iSliderDueDate.setSliderStyle(Slider::IncDecButtons);
-	iSliderDueDate.setIncDecButtonsMode(Slider::incDecButtonsDraggable_AutoDirection);
+	iSliderDueDate.setIncDecButtonsMode(Slider::incDecButtonsDraggable_Horizontal); // incDecButtonsDraggable_AutoDirection);
 	//iSliderDueDate.setTextBoxStyle(Slider::TextBoxLeft, true, 50, 20);
 	iSliderDueDate.setTextBoxStyle(Slider::NoTextBox, false, 0, 0);
 //	iSliderDueDate.setBounds(10, yofs, w - 10, 24);

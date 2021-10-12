@@ -39,7 +39,8 @@ public:
 		menubarSearch,
 		menubarSearchClear,
 		mdiNextDoc,
-		mdiPrevDoc
+		mdiPrevDoc,
+		statusbarMessage
 	};
 
     //==============================================================================
@@ -53,6 +54,7 @@ public:
 
 	void updateTimer24h();
 	void setSearchText(const String& aString, bool aUpdateSearchField);
+	void showStatusBarMessage(StringRef aString);
 
 	ApplicationCommandManager& getApplicationCommandManager();
 

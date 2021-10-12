@@ -19,6 +19,9 @@ public:
     const juce::String getApplicationName() override       { return ProjectInfo::projectName; }
     const juce::String getApplicationVersion() override    { return ProjectInfo::versionString; }
     bool moreThanOneInstanceAllowed() override             { return true; }
+	ApplicationCommandTarget* getNextCommandTarget() override { return mainWindow->iMainComponent; }
+
+	//static MainComponent* getMainComponent() { return static_cast<KanbanoeApplication*>(JUCEApplication::getInstance())->mainWindow->iMainComponent;  }
 
     //==============================================================================
     void initialise (const juce::String& /*commandLine*/) override
@@ -120,7 +123,7 @@ public:
 			}
 		}
 
-    private:
+    public:
 
 		MainComponent* iMainComponent; // destructed automatically by owner
 

@@ -17,7 +17,7 @@
 //==============================================================================
 CKanbanBoardComponent::CKanbanBoardComponent() : iGridWidth(0), iColumnsEditorEnabled(false)
 {
-	setOpaque(true);
+	setOpaque(false);
 }
 
 CKanbanBoardComponent::~CKanbanBoardComponent()
@@ -119,7 +119,8 @@ void CKanbanBoardComponent::paint (juce::Graphics& g)
        drawing code..
     */
 
-   g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
+//	g.fillAll(juce::Colours::red);   // clear the background
+//	g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));   // clear the background
 
     g.setColour (juce::Colours::grey);
     //g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
@@ -989,6 +990,9 @@ void CKanbanBoardComponent::addColumn(CKanbanColumnComponent * aColumn, bool aBe
 	aw.addCustomComponent(&tb);
 	aw.addButton("OK", 1, KeyPress(KeyPress::returnKey, 0, 0));
 	aw.addButton("Cancel", 0, KeyPress(KeyPress::escapeKey, 0, 0));
+
+	auto txt = aw.getTextEditor("text");
+	txt->setExplicitFocusOrder(1);
 
 	if (aw.runModalLoop() != 0) // is they picked 'ok'
 	{

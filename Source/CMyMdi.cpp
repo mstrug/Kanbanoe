@@ -26,6 +26,7 @@ CMyMdiDocBase::CMyMdiDocBase() :iNext(nullptr), iPrev(nullptr)
 {
 	addAndMakeVisible(iViewport);
 	setName("name");
+	//setOpaque(true);
 }
 
 CMyMdiDocBase::~CMyMdiDocBase()
@@ -44,6 +45,10 @@ void CMyMdiDocBase::resized()
 		r.removeFromBottom(8);
 		c->setBounds(r);
 	}
+}
+
+void CMyMdiDocBase::paint(juce::Graphics& g)
+{
 }
 
 void CMyMdiDocBase::setSearchText(const String& aText)
@@ -183,6 +188,7 @@ bool CMyMdi::addDocument(CMyMdiDocBase * doc, CMyMdiDocBase * docAfter)
 bool CMyMdi::addDocument(CKanbanBoardComponent* board, CMyMdiDocBase * docAfter)
 {
 	CMyMdiDoc* doc = new CMyMdiDoc(board);
+	doc->setColour(Label::backgroundColourId, juce::Colours::green);
 
 	if (docAfter)
 	{

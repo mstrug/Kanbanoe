@@ -9,6 +9,7 @@
 */
 
 #include "CConfiguration.h"
+#include "MainComponent.h"
 
 static CConfiguration* cfg = nullptr;
 
@@ -206,4 +207,24 @@ int CConfiguration::getColumnTypesCount()
 StringArray CConfiguration::getColumnTypesNames()
 {
 	return{ "Normal column", "Gitlab integration" };
+}
+
+
+void CConfiguration::showStatusbarMessage(StringRef aMessage)
+{
+	auto& c = CConfiguration::getInstance();
+	c.iStatusbarLock.enter();
+	c.iStatusbarMsg = aMessage;
+	c.iStatusbarLock.exit();
+	JUCEApplication::getInstance()->invokeDirectly(MainComponent::CommandIDs::statusbarMessage, true);
+}
+
+String CConfiguration::getStatusbarMessage()
+{
+	String tmp;
+	auto& c = CConfiguration::getInstance();
+	c.iStatusbarLock.enter();
+	tmp = c.iStatusbarMsg;
+	c.iStatusbarLock.exit();
+	return tmp;
 }

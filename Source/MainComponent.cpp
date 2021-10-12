@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.47");
+const String AppVersion("v0.48");
 
 
 
@@ -68,6 +68,8 @@ MainComponent::MainComponent() : iMdiPanel(*this), iTimer24h(*this)
 //	iStatuBarL.setco
 	addAndMakeVisible(iStatuBarL);
 
+	setOpaque(true);
+
 	setSize(1100, 600);
 
 	//iMdiPanel.addDocument(iKanbanBoards[0]);
@@ -91,20 +93,25 @@ MainComponent::~MainComponent()
 void MainComponent::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-	//g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
-	//g.fillAll(getLookAndFeel().findColour(Toolbar::backgroundColourId));
+	int h = LookAndFeel::getDefaultLookAndFeel().getDefaultMenuBarHeight();
+	
+/*	g.setGradientFill(ColourGradient(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), Point<float>(0, h),
+		getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).darker(0.9), Point<float>(getWidth(), getHeight()), true));
+	g.fillAll();
+	*/
+	// fill menubar
+	g.setColour(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
+	g.fillRect(0, 0, getWidth(), h);
 
-    //g.setFont (juce::Font (16.0f));
-    //g.setColour (juce::Colours::white);
-    //g.drawText ("Hello World!", getLocalBounds(), juce::Justification::centred, true);
 
-
+	// fill status bar background
 	auto r = getBounds();
-	auto r2 = r.removeFromBottom(LookAndFeel::getDefaultLookAndFeel().getDefaultMenuBarHeight());
+	auto r2 = r.removeFromBottom(h);
 	auto colour = findColour(TextEditor::backgroundColourId);
 	g.setColour(colour);
 	g.fillRect(r2);
 
+	// draw status bar top & bottom lines
 	g.setColour(Colours::darkgrey);
 	g.fillRect(r2.removeFromBottom(1));
 	g.fillRect(r2.removeFromTop(1)); // .translated(0, -1));
@@ -263,7 +270,7 @@ void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 	Array<CommandID> commands{ CommandIDs::menuFile, CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
 		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileSaveGroup, CommandIDs::menuFileSaveGroupAs, CommandIDs::menuFileOpenRecent, CommandIDs::menuFileExit,
 		CommandIDs::menuViewArchive, CommandIDs::menuViewColumnsEdit, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
-		CommandIDs::menubarSearchClear, CommandIDs::mdiNextDoc, CommandIDs::mdiPrevDoc };
+		CommandIDs::menubarSearchClear, CommandIDs::mdiNextDoc, CommandIDs::mdiPrevDoc, CommandIDs::statusbarMessage };
 	aCommands.addArray(commands);
 }
 
@@ -370,6 +377,9 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 	case menuHelpAbout:
 			result.setInfo("About", "", "Menu", 0);
 		break;
+	case statusbarMessage:
+			result.setInfo("Show message", "", "Statusbar", 0);
+		break;
 	default:
 		break;
 	}
@@ -458,8 +468,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 				{
 					CConfiguration::getInstance().addRecentlyOpened(kb->getFile().getFullPathName()); // todo
 
-					iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
-					Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+					showStatusBarMessage("Saved");
 				}
 			}
 		}
@@ -487,9 +496,8 @@ bool MainComponent::perform(const InvocationInfo& info)
 						if (saveFile(kb))
 						{
 							CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName()); // todo
-
-							iStatuBarL.setText("Saved", NotificationType::dontSendNotification);
-							Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+							
+							showStatusBarMessage("Saved");
 						}
 					}
 				}
@@ -503,8 +511,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 				saveFile(i);
 			}
 
-			iStatuBarL.setText("All files saved", NotificationType::dontSendNotification);
-			Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+			showStatusBarMessage("All files saved");
 		}
 		break;
 	case menuFileSaveGroup:
@@ -517,8 +524,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 				{
 					CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName(), true);
 
-					iStatuBarL.setText("Group saved", NotificationType::dontSendNotification);
-					Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+					showStatusBarMessage("Group saved");
 				}
 			}
 		}
@@ -538,8 +544,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 				{
 					CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName(), true);
 
-					iStatuBarL.setText("Group saved", NotificationType::dontSendNotification);
-					Timer::callAfterDelay(2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
+					showStatusBarMessage("Group saved");
 				}
 			}
 		}	
@@ -612,6 +617,12 @@ bool MainComponent::perform(const InvocationInfo& info)
 	case mdiPrevDoc:
 			iMdiPanel.activateNextPrevDocument(false);
 		break;
+	case statusbarMessage:
+		{
+			auto s = CConfiguration::getStatusbarMessage();
+			showStatusBarMessage(s);
+		}
+		break;
 	default:
 		return false;
 	}
@@ -636,6 +647,12 @@ void MainComponent::setSearchText(const String & aString, bool aUpdateSearchFiel
 	{
 		iTextSearch.setText(aString);
 	}
+}
+
+void MainComponent::showStatusBarMessage(StringRef aString)
+{
+	iStatuBarL.setText(aString, NotificationType::dontSendNotification);
+	Timer::callAfterDelay(aString.length() > 15 ? 10000 : 2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
 }
 
 bool MainComponent::openFile(File& aFn)

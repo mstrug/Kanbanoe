@@ -372,7 +372,15 @@ void CKanbanColumnGitlab::decodeGitlabStarting()
 	iProgressBar.setVisible(false);
 	iRefreshOngoing = false;
 
-	//if (!err.isEmpty()) AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", err );
+	if (!err.isEmpty())
+	{
+		CConfiguration::showStatusbarMessage("Refresh error: " + err);
+	}
+	else
+	{
+		CConfiguration::showStatusbarMessage("Refresh success");
+	}
+	//AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", err);
 }
 
 void CKanbanColumnGitlab::decodeGitlabNotifier(CKanbanCardComponent* aCard)

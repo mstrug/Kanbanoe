@@ -30,6 +30,7 @@ public:
 	CMyMdiDocBase();
 	virtual ~CMyMdiDocBase();
 	void resized() override;
+	void paint(juce::Graphics& g) override;
 	void setSearchText(const String& aText);
 	String& getSearchText();
 
