@@ -75,7 +75,7 @@ void CKanbanColumnContentComponent::resized()
 	Rectangle<int> r(0, -iScrollPos, getWidth(), getHeight());
 	iLayout.performLayout(r);
 	updateSize();
-	iOwner.contentUpdated();
+	iOwner.updateScrollbars();
 }
 
 void CKanbanColumnContentComponent::removeCard(CKanbanCardComponent * aCard)
@@ -431,7 +431,8 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 			{
 				col->resized();
 				//col->updateSize();
-				//col->iOwner.contentUpdated();
+				col->iOwner.contentUpdated();
+				
 			}
 			if (iDraggedCardIndex != -1 && iPlaceholderIndex > iDraggedCardIndex) iPlaceholderIndex--;
 		}

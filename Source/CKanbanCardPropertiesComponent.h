@@ -30,6 +30,8 @@ public:
     void resized() override;
 	void mouseDown(const MouseEvent& event) override;
 	void mouseUp(const MouseEvent& event) override;
+
+	bool wasContentUpdated();
 	
 public: // from ColoursComponentListener
 
@@ -75,6 +77,8 @@ private:
 	TextButton iButtonMaximize;
 
 	bool iMaximized;
+
+	bool iUpdated;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanCardPropertiesComponent)
 };

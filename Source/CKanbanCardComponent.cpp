@@ -139,7 +139,7 @@ void CKanbanCardComponent::resized()
 	if (r.getHeight() == 0) return;
 		
 	r.removeFromLeft(10);
-	r.removeFromRight(10);
+	r.removeFromRight(20);
 	iLabel.setBounds(r);
 
 	iRectUrl = getLocalBounds().removeFromRight(15);
@@ -217,7 +217,11 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 		PopupMenu menu;
 		menu.addItem("Remove", [&]()
 		{
-			int ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Confirmation", "Do you really want to remove this card?");
+			int ret = 1;
+			if (!isEmpty())
+			{
+				ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Confirmation", "Do you really want to remove this card?");
+			}
 			if (ret == 1)
 			{
 				MessageManager::callAsync([&]()
@@ -308,7 +312,15 @@ CKanbanColumnContentComponent* CKanbanCardComponent::getOwner()
 
 void CKanbanCardComponent::setOwner(CKanbanColumnContentComponent* aOwner)
 {
-	iOwner = aOwner;
+	if ( aOwner != iOwner )
+	{
+		auto oldOwner = iOwner;
+		iOwner = aOwner;
+		//if ( oldOwner != nullptr )
+		{
+			notifyListeners();
+		}
+	}
 }
 
 void CKanbanCardComponent::openPropertiesWindow()
@@ -396,8 +408,12 @@ bool CKanbanCardComponent::isDueDateSet()
 
 void CKanbanCardComponent::setDueDate(bool aIsSet, juce::Time& aDueDate)
 {
+	if ( iIsDueDateSet != aIsSet )
+	{
+		iIsDueDateSet = aIsSet;
+		// resized();
+	}
 	updateLastUpdateDate();
-	iIsDueDateSet = aIsSet;
 	if (aIsSet)
 	{
 		//Time d(aDueDate.getYear(), aDueDate.getMonth(), aDueDate.getDayOfMonth(), iCreationDate.getHours(), iCreationDate.getMinutes(), iCreationDate.getSeconds(), iCreationDate.getMilliseconds());
@@ -489,6 +505,13 @@ juce::Time CKanbanCardComponent::getDueDate()
 void CKanbanCardComponent::updateLastUpdateDate()
 {
 	iLastUpdateDate = Time::getCurrentTime();
+}
+
+bool CKanbanCardComponent::isEmpty()
+{
+	return (iLabel.getText().indexOf(KanbanCardComponentDefaultTitle) == 0 &&
+		iColorBar == CConfiguration::getColourPalette().getLastColor() &&
+		iNotes.isEmpty() && !iIsDueDateSet && iAssigne.getText().isEmpty());
 }
 
 void CKanbanCardComponent::setColour(Colour aColor)
@@ -632,6 +655,25 @@ void CKanbanCardComponent::setReadOnly(bool aReadOnly)
 	iReadOnly = aReadOnly;
 }
 
+void CKanbanCardComponent::addListener(Listener * aListener)
+{
+	jassert(aListener);
+	iListeners.addIfNotAlreadyThere(aListener);
+}
+
+void CKanbanCardComponent::removeListener(Listener * aListener)
+{
+	iListeners.removeAllInstancesOf(aListener);
+}
+
+void CKanbanCardComponent::notifyListeners()
+{
+	for (auto l : iListeners)
+	{
+		l->KanbanCardChanged();
+	}
+}
+
 CKanbanCardComponent * CKanbanCardComponent::getClipboardCard()
 {
 	return clipboardCard.get();
@@ -656,6 +698,12 @@ void CKanbanCardComponent::showProperties()
 	CallOutBox* box = new CallOutBox((juce::Component&)std::move(*comp), this->getScreenBounds(), nullptr);
 	box->setEnabled(!iReadOnly);
 	box->runModalLoop();
+
+	if (comp->wasContentUpdated())
+	{
+		notifyListeners();
+	}
+
 	delete box;
 
 	// this was disabled to let stay the callout window on the screen when changing to another app

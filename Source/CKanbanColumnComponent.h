@@ -38,6 +38,7 @@ public:
 
 	void setActiveFrame(bool aActive);
 	void contentUpdated();
+	void updateScrollbars();
 	void cardsCoutUpdated();
 	CKanbanBoardComponent& kanbanBoard();
 	CKanbanColumnContentComponent& cardsLayout();

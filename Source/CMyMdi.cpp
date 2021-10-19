@@ -22,7 +22,7 @@
 /**********************************************************************************************************/
 
 
-CMyMdiDocBase::CMyMdiDocBase() :iNext(nullptr), iPrev(nullptr)
+CMyMdiDocBase::CMyMdiDocBase() :iNext(nullptr), iPrev(nullptr), iEdited(false)
 {
 	addAndMakeVisible(iViewport);
 	setName("name");
@@ -74,6 +74,7 @@ CMyMdiDoc::CMyMdiDoc(CKanbanBoardComponent* board)
 { 
 	iViewport.setViewedComponent(board, false); 
 	setName(board->getName());
+	board->addListener(this);
 }
 
 CMyMdiDoc::~CMyMdiDoc() 
@@ -88,6 +89,28 @@ CMyMdiDoc::operator CKanbanBoardComponent*() const
 CKanbanBoardComponent* CMyMdiDoc::getKanbanBoard() 
 { 
 	return static_cast<CKanbanBoardComponent*>(iViewport.getViewedComponent()); 
+}
+
+void CMyMdiDoc::KanbanBoardChanged()
+{
+	if (!iEdited)
+	{
+		iEdited = true;
+		setName(getName() + "*");
+	}
+}
+
+void CMyMdiDoc::KanbanBoardStored()
+{
+	if (iEdited)
+	{
+		iEdited = false;
+		auto n = getName();
+		if (n.getLastCharacter() == '*')
+		{
+			setName(n.dropLastCharacters(1));
+		}
+	}
 }
 
 

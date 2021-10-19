@@ -11,13 +11,13 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "CKanbanBoard.h"
 
 
 using namespace juce;
 
 
 class MainComponent;
-class CKanbanBoardComponent;
 class CKanbanBoardArchive;
 
 
@@ -26,6 +26,7 @@ class CMyMdiDocBase : public Component
 protected:
 	String iSearchText;
 	Viewport iViewport;
+	bool iEdited;
 public:
 	CMyMdiDocBase();
 	virtual ~CMyMdiDocBase();
@@ -39,13 +40,17 @@ public:
 };
 
 
-class CMyMdiDoc : public CMyMdiDocBase
+class CMyMdiDoc : public CMyMdiDocBase, public CKanbanBoardComponent::Listener
 {
 public:
 	CMyMdiDoc(CKanbanBoardComponent* board);
 	~CMyMdiDoc();
 	operator CKanbanBoardComponent*() const;
 	CKanbanBoardComponent* getKanbanBoard();
+
+public: // from CKanbanBoardComponent::Listener
+	void KanbanBoardChanged();
+	void KanbanBoardStored();
 };
 
 

@@ -29,6 +29,9 @@ public:
         // This method is where you should put your application's initialisation code..
 
         mainWindow.reset (new MainWindow (getApplicationName()));
+		//mainWindow->setFullScreen(true);
+		//mainWindow->setTitleBarHeight(0);
+		//Desktop::getInstance().setKioskModeComponent(mainWindow.get(), false);
     }
 
     void shutdown() override
@@ -79,6 +82,7 @@ public:
 			//getLookAndFeel().setDefaultSansSerifTypefaceName("MS Mincho");
 
 			setUsingNativeTitleBar (true);
+			//setTitleBarHeight(0);
 			iMainComponent = new MainComponent();
 			if (!iMainComponent)
 			{

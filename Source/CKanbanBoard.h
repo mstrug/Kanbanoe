@@ -20,7 +20,7 @@ using namespace juce;
 //==============================================================================
 /*http://davidbau.com/colors/
 */
-class CKanbanBoardComponent  : public juce::Component
+class CKanbanBoardComponent  : public juce::Component, public CKanbanCardComponent::Listener
 {
 public:
 
@@ -76,6 +76,18 @@ public:
 
 	static bool fromJsonCard(const juce::DynamicObject* aObject, CKanbanBoardComponent* aKanbanBoard, String& aReturnErrorMessage, SArchive* aArchiveObject, bool aLoadFromFile, CKanbanCardComponent* aCard = nullptr);
 
+	struct Listener
+	{
+		virtual void KanbanBoardChanged() = 0;
+		virtual void KanbanBoardStored() = 0;
+	};
+	void addListener(Listener* aListener);
+	void removeListener(Listener* aListener);
+
+public: // from CKanbanCardComponent::Listener
+
+	void KanbanCardChanged();
+
 private:
 
 	int updateGridWidth();
@@ -103,6 +115,8 @@ private:
 	String iSearchText;
 
 	bool iColumnsEditorEnabled;
+
+	Listener* iListener; // not owned
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanBoardComponent)
 };

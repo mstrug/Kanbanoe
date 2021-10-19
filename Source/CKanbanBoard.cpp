@@ -12,10 +12,10 @@
 #include "CKanbanBoard.h"
 #include "CConfiguration.h"
 #include "CKanbanColumnGitlab.h"
-
+#include "utf8.h"
 
 //==============================================================================
-CKanbanBoardComponent::CKanbanBoardComponent() : iGridWidth(0), iColumnsEditorEnabled(false)
+CKanbanBoardComponent::CKanbanBoardComponent() : iGridWidth(0), iColumnsEditorEnabled(false), iListener(nullptr)
 {
 	setOpaque(false);
 }
@@ -287,7 +287,8 @@ void CKanbanBoardComponent::search(const String & aString)
 			for (auto c : iKanbanCards)
 			{
 				String tgs = c->getProperties()["tags"];
-				if (caseInsensitive ? !tgs.containsIgnoreCase(stag) : !tgs.contains(stag))
+				if (caseInsensitive ? (utf8casestr(tgs.toRawUTF8(), stag.toRawUTF8()) == nullptr) : !tgs.contains(stag))
+				//if (caseInsensitive ? !tgs.containsIgnoreCase(stag) : !tgs.contains(stag))
 				{
 					c->getOwner()->hideCard(c);
 				}
@@ -335,8 +336,9 @@ void CKanbanBoardComponent::search(const String & aString)
 				{
 					Colour col = c->getColour();
 					String name = pal.getColourName(col);
-
-					if (caseInsensitive ? !name.containsIgnoreCase(stag) : !name.contains(stag))
+					
+					if (caseInsensitive ? (utf8casestr(name.toRawUTF8(), stag.toRawUTF8()) == nullptr) : !name.contains(stag))
+					//if (caseInsensitive ? !name.containsIgnoreCase(stag) : !name.contains(stag))
 					{
 						c->getOwner()->hideCard(c);
 					}
@@ -365,7 +367,9 @@ void CKanbanBoardComponent::search(const String & aString)
 			for (auto c : iKanbanCards)
 			{
 				String as = c->getAssigne();
-				if (caseInsensitive ? !as.containsIgnoreCase(stag) : !as.contains(stag))
+				
+				if (caseInsensitive ? (utf8casestr(as.toRawUTF8(), stag.toRawUTF8()) == nullptr) : !as.contains(stag))
+				//if (caseInsensitive ? !as.containsIgnoreCase(stag) : !as.contains(stag))
 				{
 					c->getOwner()->hideCard(c);
 				}
@@ -388,8 +392,11 @@ void CKanbanBoardComponent::search(const String & aString)
 		Logger::outputDebugString("search: " + s);
 
 		for (auto c : iKanbanCards)
-		{
-			if (!c->getText().containsIgnoreCase(s) && !c->getNotes().containsIgnoreCase(s) && !c->getAssigne().containsIgnoreCase(s))
+		{			
+			if ( (utf8casestr(c->getText().toRawUTF8(), s.toRawUTF8()) == nullptr) &&
+				 (utf8casestr(c->getNotes().toRawUTF8(), s.toRawUTF8()) == nullptr) &&
+				 (utf8casestr(c->getAssigne().toRawUTF8(), s.toRawUTF8()) == nullptr) )
+			//if (!c->getText().containsIgnoreCase(s) && !c->getNotes().containsIgnoreCase(s) && !c->getAssigne().containsIgnoreCase(s))
 			{
 				c->getOwner()->hideCard(c);
 			}
@@ -422,13 +429,15 @@ CKanbanCardComponent* CKanbanBoardComponent::createCard()
 {
 	auto c = new CKanbanCardComponent(nullptr);
 	iKanbanCards.add(c);
-	c->setText( "Empty card " + String(iKanbanCards.size()) );
+	c->setText(KanbanCardComponentDefaultTitle + String(iKanbanCards.size()) );
+	c->addListener(this);
 	return c;
 }
 
 void CKanbanBoardComponent::removeCard(CKanbanCardComponent* aCard)
 {
 	iKanbanCards.removeObject(aCard, true);
+	if (iListener) iListener->KanbanBoardChanged();
 }
 
 bool CKanbanBoardComponent::archiveColumn(CKanbanColumnComponent * aColumn, const String & aArchiveName, bool aClearColumn)
@@ -795,6 +804,25 @@ bool CKanbanBoardComponent::fromJsonCard(const juce::DynamicObject* obj2, CKanba
 	return true;
 }
 
+void CKanbanBoardComponent::addListener(Listener * aListener)
+{
+	jassert(aListener);
+	iListener = aListener;
+}
+
+void CKanbanBoardComponent::removeListener(Listener * aListener)
+{
+	if (iListener == aListener)
+	{
+		iListener = nullptr;
+	}
+}
+
+void CKanbanBoardComponent::KanbanCardChanged()
+{
+	if (iListener) iListener->KanbanBoardChanged();
+}
+
 int CKanbanBoardComponent::updateGridWidth()
 {
 	float w = 0;
@@ -918,6 +946,7 @@ bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 		f << "}\n";
 
 		setName(iFile.getFileName());
+		if (iListener) iListener->KanbanBoardStored();
 		return true;
 	}
 

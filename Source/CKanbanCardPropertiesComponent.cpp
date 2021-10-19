@@ -16,7 +16,7 @@
 
 
 //==============================================================================
-CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardComponent &aOwner) : iOwner(aOwner), iMaximized(false)
+CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardComponent &aOwner) : iOwner(aOwner), iMaximized(false), iUpdated(false)
 {
 	setViewportIgnoreDragFlag(true);
 	addKeyListener(this);
@@ -42,6 +42,7 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	addAndMakeVisible(iTextEditor);
 	iTextEditor.onTextChange = [this, &aOwner]
 	{
+		this->iUpdated = true;
 		aOwner.setNotes(this->iTextEditor.getText());
 	};
 
@@ -94,13 +95,8 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	//iSliderDueDate.setVelocityBasedMode(true);
 	//iSliderDueDate.setVelocityModeParameters(2, 1, 0);
 	iSliderDueDate.setTextValueSuffix(" days");
-	iSliderDueDate.onValueChange = [this]
-	{
-		auto sv = this->iSliderDueDate.getValue();
-		this->setDueDate(sv);		
-	};
 	addAndMakeVisible(iSliderDueDate);
-	if (!aOwner.isDueDateSet()) iSliderDueDate.setValue(-1);
+	if (!aOwner.isDueDateSet()) iSliderDueDate.setValue(-1, dontSendNotification);
 	else
 	{
 		iSliderDueDate.setValue((aOwner.getDueDate().toMilliseconds() - aOwner.getCreationDate().toMilliseconds()) / (24 * 3600000), dontSendNotification);
@@ -108,6 +104,12 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	}
 	//this->setDueDate(-1);
 	//iSliderDueDate.setValue()
+	iSliderDueDate.onValueChange = [this]
+	{
+		this->iUpdated = true;
+		auto sv = this->iSliderDueDate.getValue();
+		this->setDueDate(sv);
+	};
 
 	iColours.reset(new ColoursComponent( 6, 1, CConfiguration::getColourPalette(), CConfiguration::getColourPalette().getColourIndex( aOwner.getColour() )));
 	addAndMakeVisible(*iColours);
@@ -215,6 +217,11 @@ void CKanbanCardPropertiesComponent::mouseUp(const MouseEvent& event)
 {
 }
 
+bool CKanbanCardPropertiesComponent::wasContentUpdated()
+{
+	return iUpdated;
+}
+
 void CKanbanCardPropertiesComponent::ColorChanged(int aSelectedColorIdx)
 {
 	iOwner.setColour(CConfiguration::getColourPalette().getColor(aSelectedColorIdx));
@@ -240,6 +247,8 @@ void CKanbanCardPropertiesComponent::changesApply()
 	/*iBar->getProperties().set("name", iTextName.getText());
 	iBar->setColour(this->iColours->getSelectedColourIdx());
 	iBar->repaint();*/
+
+	this->iUpdated = true;
 
 	iOwner.setTags(iTextTags.getText());
 	iOwner.setUrl(iTextUrl.getText());

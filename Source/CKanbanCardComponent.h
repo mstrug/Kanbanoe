@@ -61,6 +61,7 @@ public:
 	juce::Time getLastUpdateDate();
 	juce::Time getDueDate();
 	void updateLastUpdateDate();
+	bool isEmpty();
 
 	void setColour(Colour aColor);
 	Colour getColour();
@@ -84,6 +85,14 @@ public:
 		StringPairArray customProps;
 	};
 
+	struct Listener
+	{
+		virtual void KanbanCardChanged() = 0;
+	};
+
+	void addListener(Listener* aListener);
+	void removeListener(Listener* aListener);
+
 public: // clipboard
 
 	static CKanbanCardComponent* getClipboardCard();
@@ -96,6 +105,7 @@ private:
 
 	void setChildrenVisibility(bool aHidden);
 
+	void notifyListeners();
 
 private:
 
@@ -129,6 +139,8 @@ private:
 
 	bool iReadOnly;
 
+	Array<Listener*> iListeners;
+
 	CKanbanColumnContentComponent* iOwner;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanCardComponent)
@@ -136,4 +148,6 @@ private:
 
 const String KanbanCardComponentDragDescription = "KanbanCard";
 const String KanbanCardComponentLoadFromFileDescription = "KanbanCard2";
+
+const String KanbanCardComponentDefaultTitle = "Empty card ";
 

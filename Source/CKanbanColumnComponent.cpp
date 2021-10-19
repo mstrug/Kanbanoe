@@ -450,12 +450,14 @@ void CKanbanColumnComponent::setActiveFrame(bool aActive)
 
 void CKanbanColumnComponent::contentUpdated()
 {
+	//iOwner.
+}
+
+void CKanbanColumnComponent::updateScrollbars()
+{
 	//Logger::outputDebugString("minH: " + String(iViewportLayout.iMinimumHeight));
 	//Logger::outputDebugString("H: " + String(iViewportLayout.getHeight()));
-
 	iScrollBar.setRangeLimits(0, iViewportLayout.getHeight());
-
-
 	iScrollBar.setCurrentRange(iScrollBar.getCurrentRangeStart(), iViewportLayout.iMinimumHeight);
 }
 
