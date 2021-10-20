@@ -153,7 +153,6 @@ public:
 	}
 	virtual ~CTmp()
 	{
-		iCards.clear(true);
 	}
 	void resized()
 	{

@@ -61,6 +61,21 @@ String& CMyMdiDocBase::getSearchText()
 	return iSearchText;
 }
 
+String CMyMdiDocBase::getTabName()
+{
+	String s = getName();
+	if (iEdited && s.endsWithChar('*'))
+	{
+		s = s.dropLastCharacters(1);
+	}
+	return s;
+}
+
+bool CMyMdiDocBase::isUnsaved()
+{
+	return iEdited;
+}
+
 
 
 /**********************************************************************************************************/
@@ -91,6 +106,33 @@ CKanbanBoardComponent* CMyMdiDoc::getKanbanBoard()
 	return static_cast<CKanbanBoardComponent*>(iViewport.getViewedComponent()); 
 }
 
+bool CMyMdiDoc::save()
+{
+	String errorMessage;
+	CKanbanBoardComponent* b = getKanbanBoard();
+	if (b)
+	{
+		if (b->getFile().getFullPathName().isEmpty())
+		{
+			Logger::outputDebugString("File not opened!");
+			return false;
+		}
+		if (!b->saveFile(errorMessage))
+		{
+			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", errorMessage, "Close");
+		}
+		return true;
+	}
+	return false;
+}
+
+const String & CMyMdiDoc::getFilePath()
+{
+	CKanbanBoardComponent* b = getKanbanBoard();
+	if ( b) return b->getFile().getFullPathName();
+	else return String();
+}
+
 void CMyMdiDoc::KanbanBoardChanged()
 {
 	if (!iEdited)
@@ -106,7 +148,7 @@ void CMyMdiDoc::KanbanBoardStored()
 	{
 		iEdited = false;
 		auto n = getName();
-		if (n.getLastCharacter() == '*')
+		if (n.endsWithChar('*'))
 		{
 			setName(n.dropLastCharacters(1));
 		}
@@ -145,11 +187,29 @@ CMyMdi::CMyMdi(MainComponent& aOwner) : iOwner(aOwner)
 {
 }
 
+CMyMdi::~CMyMdi()
+{
+}
+
 bool CMyMdi::tryToCloseDocument(Component* component)
 {
-	/*CMyMdiDoc* doc = (CMyMdiDoc*)component;
-	if (doc->iPrev) doc->iPrev->iNext = doc->iNext;
+	CMyMdiDocBase* doc = (CMyMdiDocBase*)component;
+	/*if (doc->iPrev) doc->iPrev->iNext = doc->iNext;
 	if (doc->iNext) doc->iNext->iPrev = doc->iPrev;*/
+
+	if ( doc->isUnsaved() )
+	{
+		CMyMdiDoc* doc2 = dynamic_cast<CMyMdiDoc*>(doc);
+		if (doc2)
+		{
+			auto ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Confirmation", "Do you want to save document before closing?");
+			if (ret == 1)
+			{
+				doc2->save();
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -283,8 +343,8 @@ void CMyMdi::activateDocumentByTabName(const String & aTabName)
 {
 	for (int i = 0; i < getNumDocuments(); i++)
 	{
-		CMyMdiDoc* ad = (CMyMdiDoc*)getDocument(i);
-		if (ad->getName().compare(aTabName) == 0)
+		CMyMdiDocBase* ad = dynamic_cast<CMyMdiDocBase*>(getDocument(i));
+		if (ad && ad->getTabName().compare(aTabName) == 0)
 		{
 			setActiveDocument(ad);
 		}
@@ -371,8 +431,8 @@ bool CMyMdi::saveFile(File & aFn)
 		for (int i = 0; i < getNumDocuments(); i++)
 		{
 			if (i > 0) f << ",\n";
-			CMyMdiDoc* ad = (CMyMdiDoc*)getDocument(i);
-			f << "\"" + URL::addEscapeChars( ad->getKanbanBoard()->getFile().getFullPathName(), false ) + "\"";
+			CMyMdiDoc* ad = dynamic_cast<CMyMdiDoc*>(getDocument(i));
+			if ( ad ) f << "\"" + URL::addEscapeChars( ad->getKanbanBoard()->getFile().getFullPathName(), false ) + "\"";
 		}
 
 		f << "\n]\n";
@@ -394,11 +454,39 @@ bool CMyMdi::isAlreadyOpened(const String & aTabName)
 {
 	for (int i = 0; i < getNumDocuments(); i++)
 	{
-		CMyMdiDoc* ad = (CMyMdiDoc*)getDocument(i);
-		if (ad->getName().compare(aTabName) == 0)
+		CMyMdiDoc* ad = dynamic_cast<CMyMdiDoc*>(getDocument(i));
+		if (ad && ad->getTabName().compare(aTabName) == 0)
 		{
 			return true;
 		}
 	}
 	return false;
+}
+
+void CMyMdi::closeAllDocumentsAndVerifyStore()
+{
+	bool show = false;
+	for (int i = 0; i < getNumDocuments(); i++)
+	{
+		CMyMdiDoc* ad = dynamic_cast<CMyMdiDoc*>(getDocument(i));
+		if (ad && ad->isUnsaved())
+		{
+			show = true;
+			break;
+		}
+	}
+	if (show)
+	{
+		auto ret = AlertWindow::showYesNoCancelBox(AlertWindow::QuestionIcon, "Confirmation", "Do you want to save all documents before exit?");
+		if (ret == 1)
+		{
+			for (int i = 0; i < getNumDocuments(); i++)
+			{
+				CMyMdiDoc* ad = dynamic_cast<CMyMdiDoc*>(getDocument(i));
+				if (ad && ad->isUnsaved()) ad->save();
+			}
+			saveFile(iGroupFile);
+		}
+	}
+	closeAllDocuments(false);
 }

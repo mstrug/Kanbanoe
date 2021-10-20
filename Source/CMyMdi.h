@@ -34,6 +34,8 @@ public:
 	void paint(juce::Graphics& g) override;
 	void setSearchText(const String& aText);
 	String& getSearchText();
+	String getTabName();
+	bool isUnsaved();
 
 public:
 	CMyMdiDocBase *iNext, *iPrev;
@@ -47,6 +49,8 @@ public:
 	~CMyMdiDoc();
 	operator CKanbanBoardComponent*() const;
 	CKanbanBoardComponent* getKanbanBoard();
+	bool save();
+	const String& getFilePath();
 
 public: // from CKanbanBoardComponent::Listener
 	void KanbanBoardChanged();
@@ -80,6 +84,8 @@ public:
 
 	CMyMdi(MainComponent& aOwner);
 
+	virtual ~CMyMdi();
+
 	bool addDocument(CMyMdiDocBase* cmp, CMyMdiDocBase * docAfter = nullptr);
 
 	bool addDocument(CKanbanBoardComponent* board, CMyMdiDocBase * docAfter = nullptr);
@@ -105,6 +111,8 @@ public:
 	bool isAlreadyOpened(File& aFn);
 
 	bool isAlreadyOpened(const String& aTabName);
+
+	void closeAllDocumentsAndVerifyStore();
 };
 	
 

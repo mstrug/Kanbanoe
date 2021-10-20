@@ -224,6 +224,7 @@ bool CKanbanCardPropertiesComponent::wasContentUpdated()
 
 void CKanbanCardPropertiesComponent::ColorChanged(int aSelectedColorIdx)
 {
+	iUpdated = true;
 	iOwner.setColour(CConfiguration::getColourPalette().getColor(aSelectedColorIdx));
 }
 
@@ -248,7 +249,7 @@ void CKanbanCardPropertiesComponent::changesApply()
 	iBar->setColour(this->iColours->getSelectedColourIdx());
 	iBar->repaint();*/
 
-	this->iUpdated = true;
+	iUpdated = true;
 
 	iOwner.setTags(iTextTags.getText());
 	iOwner.setUrl(iTextUrl.getText());

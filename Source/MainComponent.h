@@ -55,6 +55,7 @@ public:
 	void updateTimer24h();
 	void setSearchText(const String& aString, bool aUpdateSearchField);
 	void showStatusBarMessage(StringRef aString);
+	void requestedApplicationExit();
 
 	ApplicationCommandManager& getApplicationCommandManager();
 
@@ -75,7 +76,6 @@ private: // from ApplicationCommandTarget
 private: 
 
 	bool openFile(File& aFn);
-	bool saveFile(CKanbanBoardComponent* aBoard);
 
 	bool openGroupFile(File& aFn);
 	bool saveGroupFile(File& aFn);

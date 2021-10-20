@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.49");
+const String AppVersion("v0.50");
 
 
 
@@ -463,10 +463,9 @@ bool MainComponent::perform(const InvocationInfo& info)
 			auto mdi = dynamic_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
 			if (mdi)
 			{
-				auto kb = mdi->getKanbanBoard();
-				if (kb && saveFile(kb))
+				if (mdi->save())
 				{
-					CConfiguration::getInstance().addRecentlyOpened(kb->getFile().getFullPathName()); // todo
+					CConfiguration::getInstance().addRecentlyOpened(mdi->getFilePath()); // todo
 
 					showStatusBarMessage("Saved");
 				}
@@ -493,9 +492,9 @@ bool MainComponent::perform(const InvocationInfo& info)
 					{
 						kb->setFile(f);
 						md->setName(f.getFileName());
-						if (saveFile(kb))
+						if (md->save())
 						{
-							CConfiguration::getInstance().addRecentlyOpened(f.getFullPathName()); // todo
+							CConfiguration::getInstance().addRecentlyOpened(md->getFilePath()); // todo
 							
 							showStatusBarMessage("Saved");
 						}
@@ -505,10 +504,13 @@ bool MainComponent::perform(const InvocationInfo& info)
 		}
 		break;
 	case menuFileSaveAll:
-		{
-			for (auto& i : iKanbanBoards)
+		{	
+			for (int i = 0; i < iMdiPanel.getNumDocuments(); i++ )
 			{
-				saveFile(i);
+				auto* doc = iMdiPanel.getDocument(i);
+
+				auto mdi = dynamic_cast<CMyMdiDoc*>(doc);
+				if ( mdi ) mdi->save();
 			}
 
 			showStatusBarMessage("All files saved");
@@ -550,6 +552,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 		}	
 		break;
 	case menuFileExit:
+			requestedApplicationExit();
 			JUCEApplicationBase::quit();
 		break;
 	case menuViewArchive:
@@ -655,6 +658,11 @@ void MainComponent::showStatusBarMessage(StringRef aString)
 	Timer::callAfterDelay(aString.length() > 15 ? 10000 : 2000, [this] { iStatuBarL.setText("", NotificationType::dontSendNotification); });
 }
 
+void MainComponent::requestedApplicationExit()
+{
+	iMdiPanel.closeAllDocumentsAndVerifyStore();
+}
+
 bool MainComponent::openFile(File& aFn)
 {
 	var d = JSON::parse(aFn);
@@ -688,25 +696,6 @@ bool MainComponent::openFile(File& aFn)
 			//Config::getInstance()->setOpenRecent(aFn.getFullPathName());
 			return true;
 		}
-	}
-	return false;
-}
-
-bool MainComponent::saveFile(CKanbanBoardComponent* aBoard)
-{
-	String errorMessage;
-	if (aBoard)
-	{
-		if (aBoard->getFile().getFullPathName().isEmpty())
-		{
-			Logger::outputDebugString("File not opened!");
-			return false;
-		}
-		if (!aBoard->saveFile(errorMessage))
-		{
-			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", errorMessage, "Close");
-		}
-		return true;
 	}
 	return false;
 }
