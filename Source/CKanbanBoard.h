@@ -65,6 +65,7 @@ public:
 	void setColumnsEditor(bool aEnabled);
 	bool isColumnsEditorEnabled();
 	void addColumn(CKanbanColumnComponent* aColumn, bool aBefore);
+	void removeColumn(CKanbanColumnComponent* aColumn);
 
 	const Array< CKanbanCardComponent* > getCardsForColumn(CKanbanColumnComponent* aColumn);
 

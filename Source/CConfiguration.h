@@ -22,6 +22,7 @@ const int KRecentlyOpenedGroupMenuItemIdCount = 4;
 
 const String KConfigSearchCase = "ConfigSearchCaseInsensitive";
 const String KConfigSearchDynamic = "ConfigSearchDynamic";
+const String KConfigAutosave = "ConfigAutosave";
 
 
 

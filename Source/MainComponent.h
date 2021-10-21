@@ -35,6 +35,7 @@ public:
 		menuViewColumnsEdit,
 		menuConfigSearchDynamic,
 		menuConfigSearchCaseInsensitive,
+		menuConfigAutosave,
 		menuHelpAbout,
 		menubarSearch,
 		menubarSearchClear,

@@ -470,6 +470,8 @@ bool CKanbanBoardComponent::archiveColumn(CKanbanColumnComponent * aColumn, cons
 		}
 	}
 	
+	if (iListener) iListener->KanbanBoardChanged();
+
 	return true;
 }
 
@@ -750,7 +752,7 @@ bool CKanbanBoardComponent::fromJsonCard(const juce::DynamicObject* obj2, CKanba
 			String _crd(((juce::int64)crDate));
 			String _dd(((juce::int64)dueDate));
 			String _ld(((juce::int64)luDate));
-			String ss("{ \"text\":\"" + _t + "\", \"colour\":\"" + s + "\", \"columnId\":" + String((int)columnId) + ", \"notes\":\"" + _n + "\", \"url\":\"" + _u + "\", \"tags\":\"" + _tg + "\", \"assignee\":\"" + _as + "\", \"dueDateSet\":" + (_dds ? "true" : "false") + ", \"isDone\":" + (_id ? "true" : "false") + ", \"creationDate\":" + _crd + "\, \"dueDate\":" + _dd +
+			String ss("{ \"text\":\"" + _t + "\", \"colour\":\"" + s + "\", \"columnId\":" + String((int)columnId) + ", \"notes\":\"" + _n + "\", \"url\":\"" + _u + "\", \"tags\":\"" + _tg + "\", \"assignee\":\"" + _as + "\", \"dueDateSet\":" + (_dds ? "true" : "false") + ", \"isDone\":" + (_id ? "true" : "false") + ", \"creationDate\":" + _crd + ", \"dueDate\":" + _dd +
 				", \"lastUpdateDate\":" + _ld + "}");
 			aArchiveObject->iKanbanCards.add(ss);
 		}
@@ -1087,6 +1089,31 @@ void CKanbanBoardComponent::addColumn(CKanbanColumnComponent * aColumn, bool aBe
 	aColumn->setEditModeRightVisible(isColumnLastInGrid(aColumn));
 
 	updateSize();
+
+	if (iListener) iListener->KanbanBoardChanged();
+}
+
+void CKanbanBoardComponent::removeColumn(CKanbanColumnComponent * aColumn)
+{
+	int ci = aColumn->getGridItem().column.start.getNumber();
+	for (auto& gi : iGrid.items)
+	{
+		if (gi.associatedComponent == aColumn)
+		{
+			iGrid.items.remove(&gi);
+		}
+		else if (gi.column.start.getNumber() > ci && ci >= 0 )
+		{
+			gi.setArea(gi.row.start, gi.column.start.getNumber() - 1, gi.row.end, gi.column.end.getNumber() - 1);
+		}
+	}
+	removeChildComponent(aColumn);
+	iKanbanColumns.removeObject(aColumn, true);
+
+	// update grid
+	updateSize();
+
+	if (iListener) iListener->KanbanBoardChanged();
 }
 
 const Array<CKanbanCardComponent*> CKanbanBoardComponent::getCardsForColumn(CKanbanColumnComponent * aColumn)

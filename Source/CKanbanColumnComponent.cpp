@@ -706,6 +706,17 @@ void CKanbanColumnComponent::showSetupMenu()
 	{
 		this->archive();
 	});
+	menu.addItem("Remove column", [&]()
+	{
+		if (iViewportLayout.getCardsCount() > 0)
+		{
+			AlertWindow::showMessageBox(MessageBoxIconType::WarningIcon, "Column must be empty.", "", "Close");
+		}
+		else if (AlertWindow::showYesNoCancelBox(MessageBoxIconType::QuestionIcon, "Remove cloumn", "Do you really want to remove this column?") == 1)
+		{
+			iOwner.removeColumn(this);
+		}
+	});
 	menu.addSeparator();
 	menu.addItem("Due date done", true, iDueDateDone, [&]()
 	{
@@ -743,8 +754,8 @@ void CKanbanColumnComponent::showSetupMenu()
 				}
 			}
 		}
-	});
-	menu.addItem("Edit name", [&]()
+	}); 
+	menu.addItem("Rename column", [&]()
 	{
 		AlertWindow w("Rename column", "Provide new name for this column", AlertWindow::QuestionIcon);
 
@@ -769,6 +780,7 @@ void CKanbanColumnComponent::showSetupMenu()
 			}
 		}
 	});
+
 	if (showRefreshMenuEntry())
 	{
 		menu.addItem("Edit refresh settings", [&]()

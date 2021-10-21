@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.50");
+const String AppVersion("v0.51");
 
 
 
@@ -221,6 +221,7 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 	{
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuConfigSearchCaseInsensitive);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuConfigSearchDynamic);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuConfigAutosave);
 	}
 	else if (topLevelMenuIndex == 3) // help
 	{
@@ -269,7 +270,7 @@ void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 {
 	Array<CommandID> commands{ CommandIDs::menuFile, CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
 		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileSaveGroup, CommandIDs::menuFileSaveGroupAs, CommandIDs::menuFileOpenRecent, CommandIDs::menuFileExit,
-		CommandIDs::menuViewArchive, CommandIDs::menuViewColumnsEdit, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
+		CommandIDs::menuViewArchive, CommandIDs::menuViewColumnsEdit, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuConfigAutosave, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
 		CommandIDs::menubarSearchClear, CommandIDs::mdiNextDoc, CommandIDs::mdiPrevDoc, CommandIDs::statusbarMessage };
 	aCommands.addArray(commands);
 }
@@ -373,6 +374,9 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		break;
 	case menuConfigSearchDynamic:
 			result.setInfo("Search doesn't require return key", "Configure dynmic search", "Menu", (CConfiguration::getBoolValue(KConfigSearchDynamic) ? ApplicationCommandInfo::isTicked : 0));
+		break;
+	case menuConfigAutosave:
+			result.setInfo("Automatically save modified files", "Autosave", "Menu", (CConfiguration::getBoolValue(KConfigAutosave) ? ApplicationCommandInfo::isTicked : 0));
 		break;
 	case menuHelpAbout:
 			result.setInfo("About", "", "Menu", 0);
@@ -603,6 +607,13 @@ bool MainComponent::perform(const InvocationInfo& info)
 			auto pf = CConfiguration::getInstance().getPropertiesFile();
 			pf->setValue(KConfigSearchDynamic, !b);
 			updateFindCallbacks();
+		}
+		break;
+	case menuConfigAutosave:
+		{
+			bool b = CConfiguration::getBoolValue(KConfigAutosave);
+			auto pf = CConfiguration::getInstance().getPropertiesFile();
+			pf->setValue(KConfigAutosave, !b);
 		}
 		break;
 	case menuHelpAbout:

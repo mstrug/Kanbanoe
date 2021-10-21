@@ -12,6 +12,7 @@
 #include "MainComponent.h"
 #include "CKanbanBoard.h"
 #include "CKanbanBoardArchive.h"
+#include "CConfiguration.h"
 
 
 
@@ -129,16 +130,23 @@ bool CMyMdiDoc::save()
 const String & CMyMdiDoc::getFilePath()
 {
 	CKanbanBoardComponent* b = getKanbanBoard();
-	if ( b) return b->getFile().getFullPathName();
-	else return String();
+	jassert(b);
+	return b->getFile().getFullPathName();
 }
 
 void CMyMdiDoc::KanbanBoardChanged()
 {
-	if (!iEdited)
+	if (CConfiguration::getBoolValue(KConfigAutosave))
 	{
-		iEdited = true;
-		setName(getName() + "*");
+		save();
+	}
+	else
+	{
+		if (!iEdited)
+		{
+			iEdited = true;
+			setName(getName() + "*");
+		}
 	}
 }
 
