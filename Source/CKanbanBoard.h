@@ -85,6 +85,9 @@ public:
 	void addListener(Listener* aListener);
 	void removeListener(Listener* aListener);
 
+	void setParentViewport(Viewport* aParentViewport);
+	Viewport* getParentViewport();
+
 public: // from CKanbanCardComponent::Listener
 
 	void KanbanCardChanged();
@@ -118,6 +121,8 @@ private:
 	bool iColumnsEditorEnabled;
 
 	Listener* iListener; // not owned
+
+	Viewport* iParentViewport; // not owned
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanBoardComponent)
 };

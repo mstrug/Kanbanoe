@@ -49,6 +49,7 @@ public:
 	void scrollToBottom();
 	void scrollToTop();
 	void scrollEnsureVisible(CKanbanCardComponent* aCard);
+	void autoscroll(int aMousePosY, int aEdge);
 
 	String getTitle();
 	int getColumnId() const;
@@ -89,6 +90,8 @@ private:
 	void archive();
 
 	String getMinimalDueDate( juce::Colour* aColour = nullptr);
+
+	void setScrollSpeed(bool aSlow);
 
 protected:
 

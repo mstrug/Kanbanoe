@@ -67,6 +67,10 @@ public:
 
 private:
 
+	void verifyFile();
+
+private:
+
 	PropertiesFile* iFile;
 
 	ColourPalette* iPalette;

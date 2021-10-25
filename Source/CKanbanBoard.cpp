@@ -15,7 +15,7 @@
 #include "utf8.h"
 
 //==============================================================================
-CKanbanBoardComponent::CKanbanBoardComponent() : iGridWidth(0), iColumnsEditorEnabled(false), iListener(nullptr)
+CKanbanBoardComponent::CKanbanBoardComponent() : iGridWidth(0), iColumnsEditorEnabled(false), iListener(nullptr), iParentViewport(nullptr)
 {
 	setOpaque(false);
 }
@@ -818,6 +818,16 @@ void CKanbanBoardComponent::removeListener(Listener * aListener)
 	{
 		iListener = nullptr;
 	}
+}
+
+void CKanbanBoardComponent::setParentViewport(Viewport * aParentViewport)
+{
+	iParentViewport = aParentViewport;
+}
+
+Viewport * CKanbanBoardComponent::getParentViewport()
+{
+	return iParentViewport;
 }
 
 void CKanbanBoardComponent::KanbanCardChanged()

@@ -157,20 +157,32 @@ void CKanbanCardComponent::resized()
 
 void CKanbanCardComponent::mouseDown(const MouseEvent& event)
 {
-	Logger::outputDebugString("entered mouseDown");
+	//Logger::outputDebugString("entered mouseDown");
 }
 
 void CKanbanCardComponent::mouseDrag(const MouseEvent& event)
 {
 	if ( !iIsDragging && event.mods.isLeftButtonDown() && !iReadOnly )
 	{
-		Logger::outputDebugString("entered mouseDrag");
+		//Logger::outputDebugString("entered mouseDrag");
 		if (auto* dragContainer = DragAndDropContainer::findParentDragContainerFor(this))
 		{
 			dragContainer->startDragging(KanbanCardComponentDragDescription, this);
 			iIsDragging = true;
 			setChildrenVisibility(iIsDragging);
 			repaint();
+			beginDragAutoRepeat(80);
+		}
+	}
+	else if (iIsDragging)
+	{
+		// autoscroll for whole board
+		auto v = iOwner->getOwner().kanbanBoard().getParentViewport();
+		if (v)
+		{
+			MouseEvent re(event.getEventRelativeTo( v->getParentComponent() ));
+			//Logger::outputDebugString("mouse: (" + String(re.x) + "," + String(re.y) + ") ");
+			v->autoScroll(re.x, re.y, 30, 10 );
 		}
 	}
 }

@@ -26,6 +26,7 @@
 CMyMdiDocBase::CMyMdiDocBase() :iNext(nullptr), iPrev(nullptr), iEdited(false)
 {
 	addAndMakeVisible(iViewport);
+	//iViewport.autoScroll()
 	setName("name");
 	//setOpaque(true);
 }
@@ -90,6 +91,7 @@ CMyMdiDoc::CMyMdiDoc(CKanbanBoardComponent* board)
 { 
 	iViewport.setViewedComponent(board, false); 
 	setName(board->getName());
+	board->setParentViewport(&iViewport);
 	board->addListener(this);
 }
 

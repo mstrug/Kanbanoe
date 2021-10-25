@@ -120,7 +120,14 @@ static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aProjec
 	q = q.replace("{USER}", aUser);
 
 	ChildProcess cp;
-	if (cp.start("curl.exe -k -v --header \"PRIVATE-TOKEN: " + aToken + "\" \"" + q + "\"", ChildProcess::wantStdOut))
+	String curls = CConfiguration::getValue("curl");
+	if (curls.isEmpty())
+	{
+		aOutput = "curl bad path";
+		aCurlErrorCode = -1;
+		return false;
+	}
+	if (cp.start(curls + " -k -v --header \"PRIVATE-TOKEN: " + aToken + "\" \"" + q + "\"", ChildProcess::wantStdOut))
 	{
 		String out = cp.readAllProcessOutput();
 		uint32 ec = cp.getExitCode();
@@ -135,8 +142,12 @@ static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aProjec
 			return false;
 		}
 	}
-
-	return false;
+	else
+	{
+		aCurlErrorCode = -2;
+		aOutput = "Process start failed";
+		return false;
+	}
 }
 
 static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aToken, StringRef aProject, StringRef aUser, StringRef aQuery)

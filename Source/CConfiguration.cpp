@@ -17,14 +17,15 @@ static CConfiguration* cfg = nullptr;
 CConfiguration::CConfiguration()
 {
 	PropertiesFile::Options opt;
-	opt.applicationName = "Test03";
+	opt.applicationName = "Kanbanoe";
 	opt.filenameSuffix = ".cfg";
-	opt.folderName = "Test03";
+	opt.folderName = "Kanbanoe";
 	opt.commonToAllUsers = false;
 	opt.ignoreCaseOfKeyNames = true;
 	opt.millisecondsBeforeSaving = 0;
 
 	iFile = new PropertiesFile(opt);
+	verifyFile();
 
 	int cc = iFile->getIntValue("ColoursCount");
 
@@ -201,12 +202,34 @@ String CConfiguration::YearAndWeekOfYear()
 
 int CConfiguration::getColumnTypesCount()
 {
-	return 2;
+	auto& c = getInstance();
+	if (!c.iFile->containsKey("KanbanColumnTypesCount"))
+	{
+		return 1;
+	}
+	return c.iFile->getIntValue("KanbanColumnTypesCount");
 }
 
 StringArray CConfiguration::getColumnTypesNames()
 {
-	return{ "Normal column", "Gitlab integration" };
+	auto& c = getInstance();
+	if (!c.iFile->containsKey("KanbanColumnTypesCount"))
+	{
+		return { "Normal column" };
+	}
+	int cnt = c.iFile->getIntValue("KanbanColumnTypesCount");
+	if (cnt == 1)
+	{
+		return{ "Normal column" };
+	}
+
+	StringArray ret;
+	for (int i = 0; i < cnt; i++)
+	{
+		auto s = c.iFile->getValue("KanbanColumnTypeName_" + String(i));
+		ret.add(s);
+	}
+	return ret;  // { "Normal column", "Gitlab integration" };
 }
 
 
@@ -227,4 +250,61 @@ String CConfiguration::getStatusbarMessage()
 	tmp = c.iStatusbarMsg;
 	c.iStatusbarLock.exit();
 	return tmp;
+}
+
+void CConfiguration::verifyFile()
+{
+	if (!iFile->containsKey("KanbanCardWidth"))
+	{
+		iFile->setValue("KanbanCardWidth", "240");
+	}
+	if (!iFile->containsKey("KanbanCardHeight"))
+	{
+		iFile->setValue("KanbanCardHeight", "40");
+	}
+	if (!iFile->containsKey("KanbanCardHorizontalMargin"))
+	{
+		iFile->setValue("KanbanCardHorizontalMargin", "10");
+	}
+	if (!iFile->containsKey("KanbanPlaceholderCardHeight"))
+	{
+		iFile->setValue("KanbanPlaceholderCardHeight", "4");
+	}
+	if (!iFile->containsKey("KanbanPlaceholderCardFrameSize"))
+	{
+		iFile->setValue("KanbanPlaceholderCardFrameSize", "2");
+	}
+	if (!iFile->containsKey("KanbanColumnMinimizedWidth"))
+	{
+		iFile->setValue("KanbanColumnMinimizedWidth", "34");
+	}
+	if (!iFile->containsKey("ColoursCount"))
+	{
+		iFile->setValue("ColoursCount", 6);
+		iFile->setValue("Colour_0", "ffc71518");
+		iFile->setValue("Colour_1", "ffffd700");
+		iFile->setValue("Colour_2", "ff32cd32");
+		iFile->setValue("Colour_3", "ff1e90ff");
+		iFile->setValue("Colour_4", "fff5f5f5");
+		iFile->setValue("Colour_5", "00000000");
+		iFile->setValue("ColourName_0", "red");
+		iFile->setValue("ColourName_1", "yellow");
+		iFile->setValue("ColourName_2", "green");
+		iFile->setValue("ColourName_3", "blue");
+		iFile->setValue("ColourName_4", "white");
+		iFile->setValue("ColourName_5", "none");
+	}
+	if (!iFile->containsKey("ConfigSearchCaseInsensitive"))
+	{
+		iFile->setValue("ConfigSearchCaseInsensitive", "1");
+	}
+	if (!iFile->containsKey("ConfigSearchDynamic"))
+	{
+		iFile->setValue("ConfigSearchDynamic", "1");
+	}
+	if (!iFile->containsKey("ConfigAutosave"))
+	{
+		iFile->setValue("ConfigAutosave", "0");
+	}
+	iFile->saveIfNeeded();
 }

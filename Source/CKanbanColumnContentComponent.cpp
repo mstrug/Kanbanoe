@@ -397,6 +397,8 @@ void CKanbanColumnContentComponent::itemDragMove(const SourceDetails & dragSourc
 		j++;
 	}
 
+	iOwner.autoscroll(p.y, 30);
+
 	if (tmp != iDragTargetPlaceholderActive || iDragTargetPlaceholderActive) repaint();
 }
 

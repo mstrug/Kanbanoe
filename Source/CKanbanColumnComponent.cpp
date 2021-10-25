@@ -166,7 +166,7 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 	iScrollBar.addListener(this);
 	iScrollBar.setAlwaysOnTop(true);
-	iScrollBar.setSingleStepSize( (h + m + m ) / 4);
+	iScrollBar.setSingleStepSize( (h + m + m ) / 8);
 	iScrollBar.addMouseListener(this, false);
 	addAndMakeVisible(iScrollBar);
 
@@ -375,6 +375,7 @@ void CKanbanColumnComponent::mouseWheelMove(const MouseEvent & event, const Mous
 		}
 		else if (iScrollBar.isVisible())
 		{
+			setScrollSpeed(false);
 			auto e = event.getEventRelativeTo(&iScrollBar);
 			iScrollBar.mouseWheelMove(e, details);
 		}
@@ -539,6 +540,24 @@ void CKanbanColumnComponent::scrollEnsureVisible(CKanbanCardComponent * aCard)
 			if  (c >= 0 ) iScrollBar.setCurrentRangeStart(c);
 			//Logger::outputDebugString("not contains bottom  " + String(c));
 		}
+	}
+}
+
+void CKanbanColumnComponent::autoscroll(int aMousePosY, int aEdge)
+{
+	setScrollSpeed(true);
+	// slow down scrolling
+	//static int tmp = 0;
+	//if (++tmp % 2 == 0) return;
+
+	//Logger::outputDebugString("mouse: (" + String(aMousePosY) + ") " + String(iScrollBar.getRangeLimit().getStart()) + "  " + String(iScrollBar.getHeight()));
+	if (aMousePosY < aEdge)
+	{
+		iScrollBar.moveScrollbarInSteps(-1);
+	}
+	else if (aMousePosY > iScrollBar.getHeight() - aEdge)
+	{
+		iScrollBar.moveScrollbarInSteps(1);
 	}
 }
 
@@ -861,6 +880,14 @@ String CKanbanColumnComponent::getMinimalDueDate(juce::Colour* aColour)
 	}
 
 	return dd;
+}
+
+void CKanbanColumnComponent::setScrollSpeed(bool aSlow)
+{
+	int h = CConfiguration::getIntValue("KanbanCardHeight");
+	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
+	if ( aSlow ) iScrollBar.setSingleStepSize((h + m + m) / 12);
+	else iScrollBar.setSingleStepSize((h + m + m) / 4);
 }
 
 
