@@ -549,6 +549,12 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 					delete ret;
 					return nullptr;
 				}
+				if (col == nullptr)
+				{
+					aReturnErrorMessage = "Cannot create column [columns array]";
+					delete ret;
+					return nullptr;
+				}
 				ret->iKanbanColumns.add( col );
 				if (dueDateDone.isBool()) col->setColumnDueDateDone(true);
 				if (minimized.isBool()) col->setMinimized(true, false);
@@ -1050,7 +1056,8 @@ void CKanbanBoardComponent::addColumn(CKanbanColumnComponent * aColumn, bool aBe
 	}
 
 	// create column object
-	auto optionIndexChosen = aw.getComboBoxComponent("option")->getSelectedItemIndex();
+	int optionIndexChosen = 0;
+	if ( ct > 1 ) optionIndexChosen = aw.getComboBoxComponent("option")->getSelectedItemIndex();
 	CKanbanColumnComponent* col = nullptr;
 	if (optionIndexChosen == 0)
 	{ // normal column

@@ -13,11 +13,11 @@
 #include "CKanbanColumnComponent.h"
 
 //==============================================================================
-/*
+/* https://docs.gitlab.com/ee/api/issues.html
 */
 class CKanbanColumnGitlab  : public CKanbanColumnComponent
 {
-	CKanbanColumnGitlab(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, StringRef aUrl, StringRef aToken, StringRef aProjectId, StringRef aUsers, StringRef aQuery);
+	CKanbanColumnGitlab(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, StringRef aUrl, StringRef aToken, StringRef aProjectId, StringRef aUsers, StringRef aDueDates, StringRef aQuery);
 
 public:
 	static CKanbanColumnGitlab* createWithWizard(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner);
@@ -51,6 +51,7 @@ private:
 	String iGitlabToken;
 	String iGitlabProjectId;
 	StringArray iGitlabUsers;
+	StringArray iGitlabDuedates;
 	String iGitlabQuery;
 
 	Array<CKanbanCardComponent::CKanbanCardData> iTempCardList;
