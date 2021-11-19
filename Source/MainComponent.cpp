@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.53");
+const String AppVersion("v0.54");
 
 
 
@@ -355,16 +355,16 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 				CMyMdiDoc* d = dynamic_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
 				if (d && d->getKanbanBoard()->isColumnsEditorEnabled())
 				{
-					result.setInfo("Close add column mode", "", "Menu", 0);
+					result.setInfo("Add column mode", "", "Menu", ApplicationCommandInfo::isTicked);
 				}
 				else
 				{
-					result.setInfo("Open add column mode", "", "Menu", 0);
+					result.setInfo("Add column mode", "", "Menu", 0);
 				}
 			}
 			else
 			{
-				result.setInfo("Open add column mode", "", "Menu", ApplicationCommandInfo::isDisabled );
+				result.setInfo("Add column mode", "", "Menu", ApplicationCommandInfo::isDisabled );
 			}
 			result.addDefaultKeypress('C', ModifierKeys::altModifier);
 		}

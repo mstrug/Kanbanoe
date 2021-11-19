@@ -15,7 +15,7 @@
 
 
 //==============================================================================
-CKanbanColumnGitlab::CKanbanColumnGitlab(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, StringRef aUrl, StringRef aToken, StringRef aProjectId, StringRef aUsers, StringRef aDueDates, StringRef aQuery) : CKanbanColumnComponent(aColumnId, aTitle, aOwner), iGitlabUrl(aUrl), iGitlabToken(aToken), iGitlabProjectId(aProjectId), iGitlabQuery(aQuery)
+CKanbanColumnGitlab::CKanbanColumnGitlab(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, StringRef aUrl, StringRef aToken, StringRef aProjectId, StringRef aUsers, StringRef aDueDates, StringRef aQuery) : CKanbanColumnComponent(aColumnId, aTitle, aOwner, true), iGitlabUrl(aUrl), iGitlabToken(aToken), iGitlabProjectId(aProjectId), iGitlabQuery(aQuery)
 {
 	iGitlabUsers.addTokens(aUsers, ", ", "");
 	iGitlabUsers.removeEmptyStrings();
@@ -35,7 +35,7 @@ bool CKanbanColumnGitlab::showRefreshMenuEntry()
 
 void CKanbanColumnGitlab::refreshThreadWorkerFunction()
 {
-	decodeGitlabStarting();
+	decodeGitlabStarting_v2();
 }
 
 
@@ -121,6 +121,41 @@ static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aProj
 	}
 }
 
+static bool invokeConnection_v2(StringRef aQueries, StringRef aToken, String& aOutput, int& aCurlErrorCode)
+{
+	ChildProcess cp;
+	String curls = CConfiguration::getValue("curl");
+	if (curls.isEmpty())
+	{
+		aOutput = "curl bad path";
+		aCurlErrorCode = -1;
+		return false;
+	}
+	String cmd = curls + " -w \"\\r\\n\\r\\n\" -k --header \"PRIVATE-TOKEN: " + aToken + "\" " + aQueries;
+	Logger::outputDebugString("curl cmd: " + cmd);
+	if (cp.start(cmd, ChildProcess::wantStdOut))
+	{
+		String out = cp.readAllProcessOutput();
+		uint32 ec = cp.getExitCode();
+		aCurlErrorCode = ec;
+		if (ec == 0)
+		{
+			aOutput = out;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		aCurlErrorCode = -2;
+		aOutput = "Process start failed";
+		return false;
+	}
+}
+
 static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aProject, StringRef aUser, StringRef aDueDate, StringRef aQuery, String& aOutput, int& aCurlErrorCode)
 {
 	String q(aQuery);
@@ -145,7 +180,7 @@ static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aProjec
 		aCurlErrorCode = ec;
 		if (ec == 0)
 		{
-			aOutput = out;
+			aOutput = out + "HTTP/1.1 200 OK";
 			return true;
 		}
 		else
@@ -279,7 +314,7 @@ CKanbanColumnGitlab * CKanbanColumnGitlab::createFromJson(int aColumnId, const S
 
 
 
-void CKanbanColumnGitlab::decodeGitlabRsp(const String & aData)
+bool CKanbanColumnGitlab::decodeGitlabRsp(const String & aData)
 {
 	var d = JSON::parse(aData);
 	if (d != var())
@@ -326,9 +361,15 @@ void CKanbanColumnGitlab::decodeGitlabRsp(const String & aData)
 
 					Time t0 = Time::getCurrentTime();
 					Time t1 = Time::fromISO8601(duedate.toString());
+					RelativeTime rt = RelativeTime::milliseconds(t1.toMilliseconds() - t0.toMilliseconds());
+					//Logger::outputDebugString("rt: " + String(rt.inDays()) + "   " + String(t1.toMilliseconds() - t0.toMilliseconds()));
 					if ((t1.getYear() == t0.getYear() && t1.getMonth() == t0.getMonth() && t1.getDayOfMonth() == t0.getDayOfMonth()) || (t1 < t0))
 					{ // tooday or previos days
 						c.values.set("colour", CConfiguration::getColourPalette().getColor(0).toString());
+					}
+					else if (rt.inDays() >= 1 && rt.inDays() <= 5 )
+					{
+						c.values.set("colour", CConfiguration::getColourPalette().getColor(rt.inDays()).toString());
 					}
 				}
 				else
@@ -357,6 +398,85 @@ void CKanbanColumnGitlab::decodeGitlabRsp(const String & aData)
 				//decodeGitlabNotifier(c);
 			}
 		}
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void CKanbanColumnGitlab::decodeGitlabStarting_v2()
+{
+	iRefreshOngoing = true;
+	iTempCardList.clear();
+
+	String err;
+
+	String queries;
+
+	for (auto& sd : iGitlabDuedates)
+	{
+		for (auto& s : iGitlabUsers)
+		{
+			String out;
+			int ec = 0;
+
+			String q(iGitlabQuery);
+			q = q.replace("{URL}", iGitlabUrl);
+			q = q.replace("{PROJECT_ID}", iGitlabProjectId);
+			q = q.replace("{DUE_DATE}", sd);
+			q = q.replace("{USER}", s);
+
+			queries += "\"" + q + "\" ";
+		}
+	}
+
+	Logger::outputDebugString("built query: " + queries);
+
+	String out;
+	int ec = 0;
+	if (invokeConnection_v2(queries, iGitlabToken, out, ec))
+	{
+		StringArray rsps = StringArray::fromLines(out);
+		rsps.removeEmptyStrings();
+		for (auto& s : rsps)
+		{
+			if (!decodeGitlabRsp(s))
+			{
+				ec = -3;
+			}
+		}
+	}
+	if ( ec != 0 )
+	{
+		if (err.isEmpty()) err = "Error occured during refresh action, error code:";
+		err += " " + String(ec) + " ";
+	}
+
+	const MessageManagerLock mml(Thread::getCurrentThread());
+	if (!mml.lockWasGained())
+	{
+		Thread::getCurrentThread()->wait(1100); // retry
+		if (!mml.lockWasGained())
+		{
+			iRefreshOngoing = false;
+			return;
+		}
+	}
+	// ui update
+	decodeGitlabFinished();
+
+	iProgressBar.setVisible(false);
+	iRefreshOngoing = false;
+
+	if (!err.isEmpty())
+	{
+		CConfiguration::showStatusbarMessage("Refresh error: " + err);
+	}
+	else
+	{
+		CConfiguration::showStatusbarMessage("Refresh success");
 	}
 }
 
@@ -434,7 +554,7 @@ void CKanbanColumnGitlab::decodeGitlabFinished()
 				ar[i]->setDueDate(c.values["dueDateSet"], Time(c.values["dueDate"]));
 				ar[i]->setAssigne(c.values["assignee"]);
 				if (c.values.contains("colour")) ar[i]->setColour(Colour::fromString(c.values["colour"].toString()));
-				//				if (c.values.contains("colour")) ar[i]->setColour(CConfiguration::getColourPalette().getColor(c.values["colour"]));
+				//if (c.values.contains("colour")) ar[i]->setColour(CConfiguration::getColourPalette().getColor(c.values["colour"]));
 				break;
 			}
 		}
@@ -444,6 +564,7 @@ void CKanbanColumnGitlab::decodeGitlabFinished()
 			card->setupFromJson(c.values, c.customProps);
 			iViewportLayout.createNewCard(card, true, false);
 			delete card;
+			ar = iOwner.getCardsForColumn(this);
 		}
 	}
 

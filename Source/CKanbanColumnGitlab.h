@@ -26,7 +26,7 @@ public:
 
 	~CKanbanColumnGitlab() override;
 
-private:
+public:
 
 	bool showRefreshMenuEntry() override;
 
@@ -40,7 +40,8 @@ private:
 
 private:
 
-	void decodeGitlabRsp(const String & aData);
+	bool decodeGitlabRsp(const String & aData);
+	void decodeGitlabStarting_v2();
 	void decodeGitlabStarting();
 	void decodeGitlabNotifier(CKanbanCardComponent* aCard);
 	void decodeGitlabFinished();

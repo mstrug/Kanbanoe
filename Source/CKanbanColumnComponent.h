@@ -21,10 +21,11 @@ class CKanbanBoardComponent;
 //==============================================================================
 /*
 */
+
 class CKanbanColumnComponent : public juce::Component, public ScrollBar::Listener
 {
 public:
-	CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner);
+	CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, bool aRefreshButton = false);
 	~CKanbanColumnComponent() override;
 
 	void paint(juce::Graphics&) override;
@@ -92,6 +93,8 @@ private:
 	String getMinimalDueDate( juce::Colour* aColour = nullptr);
 
 	void setScrollSpeed(bool aSlow);
+
+	void startRefresh();
 
 protected:
 

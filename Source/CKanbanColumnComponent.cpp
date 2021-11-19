@@ -18,6 +18,9 @@ const int KTitleHeight = 25;
 const int KEditModeMargin = 30;
 
 
+
+
+
 void CKanbanColumnComponent::ComponentListenerEditButton::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized)
 {
 	if (wasResized)
@@ -52,7 +55,7 @@ void CKanbanColumnComponent::ComponentListenerEditButton::componentMovedOrResize
 }
 
 
-CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner) : iOwner(aOwner), iColumnId(aColumnId), iMinimizedState(false), iIsFrameActive(false), iDueDateDone(false), iSortedAsc(false), iColumnTitle(aTitle), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw), iProgressBar(iProgressBarValue), iMouseTitleIsActive(false), iEditMode(false), iEditButtonRightVisible(false), iEditModeLeft("+", DrawableButton::ImageRaw), iEditModeRight("+", DrawableButton::ImageRaw), iRefreshOngoing(false)
+CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, bool aRefreshButton) : iOwner(aOwner), iColumnId(aColumnId), iMinimizedState(false), iIsFrameActive(false), iDueDateDone(false), iSortedAsc(false), iColumnTitle(aTitle), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw), iProgressBar(iProgressBarValue), iMouseTitleIsActive(false), iEditMode(false), iEditButtonRightVisible(false), iEditModeLeft("+", DrawableButton::ImageRaw), iEditModeRight("+", DrawableButton::ImageRaw), iRefreshOngoing(false)
 {
 	//setInterceptsMouseClicks(false, true);
 	//setRepaintsOnMouseActivity(true);
@@ -117,11 +120,11 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 		iSetupButton.setState(Button::buttonDown);
 		this->showSetupMenu();
 	};
-	iSetupButton.setTooltip("Column menu");
 	addAndMakeVisible(iSetupButton);
 
 	DrawablePath btnImg2;
-	{
+	if (!aRefreshButton)
+	{ // plus
 		Path p;
 		int w = 10;
 		p.addLineSegment(Line<float>(0, w/2, w, w/2), 1);
@@ -135,6 +138,29 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 		btnImg2.setStrokeFill(FillType(Colours::lightgrey));
 		btnImg2.setFill(Colours::transparentWhite);
 	}
+	else
+	{ // circle
+		Path p;
+		int w = 10;
+		p.addArc(0, 0, w, w, 7*3.14f/16.0f, 3.14f+3.14f, true);
+		p.addTriangle(w / 2 + 3, 0, w / 2, -2, w / 2, 2);
+
+
+		//p.addArc(0, 0, w, w, -3.14f / 5.0f, 3.14f / 2, true);
+		//p.addArc(0, 0, w, w, 3.14f / 4.0f + 3.14f / 2, 3.14f + 3.14f / 2, true);
+		//float tw = 2;
+		//p.addTriangle(w, w / 2 + 2, w - tw, w / 2, w + tw, w / 2);
+		//p.addTriangle(0, w / 2 - 2, - tw, w / 2, tw, w / 2);
+
+		p.applyTransform(AffineTransform::rotation(3.14f / 4, w / 2, w / 2));
+		p.applyTransform(AffineTransform::translation(7, 7));
+		p.addRectangle(-w, -w, 4 * w, 4 * w);
+		btnImg2.setPath(p);
+		PathStrokeType pt(2, PathStrokeType::curved);
+		btnImg2.setStrokeType(pt);
+		btnImg2.setStrokeFill(FillType(Colours::lightgrey));
+		btnImg2.setFill(Colours::transparentWhite);
+	}
 	DrawablePath btnImgOver2(btnImg2);
 	btnImgOver2.setStrokeFill(FillType(Colours::whitesmoke));
 	btnImgOver2.setFill(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.08f));
@@ -143,10 +169,17 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 	iAddCardButton.setImages(&btnImg2, &btnImgOver2, &btnImgPushed2);
 	iAddCardButton.onClick = [this]
 	{ // todo: clear mouse over state
-		iAddCardButton.setState(Button::buttonNormal);
-		this->iViewportLayout.createNewCard();
+		if (showRefreshMenuEntry())
+		{
+			startRefresh();
+		}
+		else
+		{
+			iAddCardButton.setState(Button::buttonNormal);
+			this->iViewportLayout.createNewCard();
+		}
 	};
-	iAddCardButton.setTooltip("Add card");
+	iAddCardButton.setTooltip(aRefreshButton ? "Refresh" : "Add card");
 	addAndMakeVisible(iAddCardButton);
 
 	iEditModeLeft.addComponentListener(&iEditModeButtonListener);
@@ -344,10 +377,7 @@ void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 		{
 			menu.addItem("Refresh", !iRefreshOngoing, false, [&]()
 			{
-				iMouseTitleIsActive = false;
-				if (!isMinimized()) iProgressBar.setVisible(true);
-				repaint();
-				Thread::launch([&]() { refreshThreadWorkerFunction(); }); // todo: exit application during running thread leaks this object
+				startRefresh();
 			});
 		}
 		menu.show();
@@ -888,6 +918,17 @@ void CKanbanColumnComponent::setScrollSpeed(bool aSlow)
 	int m = CConfiguration::getIntValue("KanbanCardHorizontalMargin");
 	if ( aSlow ) iScrollBar.setSingleStepSize((h + m + m) / 12);
 	else iScrollBar.setSingleStepSize((h + m + m) / 4);
+}
+
+void CKanbanColumnComponent::startRefresh()
+{
+	if (!iRefreshOngoing)
+	{
+		iMouseTitleIsActive = false;
+		if (!isMinimized()) iProgressBar.setVisible(true);
+		repaint();
+		Thread::launch([&]() { refreshThreadWorkerFunction(); }); // todo: exit application during running thread leaks this object
+	}
 }
 
 
