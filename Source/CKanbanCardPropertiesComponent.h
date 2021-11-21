@@ -60,6 +60,7 @@ private:
 
 	TextEditor iTextUrl;
 	Label iLabelUrl;
+	DrawableButton iButtonUrl;
 
 	TextEditor iTextTags;
 	Label iLabelTags;

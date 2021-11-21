@@ -110,10 +110,13 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 
 		if (iIsUrlSet)
 		{
-			g.setColour(juce::Colours::grey);
 			if (iIsUrlMouseActive) g.setColour(juce::Colours::lightgrey);
-			//g.fillRect(iRectUrl);
-			g.drawArrow(iLineUrl, 2, 7, 7);
+			else g.setColour(juce::Colours::grey);
+			
+			PathStrokeType pt(2, PathStrokeType::JointStyle::curved, PathStrokeType::EndCapStyle::butt);
+			g.strokePath(iUrlPath, pt);
+
+			//g.drawArrow(iLineUrl, 1, 5, 5);
 		}
 
 		if (iIsDueDateSet)
@@ -151,8 +154,25 @@ void CKanbanCardComponent::resized()
 	iRectAssigne.removeFromBottom(15);
 	iRectAssigne.translate(-1, 0);
 
-	iLineUrl.setStart(iRectUrl.getTopLeft().x + 2, iRectUrl.getBottom() - 2);
-	iLineUrl.setEnd(iRectUrl.getRight() - 2, iRectUrl.getTopLeft().y + 2);
+	//iLineUrl.setStart(iRectUrl.getTopLeft().x + 2, iRectUrl.getBottom() - 2);
+	//iLineUrl.setEnd(iRectUrl.getRight() - 2, iRectUrl.getTopLeft().y + 2);
+
+	iUrlPath = generateUrlPath(iRectUrl);
+
+	/*auto r2 = iRectUrl.reduced(4).translated(-1, 2);
+	iUrlPath.clear();
+	iUrlPath.startNewSubPath(r2.getTopLeft().x + 3, r2.getTopLeft().y);
+	iUrlPath.lineTo(r2.getTopLeft().x, r2.getTopLeft().y);
+	iUrlPath.lineTo(r2.getTopLeft().x, r2.getBottom());
+	iUrlPath.lineTo(r2.getRight(), r2.getBottom());
+	iUrlPath.lineTo(r2.getRight(), r2.getBottom() - 3);
+
+	float aw = 5, aa = 5;
+	iUrlPath.startNewSubPath(r2.getCentreX() + 1, r2.getCentreY());
+	iUrlPath.lineTo(r2.getCentreX() + 1 + aw, r2.getCentreY() - aw);
+	iUrlPath.lineTo(r2.getCentreX() + 1 + aw - aa, r2.getCentreY() - aw);
+	iUrlPath.startNewSubPath(r2.getCentreX() + 1 + aw, r2.getCentreY() - aw);
+	iUrlPath.lineTo(r2.getCentreX() + 1 + aw, r2.getCentreY() - aw + aa);*/
 }
 
 void CKanbanCardComponent::mouseDown(const MouseEvent& event)
@@ -677,6 +697,28 @@ void CKanbanCardComponent::removeListener(Listener * aListener)
 {
 	iListeners.removeAllInstancesOf(aListener);
 }
+
+Path CKanbanCardComponent::generateUrlPath(Rectangle<int> aBoundaryRect)
+{
+	Path p;
+	auto r2 = aBoundaryRect.reduced(4).translated(-1, 2);
+	p.clear();
+	p.startNewSubPath(r2.getTopLeft().x + 3, r2.getTopLeft().y);
+	p.lineTo(r2.getTopLeft().x, r2.getTopLeft().y);
+	p.lineTo(r2.getTopLeft().x, r2.getBottom());
+	p.lineTo(r2.getRight(), r2.getBottom());
+	p.lineTo(r2.getRight(), r2.getBottom() - 3);
+
+	float aw = 5, aa = 5;
+	p.startNewSubPath(r2.getCentreX() + 1, r2.getCentreY());
+	p.lineTo(r2.getCentreX() + 1 + aw, r2.getCentreY() - aw);
+	p.lineTo(r2.getCentreX() + 1 + aw - aa, r2.getCentreY() - aw);
+	p.startNewSubPath(r2.getCentreX() + 1 + aw, r2.getCentreY() - aw);
+	p.lineTo(r2.getCentreX() + 1 + aw, r2.getCentreY() - aw + aa);
+	p.closeSubPath();
+	return p;
+}
+
 
 void CKanbanCardComponent::notifyListeners()
 {

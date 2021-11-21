@@ -139,7 +139,7 @@ CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTit
 		btnImg2.setFill(Colours::transparentWhite);
 	}
 	else
-	{ // circle
+	{ // circle with arrow
 		Path p;
 		int w = 10;
 		p.addArc(0, 0, w, w, 7*3.14f/16.0f, 3.14f+3.14f, true);

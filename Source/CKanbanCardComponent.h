@@ -93,6 +93,8 @@ public:
 	void addListener(Listener* aListener);
 	void removeListener(Listener* aListener);
 
+	static Path generateUrlPath( Rectangle<int> aBoundaryRect );
+
 public: // clipboard
 
 	static CKanbanCardComponent* getClipboardCard();
@@ -123,10 +125,10 @@ private:
 
 	HyperlinkButton iButtonUrl;
 
-	Line<float> iLineUrl;
 	Rectangle<int> iRectUrl;
 	bool iIsUrlSet;
 	bool iIsUrlMouseActive;
+	Path iUrlPath;
 
 	bool iIsDueDateSet;
 	bool iIsDone;

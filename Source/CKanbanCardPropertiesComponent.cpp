@@ -16,7 +16,7 @@
 
 
 //==============================================================================
-CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardComponent &aOwner) : iOwner(aOwner), iMaximized(false), iUpdated(false)
+CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardComponent &aOwner) : iOwner(aOwner), iMaximized(false), iUpdated(false), iButtonUrl("Url", DrawableButton::ImageRaw)
 {
 	setViewportIgnoreDragFlag(true);
 	addKeyListener(this);
@@ -71,6 +71,15 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 		//iTextUrl.scroll
 		this->changesApply();
 	};
+	iButtonUrl.onClick = [this]
+	{
+		URL u(iTextUrl.getText());
+		if (u.isWellFormed())
+		{
+			u.launchInDefaultBrowser();
+		}
+	};
+	addAndMakeVisible(iButtonUrl);
 
 	iLabelTags.setText("Tags:", juce::NotificationType::dontSendNotification);
 	addAndMakeVisible(iLabelTags);
@@ -96,7 +105,11 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	//iSliderDueDate.setVelocityModeParameters(2, 1, 0);
 	iSliderDueDate.setTextValueSuffix(" days");
 	addAndMakeVisible(iSliderDueDate);
-	if (!aOwner.isDueDateSet()) iSliderDueDate.setValue(-1, dontSendNotification);
+	if (!aOwner.isDueDateSet())
+	{
+		iSliderDueDate.setValue(-1, dontSendNotification);
+		this->iLabelSlider.setText("Due date: -", dontSendNotification);
+	}
 	else
 	{
 		iSliderDueDate.setValue((aOwner.getDueDate().toMilliseconds() - aOwner.getCreationDate().toMilliseconds()) / (24 * 3600000), dontSendNotification);
@@ -170,6 +183,18 @@ void CKanbanCardPropertiesComponent::layout()
 
 	iLabelUrl.setBounds(10, yofs, wl, 24);
 	iTextUrl.setBounds(10 + wl + 10, yofs, w - wl - 10, 24);
+	iButtonUrl.setBounds(10 + wl - 25, yofs, 24, 24);
+	DrawablePath btnImg;
+	auto p = CKanbanCardComponent::generateUrlPath(Rectangle<int>(5, 4, 15, 15));
+	btnImg.setPath(p);
+	PathStrokeType pt(2, PathStrokeType::JointStyle::curved, PathStrokeType::EndCapStyle::butt);
+	btnImg.setStrokeType(pt);
+	btnImg.setStrokeFill(FillType(Colours::grey));
+	DrawablePath btnImgOver(btnImg);
+	btnImgOver.setStrokeFill(FillType(Colours::lightgrey));
+	DrawablePath btnImgPushed(btnImgOver);
+	btnImgPushed.setStrokeFill(FillType(Colours::darkgrey));
+	iButtonUrl.setImages(&btnImg, &btnImgOver, &btnImgPushed);
 
 	yofs = iTextUrl.getBottom() + 12;
 
