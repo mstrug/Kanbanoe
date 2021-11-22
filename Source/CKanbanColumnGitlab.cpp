@@ -362,14 +362,14 @@ bool CKanbanColumnGitlab::decodeGitlabRsp(const String & aData)
 					Time t0 = Time::getCurrentTime();
 					Time t1 = Time::fromISO8601(duedate.toString());
 					RelativeTime rt = RelativeTime::milliseconds(t1.toMilliseconds() - t0.toMilliseconds());
-					//Logger::outputDebugString("rt: " + String(rt.inDays()) + "   " + String(t1.toMilliseconds() - t0.toMilliseconds()));
+					Logger::outputDebugString("rt: " + String(rt.inDays()) + "   " + String(t1.toMilliseconds() - t0.toMilliseconds()));
 					if ((t1.getYear() == t0.getYear() && t1.getMonth() == t0.getMonth() && t1.getDayOfMonth() == t0.getDayOfMonth()) || (t1 < t0))
 					{ // tooday or previos days
 						c.values.set("colour", CConfiguration::getColourPalette().getColor(0).toString());
 					}
-					else if (rt.inDays() >= 1 && rt.inDays() <= 5 )
+					else if (rt.inDays() > 0 && rt.inDays() < 5 )
 					{
-						c.values.set("colour", CConfiguration::getColourPalette().getColor(rt.inDays()).toString());
+						c.values.set("colour", CConfiguration::getColourPalette().getColor(((int)rt.inDays())+1).toString());
 					}
 				}
 				else
