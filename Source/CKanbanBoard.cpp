@@ -210,6 +210,7 @@ void CKanbanBoardComponent::updateColumnSize(CKanbanColumnComponent * aColumn, b
 		if (iKanbanColumns[j]->isGridColumn(gi.column.start.getNumber(), gi.column.end.getNumber()))
 		{
 			iKanbanColumns[j]->setMinimized(aMinimized, false);
+			iKanbanColumns[j]->setEditModeRightVisible(aColumn->isEditModeRightVisible());
 		}
 	}
 
@@ -866,6 +867,28 @@ bool CKanbanBoardComponent::isColumnLastInGrid(CKanbanColumnComponent * aColumn)
 	return (end >= iGrid.getNumberOfColumns());
 }
 
+bool CKanbanBoardComponent::isColumnHalfBeforeFull(CKanbanColumnComponent * aColumn)
+{
+	int end = aColumn->getGridItem().column.end.getNumber();
+	int rc = iGrid.getNumberOfRows() + 1; // row end in grid item is larger by 1 from number of rows, so we need to add 1 to the count
+	if (end < iGrid.getNumberOfColumns())
+	{
+		int cnt = 0;
+		for (GridItem& gi : iGrid.items)
+		{
+			int cs = gi.column.start.getNumber();
+			int rs = gi.row.start.getNumber();
+			int re = gi.row.end.getNumber();
+			if (cs == end + 1)
+			{
+				if ( rs == 1 && re == rc ) cnt++;
+			}
+		}
+		return cnt == 1;
+	}
+	return false;
+}
+
 bool CKanbanBoardComponent::isColumnNextInGridSameSize(CKanbanColumnComponent * aColumn)
 {
 	int rs = aColumn->getGridItem().row.start.getNumber();
@@ -1076,7 +1099,7 @@ void CKanbanBoardComponent::addColumn(CKanbanColumnComponent * aColumn, bool aBe
 	addAndMakeVisible(col);
 
 	// update grid
-
+	// todo: check if half column should be added to existing column with half column
 	int gi1col = aColumn->getGridItem().column.start.getNumber();
 	int gi1rows = aColumn->getGridItem().row.start.getNumber();
 	int gi1rowe = aColumn->getGridItem().row.end.getNumber();
@@ -1103,7 +1126,9 @@ void CKanbanBoardComponent::addColumn(CKanbanColumnComponent * aColumn, bool aBe
 	iGrid.items.add(gi);
 	col->setGridItem(gi);
 
-	aColumn->setEditModeRightVisible(isColumnLastInGrid(aColumn));
+	aColumn->setEditModeRightVisible(isColumnLastInGrid(aColumn) || isColumnHalfBeforeFull(aColumn) );
+	updateColumnSize(aColumn, aColumn->isMinimized()); // update rest items in the same column
+	//aColumn->setEditModeRightVisible //todo
 
 	updateSize();
 
@@ -1113,19 +1138,51 @@ void CKanbanBoardComponent::addColumn(CKanbanColumnComponent * aColumn, bool aBe
 void CKanbanBoardComponent::removeColumn(CKanbanColumnComponent * aColumn)
 {
 	int ci = aColumn->getGridItem().column.start.getNumber();
+	//int ri = aColumn->getGridItem().row.end.getNumber() - aColumn->getGridItem().row.end.getNumber();
+	//bool divided_col = (ri != iGrid.getNumberOfRows());
+
 	for (auto& gi : iGrid.items)
 	{
 		if (gi.associatedComponent == aColumn)
 		{
 			iGrid.items.remove(&gi);
-		}
-		else if (gi.column.start.getNumber() > ci && ci >= 0 )
-		{
-			gi.setArea(gi.row.start, gi.column.start.getNumber() - 1, gi.row.end, gi.column.end.getNumber() - 1);
+			//iGrid.templateColumns.remove(ci - 1);
+			break;
 		}
 	}
 	removeChildComponent(aColumn);
 	iKanbanColumns.removeObject(aColumn, true);
+
+	// remove empty grid columns
+	Array<int> cols;
+	for (int i = 0; i < iGrid.getNumberOfColumns(); i++)
+	{
+		cols.add(i + 1);
+	}
+	for (auto& gi : iGrid.items)
+	{
+		cols.removeAllInstancesOf(gi.column.start.getNumber());
+		cols.removeAllInstancesOf(gi.column.end.getNumber());
+	}
+	int cols_removed = cols.size();
+	for (int i = cols.size() - 1; i >= 0; i--)
+	{
+		iGrid.templateColumns.remove(cols[i]);
+	}
+
+	// move columns on right of deleted column to left
+	if (cols_removed > 0)
+	{
+		for (auto& gi : iGrid.items)
+		{
+			if (gi.column.start.getNumber() > ci && ci >= 0)
+			{
+				// assuming continous columns area
+				gi.setArea(gi.row.start, gi.column.start.getNumber() - cols_removed, gi.row.end, gi.column.end.getNumber() - cols_removed);
+				if (gi.associatedComponent) static_cast<CKanbanColumnComponent*>(gi.associatedComponent)->setGridItem(gi);
+			}
+		}
+	}
 
 	// update grid
 	updateSize();

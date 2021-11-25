@@ -440,7 +440,6 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 		}
 	} 
 	// else KanbanCardComponentLoadFromFileDescription
-	card->setOwner(this);
 
 	if (getOwner().isColumnDueDateDone()) card->setDone(true);
 	else card->setDone(false);
@@ -470,6 +469,7 @@ void CKanbanColumnContentComponent::itemDropped(const SourceDetails & dragSource
 	{
 		iLayout.items.insert(iPlaceholderIndex, fi);
 	}
+	card->setOwner(this); // here for proper autosave
 	iOwner.cardsCoutUpdated();
 
 	//auto& flexItem = iLayout.items.getReference(iLayout.items.size() - 1);

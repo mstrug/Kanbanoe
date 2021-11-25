@@ -74,6 +74,8 @@ public:
 	void setEditMode(bool aLeftEnabled, bool aRightEnabled);
 	bool isEditModeRightVisible();
 	void setEditModeRightVisible(bool aVisible);
+	bool isEditModeLeftVisible();
+	void setEditModeLeftVisible(bool aVisible);
 	static int getEditModeMargin();
 
 	String outputAsJson();
@@ -166,6 +168,7 @@ protected:
 	bool iEditMode;
 
 	bool iEditButtonRightVisible;
+	bool iEditButtonLeftVisible;
 
 	DrawableButton iEditModeLeft;
 	DrawableButton iEditModeRight;

@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.55");
+const String AppVersion("v0.56");
 
 
 
@@ -326,7 +326,15 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		}
 		break;
 	case menuFileSaveAs:
-			result.setInfo("Save As", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));
+		{
+			bool enabled = false;
+			if (isDocOpened)
+			{
+				CMyMdiDoc* d = dynamic_cast<CMyMdiDoc*>(iMdiPanel.getActiveDocument());
+				enabled = (d != nullptr);
+			}
+			result.setInfo("Save As", "", "Menu", (!enabled ? ApplicationCommandInfo::isDisabled : 0));
+		}
 		break;
 	case menuFileSaveAll:
 			result.setInfo("Save All", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));

@@ -98,6 +98,8 @@ private:
 
 	bool isColumnLastInGrid(CKanbanColumnComponent* aColumn);
 
+	bool isColumnHalfBeforeFull(CKanbanColumnComponent * aColumn);
+
 	bool isColumnNextInGridSameSize(CKanbanColumnComponent* aColumn);
 
 private:
