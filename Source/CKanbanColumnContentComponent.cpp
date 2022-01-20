@@ -18,7 +18,7 @@
 CKanbanColumnContentComponent::CKanbanColumnContentComponent(CKanbanColumnComponent& aOwner) : iOwner(aOwner), iDragTargetActive(false), iDragTargetPlaceholderActive(false), iPlaceholderIndex(-1), iDraggedCardIndex(-1), iScrollPos(0), iHiddenCardsFromSearchCount(0), iMaxWip(0)
 {
 	iLayout.alignContent = FlexBox::AlignContent::center;
-	iLayout.alignItems = FlexBox::AlignItems::flexStart;
+	iLayout.alignItems = FlexBox::AlignItems::center; // flexStart;
 	iLayout.flexDirection = FlexBox::Direction::column;
 	iLayout.flexWrap = FlexBox::Wrap::noWrap;
 	iLayout.justifyContent = FlexBox::JustifyContent::flexStart;

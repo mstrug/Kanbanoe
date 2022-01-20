@@ -55,7 +55,7 @@ void CKanbanColumnComponent::ComponentListenerEditButton::componentMovedOrResize
 }
 
 
-CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, bool aRefreshButton) : iOwner(aOwner), iColumnId(aColumnId), iMinimizedState(false), iIsFrameActive(false), iDueDateDone(false), iSortedAsc(false), iColumnTitle(aTitle), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw), iProgressBar(iProgressBarValue), iMouseTitleIsActive(false), iEditMode(false), iEditButtonRightVisible(false), iEditButtonLeftVisible(true), iEditModeLeft("+", DrawableButton::ImageRaw), iEditModeRight("+", DrawableButton::ImageRaw), iRefreshOngoing(false)
+CKanbanColumnComponent::CKanbanColumnComponent(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, bool aRefreshButton) : iOwner(aOwner), iColumnId(aColumnId), iMinimizedState(false), iIsFrameActive(false), iDueDateDone(false), iSortedAsc(false), iColumnTitle(aTitle), iViewportLayout(*this), iScrollBar(true), iAddCardButton("Add card", DrawableButton::ImageRaw), iSetupButton("Setup", DrawableButton::ImageRaw), iProgressBar(iProgressBarValue), iMouseTitleIsActive(false), iEditMode(false), iEditButtonRightVisible(false), iEditButtonLeftVisible(false), iEditModeLeft("+", DrawableButton::ImageRaw), iEditModeRight("+", DrawableButton::ImageRaw), iRefreshOngoing(false)
 {
 	//setInterceptsMouseClicks(false, true);
 	//setRepaintsOnMouseActivity(true);
@@ -700,8 +700,10 @@ Rectangle<int> CKanbanColumnComponent::getLocalBoundsForCardsSection()
 	auto r = getLocalBounds();
 	if (iEditMode)
 	{
-		if ( iEditButtonRightVisible ) r.reduce(KEditModeMargin, 0);
-		else r.setLeft(r.getTopLeft().x + KEditModeMargin);
+		if (iEditButtonRightVisible) r.removeFromRight(KEditModeMargin);
+		if (iEditButtonLeftVisible) r.setLeft(r.getTopLeft().x + KEditModeMargin);
+		//if ( iEditButtonRightVisible ) r.reduce(KEditModeMargin, 0);
+		//else r.setLeft(r.getTopLeft().x + KEditModeMargin);
 	}
 	return r;
 }
@@ -965,8 +967,10 @@ void CKanbanColumnComponent::updateColumnTitle()
 void CKanbanColumnComponent::setEditMode(bool aLeftEnabled, bool aRightEnabled)
 {
 	iEditMode = aLeftEnabled || aRightEnabled;
-	iEditButtonLeftVisible = aLeftEnabled;
-	iEditButtonRightVisible = aRightEnabled;
+	//iEditButtonLeftVisible = aLeftEnabled;
+	setEditModeLeftVisible(aLeftEnabled);
+	setEditModeRightVisible(aRightEnabled);
+	//iEditButtonRightVisible = aRightEnabled;
 }
 
 bool CKanbanColumnComponent::isEditModeRightVisible()

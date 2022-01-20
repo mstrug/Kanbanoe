@@ -136,6 +136,11 @@ const String & CMyMdiDoc::getFilePath()
 	return b->getFile().getFullPathName();
 }
 
+void CMyMdiDoc::updateCardsView()
+{
+	getKanbanBoard()->updateCardsView();
+}
+
 void CMyMdiDoc::KanbanBoardChanged()
 {
 	if (CConfiguration::getBoolValue(KConfigAutosave))
@@ -464,7 +469,8 @@ bool CMyMdi::isAlreadyOpened(const String & aTabName)
 {
 	for (int i = 0; i < getNumDocuments(); i++)
 	{
-		CMyMdiDoc* ad = dynamic_cast<CMyMdiDoc*>(getDocument(i));
+		auto c = getDocument(i);
+		CMyMdiDocBase* ad = dynamic_cast<CMyMdiDocBase*>(c);
 		if (ad && ad->getTabName().compare(aTabName) == 0)
 		{
 			return true;
@@ -499,4 +505,16 @@ void CMyMdi::closeAllDocumentsAndVerifyStore()
 		}
 	}
 	closeAllDocuments(false);
+}
+
+void CMyMdi::updateDocuments()
+{
+	for (int i = 0; i < getNumDocuments(); i++)
+	{
+		CMyMdiDocBase* ad = dynamic_cast<CMyMdiDocBase*>(getDocument(i));
+		if (ad)
+		{
+			ad->updateCardsView();
+		}
+	}
 }

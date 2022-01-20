@@ -36,6 +36,7 @@ public:
 	String& getSearchText();
 	String getTabName();
 	bool isUnsaved();
+	virtual void updateCardsView() { }
 
 public:
 	CMyMdiDocBase *iNext, *iPrev;
@@ -51,6 +52,7 @@ public:
 	CKanbanBoardComponent* getKanbanBoard();
 	bool save();
 	const String& getFilePath();
+	void updateCardsView();
 
 public: // from CKanbanBoardComponent::Listener
 	void KanbanBoardChanged();
@@ -113,6 +115,8 @@ public:
 	bool isAlreadyOpened(const String& aTabName);
 
 	void closeAllDocumentsAndVerifyStore();
+
+	void updateDocuments();
 };
 	
 

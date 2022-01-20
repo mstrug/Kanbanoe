@@ -23,6 +23,7 @@ const int KRecentlyOpenedGroupMenuItemIdCount = 4;
 const String KConfigSearchCase = "ConfigSearchCaseInsensitive";
 const String KConfigSearchDynamic = "ConfigSearchDynamic";
 const String KConfigAutosave = "ConfigAutosave";
+const String KConfigCardViewComplex = "ConfigCardViewComplex";
 
 
 
@@ -49,6 +50,8 @@ public:
 	static String getValue(StringRef aPropertyName);
 
 	static int getIntValue(StringRef aPropertyName);
+
+	static float getFloatValue(StringRef aPropertyName);
 
 	static bool getBoolValue(StringRef aPropertyName);
 

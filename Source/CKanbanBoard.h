@@ -53,6 +53,7 @@ public:
 
 	CKanbanCardComponent* createCard();
 	void removeCard(CKanbanCardComponent* aCard);
+	void updateCardsView();
 
 	bool archiveColumn(CKanbanColumnComponent* aColumn, const String& aArchiveName, bool aClearColumn);
 	void logArchives();

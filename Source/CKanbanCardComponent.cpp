@@ -13,7 +13,7 @@
 #include "CKanbanColumnContentComponent.h"
 #include "CKanbanColumnComponent.h"
 #include "CKanbanBoard.h"
-#include "Cconfiguration.h"
+#include "CConfiguration.h"
 #include "CKanbanCardPropertiesComponent.h"
 
 // clipboard card
@@ -23,7 +23,7 @@ const int KAssigneeLength = 3;
 
 
 //==============================================================================
-CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iIsDone(false), iCreationDate(juce::Time::getCurrentTime()), iReadOnly(false)
+CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iIsDone(false), iIsDueDateVisible(false), iCreationDate(juce::Time::getCurrentTime()), iReadOnly(false)
 {
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -40,11 +40,13 @@ CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner
 	iButtonUrl.setButtonText("+");
 	addAndMakeVisible(iButtonUrl);
 	
-
+	iDataFontSize = CConfiguration::getFloatValue("KanbanCardDataFontSize");
 	//setOpaque(true);
 
 	setSize(w, h);
 
+	updateCardView();
+		
 	iLastUpdateDate = iCreationDate;
 }
 
@@ -62,6 +64,7 @@ void CKanbanCardComponent::duplicateDataFrom(const CKanbanCardComponent & aCard,
 	iIsUrlSet = aCard.iIsUrlSet;
 	iIsDueDateSet = aCard.iIsDueDateSet;
 	iDueDate = aCard.iDueDate;
+	iIsDueDateVisible = aCard.iIsDueDateVisible;
 	if (aDuplicateDates)
 	{
 		iCreationDate = aCard.iCreationDate;
@@ -101,14 +104,14 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 
 		//g.setColour(Colours::red);
 		//g.fillRect(iRectAssigne);
-		if (!iAssigne.getText().isEmpty())
+		if (!iAssigne.getText().isEmpty() && iIsDueDateVisible)
 		{
 			g.setColour(Colours::lightgrey);
-			g.setFont(juce::Font(12.0f));
+			g.setFont(juce::Font(iDataFontSize));
 			g.drawText(iAssigne.getText().substring(0, KAssigneeLength), iRectAssigne, Justification::centredRight, false);
 		}
 
-		if (iIsUrlSet)
+		if (iIsUrlSet && iIsDueDateVisible)
 		{
 			if (iIsUrlMouseActive) g.setColour(juce::Colours::lightgrey);
 			else g.setColour(juce::Colours::grey);
@@ -119,13 +122,13 @@ void CKanbanCardComponent::paint (juce::Graphics& g)
 			//g.drawArrow(iLineUrl, 1, 5, 5);
 		}
 
-		if (iIsDueDateSet)
+		if (iIsDueDateSet && iIsDueDateVisible)
 		{
 			auto b = getLocalBounds();
 			auto b1 = b.removeFromRight(50);
 			auto b2 = b1.removeFromTop(20);
 			b2.translate(-1, 0);
-			g.setFont(juce::Font(12.0f));
+			g.setFont(juce::Font(iDataFontSize));
 
 			juce::Colour col;
 			String s = getDueDateAsString(&col);
@@ -355,6 +358,15 @@ void CKanbanCardComponent::setOwner(CKanbanColumnContentComponent* aOwner)
 	}
 }
 
+void CKanbanCardComponent::updateCardView()
+{
+	bool b = CConfiguration::getBoolValue(KConfigCardViewComplex);
+	iButtonUrl.setVisible(b);
+	iAssigne.setVisible(b);
+	iIsDueDateVisible = b;
+	repaint();
+}
+
 void CKanbanCardComponent::openPropertiesWindow()
 {
 	showProperties();
@@ -438,7 +450,7 @@ bool CKanbanCardComponent::isDueDateSet()
 	return iIsDueDateSet;
 }
 
-void CKanbanCardComponent::setDueDate(bool aIsSet, juce::Time& aDueDate)
+void CKanbanCardComponent::setDueDate(bool aIsSet, const juce::Time& aDueDate)
 {
 	if ( iIsDueDateSet != aIsSet )
 	{
@@ -513,7 +525,7 @@ String CKanbanCardComponent::getDueDateAsString(juce::Colour* aColour, bool aLon
 	return s;
 }
 
-void CKanbanCardComponent::setDates(Time& aCreateionDate, Time& aLastUpdateDate)
+void CKanbanCardComponent::setDates(const Time& aCreateionDate, const Time& aLastUpdateDate)
 {
 	iCreationDate = aCreateionDate;
 	iLastUpdateDate = aLastUpdateDate;
@@ -748,8 +760,9 @@ void CKanbanCardComponent::cleanupClipboardCard()
 void CKanbanCardComponent::showProperties()
 {
 	iMouseActive = true;
-	auto comp = std::make_unique<CKanbanCardPropertiesComponent>(*this);
-	CallOutBox* box = new CallOutBox((juce::Component&)std::move(*comp), this->getScreenBounds(), nullptr);
+	auto comp = new CKanbanCardPropertiesComponent(*this);
+	CallOutBox* box = new CallOutBox(*(static_cast<juce::Component*>(comp)), this->getScreenBounds(), nullptr);
+	box->setDismissalMouseClicksAreAlwaysConsumed(true);
 	box->setEnabled(!iReadOnly);
 	box->runModalLoop();
 
@@ -759,6 +772,7 @@ void CKanbanCardComponent::showProperties()
 	}
 
 	delete box;
+	delete comp;
 
 	// this was disabled to let stay the callout window on the screen when changing to another app
 	//CallOutBox* box = &CallOutBox::launchAsynchronously(std::move(comp), this->getScreenBounds(), nullptr);

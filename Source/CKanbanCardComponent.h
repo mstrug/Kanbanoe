@@ -40,6 +40,7 @@ public:
 
 	CKanbanColumnContentComponent* getOwner();
 	void setOwner(CKanbanColumnContentComponent* aOwner);
+	void updateCardView();
 
 	void openPropertiesWindow();
 	void setupFromArchive(const juce::var & aArchive);
@@ -52,11 +53,11 @@ public:
 	void setTags(const String& aString);
 	
 	bool isDueDateSet();
-	void setDueDate(bool aIsSet, juce::Time& aDueDate);
+	void setDueDate(bool aIsSet, const juce::Time& aDueDate);
 	bool isDone();
 	void setDone(bool aDone);
 	String getDueDateAsString( juce::Colour* aColour = nullptr, bool aLongForm = false);
-	void setDates(Time& aCreateionDate, Time& aLastUpdateDate);
+	void setDates(const Time& aCreateionDate, const Time& aLastUpdateDate);
 	juce::Time getCreationDate();
 	juce::Time getLastUpdateDate();
 	juce::Time getDueDate();
@@ -132,12 +133,14 @@ private:
 
 	bool iIsDueDateSet;
 	bool iIsDone;
+	bool iIsDueDateVisible;
 	juce::Time iDueDate;
 	juce::Time iCreationDate;
 	juce::Time iLastUpdateDate;
 
 	Label iAssigne;
 	Rectangle<int> iRectAssigne;
+	int iDataFontSize;
 
 	bool iReadOnly;
 

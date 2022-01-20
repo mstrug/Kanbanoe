@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.56");
+const String AppVersion("v0.58 BETA");
 
 
 
@@ -222,6 +222,7 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuConfigSearchCaseInsensitive);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuConfigSearchDynamic);
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuConfigAutosave);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuConfigCardViewComplex);
 	}
 	else if (topLevelMenuIndex == 3) // help
 	{
@@ -270,7 +271,7 @@ void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 {
 	Array<CommandID> commands{ CommandIDs::menuFile, CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
 		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileSaveGroup, CommandIDs::menuFileSaveGroupAs, CommandIDs::menuFileOpenRecent, CommandIDs::menuFileExit,
-		CommandIDs::menuViewArchive, CommandIDs::menuViewColumnsEdit, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuConfigAutosave, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
+		CommandIDs::menuViewArchive, CommandIDs::menuViewColumnsEdit, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuConfigAutosave, CommandIDs::menuConfigCardViewComplex, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
 		CommandIDs::menubarSearchClear, CommandIDs::mdiNextDoc, CommandIDs::mdiPrevDoc, CommandIDs::statusbarMessage };
 	aCommands.addArray(commands);
 }
@@ -384,7 +385,10 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 			result.setInfo("Search doesn't require return key", "Configure dynmic search", "Menu", (CConfiguration::getBoolValue(KConfigSearchDynamic) ? ApplicationCommandInfo::isTicked : 0));
 		break;
 	case menuConfigAutosave:
-			result.setInfo("Automatically save modified files", "Autosave", "Menu", (CConfiguration::getBoolValue(KConfigAutosave) ? ApplicationCommandInfo::isTicked : 0));
+		result.setInfo("Automatically save modified files", "Autosave", "Menu", (CConfiguration::getBoolValue(KConfigAutosave) ? ApplicationCommandInfo::isTicked : 0));
+		break;
+	case menuConfigCardViewComplex:
+		result.setInfo("Card view with due date, assigne, url", "Complex card view", "Menu", (CConfiguration::getBoolValue(KConfigCardViewComplex) ? ApplicationCommandInfo::isTicked : 0));
 		break;
 	case menuHelpAbout:
 			result.setInfo("About", "", "Menu", 0);
@@ -624,8 +628,16 @@ bool MainComponent::perform(const InvocationInfo& info)
 			pf->setValue(KConfigAutosave, !b);
 		}
 		break;
+	case menuConfigCardViewComplex:
+		{
+			bool b = CConfiguration::getBoolValue(KConfigCardViewComplex);
+			auto pf = CConfiguration::getInstance().getPropertiesFile();
+			pf->setValue(KConfigCardViewComplex, !b);
+			iMdiPanel.updateDocuments();
+		}
+		break;
 	case menuHelpAbout:
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "Kanbanoe " + AppVersion + "\nMichal Strug", "OK");
+			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "Kanbanoe " + AppVersion + "\nMichal Strug\n\nhttp://kanbanoe.app/", "OK");
 		break;
 	case menubarSearch:
 			iTextSearch.grabKeyboardFocus();

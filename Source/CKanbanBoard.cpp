@@ -173,8 +173,11 @@ void CKanbanBoardComponent::updateSize()
 			if (iKanbanColumns[j]->isGridColumn(i, i))
 			{
 				int emadd = 0;
-				if (iColumnsEditorEnabled) emadd += CKanbanColumnComponent::getEditModeMargin();
-				if (iKanbanColumns[j]->isEditModeRightVisible()) emadd += CKanbanColumnComponent::getEditModeMargin();
+				if (iColumnsEditorEnabled)
+				{
+					if (iKanbanColumns[j]->isEditModeLeftVisible()) emadd += CKanbanColumnComponent::getEditModeMargin();
+					if (iKanbanColumns[j]->isEditModeRightVisible()) emadd += CKanbanColumnComponent::getEditModeMargin();
+				}
 
 				if (iKanbanColumns[j]->isMinimized())
 				{
@@ -211,6 +214,7 @@ void CKanbanBoardComponent::updateColumnSize(CKanbanColumnComponent * aColumn, b
 		{
 			iKanbanColumns[j]->setMinimized(aMinimized, false);
 			iKanbanColumns[j]->setEditModeRightVisible(aColumn->isEditModeRightVisible());
+			iKanbanColumns[j]->setEditModeLeftVisible(aColumn->isEditModeLeftVisible());
 		}
 	}
 
@@ -439,6 +443,14 @@ void CKanbanBoardComponent::removeCard(CKanbanCardComponent* aCard)
 {
 	iKanbanCards.removeObject(aCard, true);
 	if (iListener) iListener->KanbanBoardChanged();
+}
+
+void CKanbanBoardComponent::updateCardsView()
+{
+	for (auto& c : iKanbanCards)
+	{
+		c->updateCardView();
+	}
 }
 
 bool CKanbanBoardComponent::archiveColumn(CKanbanColumnComponent * aColumn, const String & aArchiveName, bool aClearColumn)
@@ -1098,6 +1110,8 @@ void CKanbanBoardComponent::addColumn(CKanbanColumnComponent * aColumn, bool aBe
 	iKanbanColumns.add(col);
 	addAndMakeVisible(col);
 
+	if (iColumnsEditorEnabled && !aBefore) aColumn->setEditModeRightVisible(false); // hide right add button on previous column
+
 	// update grid
 	// todo: check if half column should be added to existing column with half column
 	int gi1col = aColumn->getGridItem().column.start.getNumber();
@@ -1126,7 +1140,7 @@ void CKanbanBoardComponent::addColumn(CKanbanColumnComponent * aColumn, bool aBe
 	iGrid.items.add(gi);
 	col->setGridItem(gi);
 
-	aColumn->setEditModeRightVisible(isColumnLastInGrid(aColumn) || isColumnHalfBeforeFull(aColumn) );
+	//todo fix for err. aColumn->setEditModeRightVisible(isColumnLastInGrid(aColumn) || isColumnHalfBeforeFull(aColumn) );
 	updateColumnSize(aColumn, aColumn->isMinimized()); // update rest items in the same column
 	//aColumn->setEditModeRightVisible //todo
 

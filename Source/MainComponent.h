@@ -36,6 +36,7 @@ public:
 		menuConfigSearchDynamic,
 		menuConfigSearchCaseInsensitive,
 		menuConfigAutosave,
+		menuConfigCardViewComplex,
 		menuHelpAbout,
 		menubarSearch,
 		menubarSearchClear,

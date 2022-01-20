@@ -149,6 +149,12 @@ int CConfiguration::getIntValue(StringRef aPropertyName)
 	return c.iFile->getIntValue(aPropertyName);
 }
 
+float CConfiguration::getFloatValue(StringRef aPropertyName)
+{
+	CConfiguration& c = getInstance();
+	return (float)c.iFile->getDoubleValue(aPropertyName);
+}
+
 bool CConfiguration::getBoolValue(StringRef aPropertyName)
 {
 	CConfiguration& c = getInstance();
@@ -261,6 +267,10 @@ void CConfiguration::verifyFile()
 	if (!iFile->containsKey("KanbanCardHeight"))
 	{
 		iFile->setValue("KanbanCardHeight", "40");
+	}
+	if (!iFile->containsKey("KanbanCardDataFontSize"))
+	{
+		iFile->setValue("KanbanCardDataFontSize", "12.0");
 	}
 	if (!iFile->containsKey("KanbanCardHorizontalMargin"))
 	{
