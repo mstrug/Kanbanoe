@@ -2,7 +2,7 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.58 BETA");
+const String AppVersion("v0.59 BETA");
 
 
 
@@ -227,6 +227,7 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 	else if (topLevelMenuIndex == 3) // help
 	{
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuHelpAbout);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuHelpCheckUpdate);
 	}
 
 	return menu;
@@ -271,7 +272,7 @@ void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 {
 	Array<CommandID> commands{ CommandIDs::menuFile, CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
 		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileSaveGroup, CommandIDs::menuFileSaveGroupAs, CommandIDs::menuFileOpenRecent, CommandIDs::menuFileExit,
-		CommandIDs::menuViewArchive, CommandIDs::menuViewColumnsEdit, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuConfigAutosave, CommandIDs::menuConfigCardViewComplex, CommandIDs::menuHelpAbout, CommandIDs::menubarSearch,
+		CommandIDs::menuViewArchive, CommandIDs::menuViewColumnsEdit, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuConfigAutosave, CommandIDs::menuConfigCardViewComplex, CommandIDs::menuHelpAbout, CommandIDs::menuHelpCheckUpdate, CommandIDs::menubarSearch,
 		CommandIDs::menubarSearchClear, CommandIDs::mdiNextDoc, CommandIDs::mdiPrevDoc, CommandIDs::statusbarMessage };
 	aCommands.addArray(commands);
 }
@@ -392,6 +393,9 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		break;
 	case menuHelpAbout:
 			result.setInfo("About", "", "Menu", 0);
+		break;
+	case menuHelpCheckUpdate:
+		result.setInfo("Check for updates...", "", "Menu", 0);
 		break;
 	case statusbarMessage:
 			result.setInfo("Show message", "", "Statusbar", 0);
@@ -639,6 +643,9 @@ bool MainComponent::perform(const InvocationInfo& info)
 	case menuHelpAbout:
 			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "Kanbanoe " + AppVersion + "\nMichal Strug\n\nhttp://kanbanoe.app/", "OK");
 		break;
+	case menuHelpCheckUpdate:
+			checkForUpdates();
+		break;
 	case menubarSearch:
 			iTextSearch.grabKeyboardFocus();
 		break;
@@ -780,6 +787,59 @@ void MainComponent::updateFindCallbacks()
 	{
 		iTextSearch.onReturnKey = [this] { textFindCallbackFcn(); };
 		iTextSearch.onTextChange = nullptr;
+	}
+}
+
+void MainComponent::checkForUpdates()
+{
+	ChildProcess cp;
+	String curls = CConfiguration::getValue("curl");
+	if (curls.isEmpty())
+	{
+		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Check for update", "Cannot find curl.exe application.", "OK");
+		return;
+	}
+	String cmd = curls + " http://kanbanoe.app/data/v.txt";
+	Logger::outputDebugString("curl cmd: " + cmd);
+	if (cp.start(cmd, ChildProcess::wantStdOut))
+	{
+		String out = cp.readAllProcessOutput();
+		uint32 ec = cp.getExitCode();
+		if (ec == 0)
+		{
+			int idx = out.indexOf("\r");
+			if (idx >= 0)
+			{
+				auto version = out.substring(0, idx);
+				auto url = out.substring(idx + 2); // \r an \n
+				int idx2 = url.indexOf("\r");
+				if (idx2 >= 0)
+				{
+					url = url.substring(0, idx2);
+					url = url.removeCharacters("\r");
+					url = url.removeCharacters("\n");
+				}
+
+				if (AppVersion.contains(version))
+				{
+					AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Check for update", "You have the latest version.", "OK");
+				}
+				else
+				{
+					AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Check for update", "There is a newer verson: " + version +".\r\nIt can be download from:\r\n" + url, "OK");
+				}
+			}
+		}
+		else
+		{
+			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Check for update", "Error during downloading of data.", "OK");
+			return;
+		}
+	}
+	else
+	{
+		AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Check for update", "Process start failed.", "OK");
+		return;
 	}
 }
 

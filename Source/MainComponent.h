@@ -38,6 +38,7 @@ public:
 		menuConfigAutosave,
 		menuConfigCardViewComplex,
 		menuHelpAbout,
+		menuHelpCheckUpdate,
 		menubarSearch,
 		menubarSearchClear,
 		mdiNextDoc,
@@ -84,6 +85,8 @@ private:
 
 	void textFindCallbackFcn();
 	void updateFindCallbacks();
+
+	void checkForUpdates();
 
 private:
 	class testc : public Component

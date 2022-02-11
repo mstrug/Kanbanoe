@@ -140,7 +140,11 @@ CConfiguration & CConfiguration::getInstance()
 String CConfiguration::getValue(StringRef aPropertyName)
 {
 	CConfiguration& c = getInstance();
-	return c.iFile->getValue(aPropertyName);
+	if (c.iFile->getValue(aPropertyName).isEmpty())
+	{
+		File pathToMyExecutable = File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("curl.exe");
+		return pathToMyExecutable.getFullPathName();
+	}
 }
 
 int CConfiguration::getIntValue(StringRef aPropertyName)
