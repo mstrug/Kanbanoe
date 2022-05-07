@@ -140,11 +140,12 @@ CConfiguration & CConfiguration::getInstance()
 String CConfiguration::getValue(StringRef aPropertyName)
 {
 	CConfiguration& c = getInstance();
-	if (c.iFile->getValue(aPropertyName).isEmpty())
+	if (c.iFile->getValue(aPropertyName).isEmpty() && aPropertyName == String("curl"))
 	{
 		File pathToMyExecutable = File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("curl.exe");
 		return pathToMyExecutable.getFullPathName();
 	}
+	return c.iFile->getValue(aPropertyName);
 }
 
 int CConfiguration::getIntValue(StringRef aPropertyName)
@@ -272,10 +273,6 @@ void CConfiguration::verifyFile()
 	{
 		iFile->setValue("KanbanCardHeight", "40");
 	}
-	if (!iFile->containsKey("KanbanCardDataFontSize"))
-	{
-		iFile->setValue("KanbanCardDataFontSize", "12.0");
-	}
 	if (!iFile->containsKey("KanbanCardHorizontalMargin"))
 	{
 		iFile->setValue("KanbanCardHorizontalMargin", "10");
@@ -319,6 +316,24 @@ void CConfiguration::verifyFile()
 	if (!iFile->containsKey("ConfigAutosave"))
 	{
 		iFile->setValue("ConfigAutosave", "0");
+	}
+	if (!iFile->containsKey("UiFontTypeFace"))
+	{
+	    // if empty in config -> use default system typeface
+		//iFile->setValue("UiFontTypeFace", "Arial");
+	}
+	if (!iFile->containsKey("KanbanCardFontTypeFace"))
+	{
+	    // if empty in config -> use default system typeface
+		//iFile->setValue("KanbanCardFontTypeFace", "Roboto");
+	}
+	if (!iFile->containsKey("KanbanCardFontSize"))
+	{
+		iFile->setValue("KanbanCardFontSize", "12.0");
+	}
+	if (!iFile->containsKey("KanbanCardDataFontSize"))
+	{
+		iFile->setValue("KanbanCardDataFontSize", "12.0");
 	}
 	iFile->saveIfNeeded();
 }

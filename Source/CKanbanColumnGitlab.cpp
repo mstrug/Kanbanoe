@@ -502,7 +502,7 @@ void CKanbanColumnGitlab::decodeGitlabStarting()
 			{
 				if (err.isEmpty()) err = "Error occured during refresh action, error codes:";
 				err += " " + String(ec) + " ";
-			}
+			}
 		}
 	}
 

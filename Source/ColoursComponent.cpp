@@ -32,7 +32,7 @@ ColoursComponent::ColoursComponent(int xColourCount, int yColourCount, ColourPal
 
 			if (aIdxSelected == k)
 			{
-				b->setToggleState(true, false);
+				b->setToggleState(true, dontSendNotification );
 			}
 			b->setRadioGroupId(group);
 			b->setClickingTogglesState(true);

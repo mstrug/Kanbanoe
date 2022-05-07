@@ -8,6 +8,7 @@
 
 #include <JuceHeader.h>
 #include "MainComponent.h"
+#include "CConfiguration.h"
 
 //==============================================================================
 class KanbanoeApplication  : public juce::JUCEApplication
@@ -78,11 +79,15 @@ public:
                                                           .findColour (juce::ResizableWindow::backgroundColourId),
                               DocumentWindow::allButtons)
         {
-			getLookAndFeel().setColour(juce::ScrollBar::thumbColourId, juce::Colours::dimgrey);
-			//getLookAndFeel().setDefaultSansSerifTypefaceName("MS Mincho");
+	        auto& c = CConfiguration::getInstance(); // create object
+
+	        getLookAndFeel().setColour(juce::ScrollBar::thumbColourId, juce::Colours::dimgrey);
+	        
+	        auto f = CConfiguration::getValue("UiFontTypeFace");
+	        if ( !f.isEmpty() ) getLookAndFeel().setDefaultSansSerifTypefaceName( f );
 
 			setUsingNativeTitleBar (true);
-			//setTitleBarHeight(0);
+			setTitleBarHeight(0);
 			iMainComponent = new MainComponent();
 			if (!iMainComponent)
 			{

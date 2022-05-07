@@ -36,6 +36,11 @@ CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner
 	addAndMakeVisible(iLabel);
 	iLabel.addMouseListener(this,true);
 	iLabel.setMinimumHorizontalScale(1);
+	auto f = iLabel.getFont();
+	auto tf = CConfiguration::getValue("KanbanCardFontTypeFace" );
+	if ( !tf.isEmpty() ) f.setTypefaceName( tf );
+	f.setHeight( CConfiguration::getFloatValue("KanbanCardFontSize") );
+	iLabel.setFont(f);
 
 	iButtonUrl.setButtonText("+");
 	addAndMakeVisible(iButtonUrl);

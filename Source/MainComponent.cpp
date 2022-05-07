@@ -2,16 +2,13 @@
 #include "CConfiguration.h"
 #include "CKanbanBoardArchive.h"
 
-const String AppVersion("v0.59 BETA");
+const String AppVersion("v0.60 BETA");
 
 
 
 //==============================================================================
 MainComponent::MainComponent() : iMdiPanel(*this), iTimer24h(*this)
 {
-	auto& c = CConfiguration::getInstance(); // create object
-	//c.getPropertiesFile()->setValue("Test", 1);
-
 	setApplicationCommandManagerToWatch(&iCommandManager);
 	iCommandManager.registerAllCommandsForTarget(this);
 
