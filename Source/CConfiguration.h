@@ -45,6 +45,8 @@ public:
 	String getRecentlyOpened(int aIdx, bool aReturnGroup = false);
 	void addRecentlyOpened(const String& aFn, bool aReturnGroup = false);
 
+	String getConfigurationFileLocation();
+
 	static CConfiguration& getInstance();
 
 	static String getValue(StringRef aPropertyName);

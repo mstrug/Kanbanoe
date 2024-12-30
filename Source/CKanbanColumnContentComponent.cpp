@@ -8,7 +8,6 @@
   ==============================================================================
 */
 
-#include <climits>
 #include <JuceHeader.h>
 #include "CKanbanColumnContentComponent.h"
 #include "CKanbanColumnComponent.h"

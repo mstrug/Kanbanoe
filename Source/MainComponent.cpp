@@ -9,6 +9,8 @@ const String AppVersion("v0.60 BETA");
 //==============================================================================
 MainComponent::MainComponent() : iMdiPanel(*this), iTimer24h(*this)
 {
+	auto& c = CConfiguration::getInstance(); // create object
+
 	setApplicationCommandManagerToWatch(&iCommandManager);
 	iCommandManager.registerAllCommandsForTarget(this);
 
@@ -224,7 +226,8 @@ PopupMenu MainComponent::getMenuForIndex(int topLevelMenuIndex, const String&)
 	else if (topLevelMenuIndex == 3) // help
 	{
 		menu.addCommandItem(&iCommandManager, CommandIDs::menuHelpAbout);
-		menu.addCommandItem(&iCommandManager, CommandIDs::menuHelpCheckUpdate);
+		menu.addCommandItem(&iCommandManager, CommandIDs::menuHelpDiagnostic);
+		//menu.addCommandItem(&iCommandManager, CommandIDs::menuHelpCheckUpdate);
 	}
 
 	return menu;
@@ -269,7 +272,7 @@ void MainComponent::getAllCommands(Array<CommandID>& aCommands)
 {
 	Array<CommandID> commands{ CommandIDs::menuFile, CommandIDs::menuFileNew, CommandIDs::menuFileOpen, CommandIDs::menuFileClose,
 		CommandIDs::menuFileSave, CommandIDs::menuFileSaveAs, CommandIDs::menuFileSaveAll, CommandIDs::menuFileSaveGroup, CommandIDs::menuFileSaveGroupAs, CommandIDs::menuFileOpenRecent, CommandIDs::menuFileExit,
-		CommandIDs::menuViewArchive, CommandIDs::menuViewColumnsEdit, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuConfigAutosave, CommandIDs::menuConfigCardViewComplex, CommandIDs::menuHelpAbout, CommandIDs::menuHelpCheckUpdate, CommandIDs::menubarSearch,
+		CommandIDs::menuViewArchive, CommandIDs::menuViewColumnsEdit, CommandIDs::menuConfigSearchDynamic, CommandIDs::menuConfigSearchCaseInsensitive, CommandIDs::menuConfigAutosave, CommandIDs::menuConfigCardViewComplex, CommandIDs::menuHelpAbout, CommandIDs::menuHelpDiagnostic, CommandIDs::menuHelpCheckUpdate, CommandIDs::menubarSearch,
 		CommandIDs::menubarSearchClear, CommandIDs::mdiNextDoc, CommandIDs::mdiPrevDoc, CommandIDs::statusbarMessage };
 	aCommands.addArray(commands);
 }
@@ -389,7 +392,10 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		result.setInfo("Card view with due date, assigne, url", "Complex card view", "Menu", (CConfiguration::getBoolValue(KConfigCardViewComplex) ? ApplicationCommandInfo::isTicked : 0));
 		break;
 	case menuHelpAbout:
-			result.setInfo("About", "", "Menu", 0);
+		result.setInfo("About", "", "Menu", 0);
+		break;
+	case menuHelpDiagnostic:
+		result.setInfo("Diagnostic information", "", "Menu", 0);
 		break;
 	case menuHelpCheckUpdate:
 		result.setInfo("Check for updates...", "", "Menu", 0);
@@ -638,7 +644,14 @@ bool MainComponent::perform(const InvocationInfo& info)
 		}
 		break;
 	case menuHelpAbout:
-			AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "Kanbanoe " + AppVersion + "\nMichal Strug\n\nhttp://kanbanoe.app/", "OK");
+		AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "About", "Kanbanoe " + AppVersion + "\nMichal Strug", "OK");
+		break;
+	case menuHelpDiagnostic:
+		AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Diagnostic information", 
+			"Made with JUCE v" + String(JUCE_MAJOR_VERSION) + "." + String(JUCE_MINOR_VERSION) + "." + String(JUCE_BUILDNUMBER)
+			+ "\n\nConfiguration file location:\n" + CConfiguration::getInstance().getConfigurationFileLocation()
+			+ "\n\ncurl location:\n" + CConfiguration::getInstance().getValue("curl"),
+			"OK");
 		break;
 	case menuHelpCheckUpdate:
 			checkForUpdates();

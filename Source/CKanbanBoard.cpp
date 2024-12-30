@@ -12,6 +12,7 @@
 #include "CKanbanBoard.h"
 #include "CConfiguration.h"
 #include "CKanbanColumnGitlab.h"
+#include "CKanbanColumnGithub.h"
 #include "utf8.h"
 
 //==============================================================================
@@ -521,7 +522,7 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 	var version = obj->getProperty("version");
 	if (version.isString())
 	{
-		if (version.toString() != "0.1" && version.toString() != "0.2" && version.toString() != "0.3")
+		if (version.toString() != "0.1" && version.toString() != "0.2" && version.toString() != "0.3" && version.toString() != "0.4")
 		{
 			aReturnErrorMessage = "Not supported file version";
 			delete ret;
@@ -554,8 +555,9 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 				if (type.isInt()) colType = type;
 
 				CKanbanColumnComponent *col = nullptr;
-				if ( colType == 0 ) col = new CKanbanColumnComponent(id, URL::removeEscapeChars(title), *ret);
+				if (colType == 0) col = new CKanbanColumnComponent(id, URL::removeEscapeChars(title), *ret);
 				else if (colType == 1) col = CKanbanColumnGitlab::createFromJson(id, URL::removeEscapeChars(title), *ret, obj2);
+				else if (colType == 2) col = CKanbanColumnGithub::createFromJson(id, URL::removeEscapeChars(title), *ret, obj2);
 				else
 				{
 					aReturnErrorMessage = "Not supported column type [columns array]";
@@ -683,7 +685,7 @@ CKanbanBoardComponent* CKanbanBoardComponent::fromJson(var& aFile, String& aRetu
 	}
 	else
 	{
-		if (version.toString() == "0.2" || version.toString() == "0.3")
+		if (version.toString() == "0.2" || version.toString() == "0.3" || version.toString() == "0.4")
 		{
 			aReturnErrorMessage = "Not supported file type [archives array]";
 			delete ret;
@@ -1101,6 +1103,10 @@ void CKanbanBoardComponent::addColumn(CKanbanColumnComponent * aColumn, bool aBe
 	else if (optionIndexChosen == 1)
 	{ // gitlab integration
 		col = CKanbanColumnGitlab::createWithWizard(maxid, colName, *this);
+	}
+	else if (optionIndexChosen == 2)
+	{ // github integration
+		col = CKanbanColumnGithub::createWithWizard(maxid, colName, *this);
 	}
 	if (col == nullptr)
 	{

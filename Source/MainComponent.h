@@ -38,6 +38,7 @@ public:
 		menuConfigAutosave,
 		menuConfigCardViewComplex,
 		menuHelpAbout,
+		menuHelpDiagnostic,
 		menuHelpCheckUpdate,
 		menubarSearch,
 		menubarSearchClear,

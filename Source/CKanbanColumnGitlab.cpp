@@ -59,9 +59,10 @@ void CKanbanColumnGitlab::outputAdditionalDataToJson(String & aJson)
 //		-1 : canceled
 //		0 : ok
 //		1 : wrong data entered, retry by showing the window
-static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aProject, String& aUsers, String& aDueDates, String& aQuery, bool& aTestConn)
+static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aProject, String& aUsers, String& aDueDates, String& aQuery, bool& aTestConn, bool edit = false)
 {
-	AlertWindow aw("Create gitlab integration column", "Provide new column information", AlertWindow::QuestionIcon);
+	AlertWindow aw(edit ? "Edit gitlab integration column" : "Create gitlab integration column",
+				   edit ? "Edit column information" : "Provide new column information", AlertWindow::QuestionIcon);
 	aw.addTextEditor("text_url", aUrl, "Gitlab URL:");
 	aw.addTextEditor("text_token", aToken, "Gitlab API token:");
 	aw.addTextEditor("text_project", aProject, "Project ID:");
@@ -604,7 +605,7 @@ void CKanbanColumnGitlab::refreshSetupFunction()
 	bool conn = true;
 
 	int res;
-	while ((res = createAndShowWizardWindow(url, token, projId, users, duedates, query, conn)) >= 0)
+	while ((res = createAndShowWizardWindow(url, token, projId, users, duedates, query, conn, true)) >= 0)
 	{
 		if (res == -1) return; // user clicked cancel
 		if (res == 0)

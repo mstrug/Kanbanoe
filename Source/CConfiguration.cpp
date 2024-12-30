@@ -27,6 +27,8 @@ CConfiguration::CConfiguration()
 	iFile = new PropertiesFile(opt);
 	verifyFile();
 
+	//opt.getDefaultFile().getFullPathName()
+
 	int cc = iFile->getIntValue("ColoursCount");
 
 	iPalette = new ColourPalette(cc);
@@ -128,6 +130,11 @@ void CConfiguration::addRecentlyOpened(const String & aFn, bool aReturnGroup)
 	iFile->save();
 }
 
+String CConfiguration::getConfigurationFileLocation()
+{
+	return iFile->getFile().getFullPathName();
+}
+
 CConfiguration & CConfiguration::getInstance()
 {
 	if (!cfg)
@@ -140,7 +147,7 @@ CConfiguration & CConfiguration::getInstance()
 String CConfiguration::getValue(StringRef aPropertyName)
 {
 	CConfiguration& c = getInstance();
-	if (c.iFile->getValue(aPropertyName).isEmpty() && aPropertyName == String("curl"))
+	if (aPropertyName == String("curl") && c.iFile->getValue(aPropertyName).isEmpty())
 	{
 		File pathToMyExecutable = File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("curl.exe");
 		return pathToMyExecutable.getFullPathName();
@@ -334,6 +341,22 @@ void CConfiguration::verifyFile()
 	if (!iFile->containsKey("KanbanCardDataFontSize"))
 	{
 		iFile->setValue("KanbanCardDataFontSize", "12.0");
+	}
+	if (!iFile->containsKey("KanbanColumnTypesCount"))
+	{
+		iFile->setValue("KanbanColumnTypesCount", "3");
+	}
+	if (!iFile->containsKey("KanbanColumnTypeName_0"))
+	{
+		iFile->setValue("KanbanColumnTypeName_0", "Normal column");
+	}
+	if (!iFile->containsKey("KanbanColumnTypeName_1"))
+	{
+		iFile->setValue("KanbanColumnTypeName_1", "Gitlab integration");
+	}
+	if (!iFile->containsKey("KanbanColumnTypeName_2"))
+	{
+		iFile->setValue("KanbanColumnTypeName_2", "Github integration");
 	}
 	iFile->saveIfNeeded();
 }
