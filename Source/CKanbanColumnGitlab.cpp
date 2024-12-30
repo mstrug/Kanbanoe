@@ -129,7 +129,7 @@ static bool invokeConnection_v2(StringRef aQueries, StringRef aToken, String& aO
 	if (curls.isEmpty())
 	{
 		aOutput = "curl bad path";
-		aCurlErrorCode = -1;
+		aCurlErrorCode = -2;
 		return false;
 	}
 	String cmd = curls + " -w \"\\r\\n\\r\\n\" -k --header \"PRIVATE-TOKEN: " + aToken + "\" " + aQueries;
@@ -151,7 +151,7 @@ static bool invokeConnection_v2(StringRef aQueries, StringRef aToken, String& aO
 	}
 	else
 	{
-		aCurlErrorCode = -2;
+		aCurlErrorCode = -3;
 		aOutput = "Process start failed";
 		return false;
 	}

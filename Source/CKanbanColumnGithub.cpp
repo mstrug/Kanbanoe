@@ -30,7 +30,7 @@ bool CKanbanColumnGithub::showRefreshMenuEntry()
 
 void CKanbanColumnGithub::refreshThreadWorkerFunction()
 {
-	decodeGitlabStarting_v2();
+	requestGithubStart();
 }
 
 
@@ -61,9 +61,7 @@ static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aOwne
 	aw.addTextEditor("text_token", aToken, "Github API token:");
 	aw.addTextEditor("text_owner", aOwner, "Repo owner:");
 	aw.addTextEditor("text_repo", aRepo, "Repo:");
-	//aw.addTextEditor("text_users", aUsers, "API query user name list:");
-	//aw.addTextEditor("text_duedates", aDueDates, "API query due date list:");
-	aw.addTextEditor("text_query", aQuery, "Github API query (evaluated for each user):");
+	aw.addTextEditor("text_query", aQuery, "Github API query:");
 	
 	ToggleButton tb("Test connection");
 	tb.setComponentID("checkbox");
@@ -113,13 +111,31 @@ static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aOwne
 	}
 }
 
-static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aOwner, StringRef aRepo, StringRef aQuery, String& aOutput, int& aCurlErrorCode)
-{
-	String q(aQuery);
-	q = q.replace("{URL}", aUrl);
-	q = q.replace("{OWNER}", aOwner);
-	q = q.replace("{REPO}", aRepo);
+static int decodeHttpStatusCode(StringRef msg, String& text_code) {
+	StringArray lines = StringArray::fromLines(msg);
+	if (lines.size() > 0) {
+		StringArray data = StringArray::fromTokens(lines[0], " ");
+		if (data.size() >= 3) {
+			int code = data[1].getIntValue();
+			text_code = data.joinIntoString(" ", 2);
+			return code;
+		}
+	}
+	return -1;
+}
 
+static bool dropHttpHeaders(String& msg, String& body_start) {
+	int idx = msg.indexOf("\r\n\r\n");
+	if (idx >= 0)
+	{
+		body_start = msg.substring(idx);
+		return true;
+	}
+	return false;
+}
+
+static bool invokeConnection(StringRef aQuery, StringRef aToken, String& aOutput, int& aCurlErrorCode)
+{
 	ChildProcess cp;
 	String curls = CConfiguration::getValue("curl");
 	if (curls.isEmpty())
@@ -128,19 +144,36 @@ static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aOwner,
 		aCurlErrorCode = -2;
 		return false;
 	}
-	Logger::outputDebugString("query: " + q);
-	String process = curls + " -L --header \"Accept: application/vnd.github+json\" --header \"X-GitHub-Api-Version: 2022-11-28\" --header \"Authorization: Bearer " + aToken + "\" \"" + q + "\"";
-	Logger::outputDebugString("process: " + process);
-	if (cp.start(process, ChildProcess::wantStdOut))
+	String cmd = curls + " -i -L --header \"Accept: application/vnd.github+json\" --header \"X-GitHub-Api-Version: 2022-11-28\" --header \"Authorization: Bearer " + aToken + "\" \"" + aQuery + "\"";
+	Logger::outputDebugString("curl cmd: " + cmd);
+	if (cp.start(cmd, ChildProcess::wantStdOut))
 	{
 		String out = cp.readAllProcessOutput();
-		Logger::outputDebugString("curl output: " + out);
+		Logger::outputDebugString("out: " + out);
+
+		String http_code_str;
+		int http_code = decodeHttpStatusCode(out, http_code_str);
 		uint32 ec = cp.getExitCode();
 		aCurlErrorCode = ec;
-		if (ec == 0)
+
+		if (http_code == 200 && ec == 0) 
 		{
-			aOutput = out + "HTTP/1.1 200 OK";
-			return true;
+			if (dropHttpHeaders(out, aOutput)) 
+			{
+				return true;
+			}
+			else 
+			{
+				aOutput = "Malformed HTTP message body";
+				aCurlErrorCode = -4;
+				return false;
+			}
+		}
+		else if (ec == 0)
+		{
+			aOutput = "  HTTP error code: " + String(http_code) + " " + http_code_str;
+			aCurlErrorCode = -4;
+			return false;
 		}
 		else
 		{
@@ -153,6 +186,24 @@ static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aOwner,
 		aOutput = "Process start failed";
 		return false;
 	}
+}
+
+static bool invokeTestConnection(StringRef aUrl, StringRef aToken, StringRef aOwner, StringRef aRepo, StringRef aQuery, String& aOutput, int& aCurlErrorCode)
+{
+	String q(aQuery);
+	q = q.replace("{URL}", aUrl);
+	q = q.replace("{OWNER}", aOwner);
+	q = q.replace("{REPO}", aRepo);
+
+	int ec = 0;
+	String out;
+	bool ret = invokeConnection(q, aToken, out, ec);
+	aCurlErrorCode = ec;
+	if (ec != 0)
+	{
+		aOutput = out;
+	}
+	return ret;
 }
 
 static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aToken, StringRef aOwner, StringRef aRepo, StringRef aQuery, String& aOutput)
@@ -179,7 +230,7 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 
 		void run() override
 		{
-			invokeResult = invokeConnection(url, token, owner, repo, query, invokeOutput, curlErrorCode);
+			invokeResult = invokeTestConnection(url, token, owner, repo, query, invokeOutput, curlErrorCode);
 		}
 	} *dw = new DemoBackgroundThread();
 	dw->url = aUrl;
@@ -197,8 +248,8 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 		}
 		else
 		{ // not connected
-			aOutput = dw->invokeOutput;
-			ret = dw->curlErrorCode; // > 0 ? dw->curlErrorCode : 9999;
+			aOutput = dw->invokeOutput.trimStart();
+			ret = dw->curlErrorCode;
 		}
 		delete dw;
 		return ret;
@@ -280,9 +331,7 @@ CKanbanColumnGithub * CKanbanColumnGithub::createFromJson(int aColumnId, const S
 	return nullptr;
 }
 
-
-
-bool CKanbanColumnGithub::decodeGitlabRsp(const String & aData)
+bool CKanbanColumnGithub::decodeGithubResponse(const String& aData)
 {
 	var d = JSON::parse(aData);
 	if (d != var())
@@ -294,132 +343,78 @@ bool CKanbanColumnGithub::decodeGitlabRsp(const String & aData)
 			for (auto& i : *ar)
 			{
 				auto dd = i.getDynamicObject();
-				auto id = dd->getProperty("id");
-				auto pid = dd->getProperty("project_id");
-				auto title = dd->getProperty("title");
-				auto duedate = dd->getProperty("due_date");
-				auto state = dd->getProperty("state");
-				auto cr = dd->getProperty("created_at");
-				auto up = dd->getProperty("updated_at");
-				auto labels = dd->getProperty("labels"); //tab
-				auto assobj = dd->getProperty("assignee"); //obj
-				auto url = dd->getProperty("web_url");
+				auto draft = dd->getProperty("draft");
 
-				auto da = assobj.getDynamicObject();
-				auto assingee = da->getProperty("username"); // name?
+				if (draft.isBool() && !draft) {
+					auto id = dd->getProperty("number");
+					auto url = dd->getProperty("html_url");
+					auto title = dd->getProperty("title");
+					auto cr = dd->getProperty("created_at");
+					auto up = dd->getProperty("updated_at");
+					auto notes = dd->getProperty("body");
 
-				auto dl = labels.getArray();
-				String tags;
-				for (auto& j : *dl) tags += j.toString() + " ";
+					auto user = dd->getProperty("user");
+					auto du = user.getDynamicObject();
+					auto user_login = du->getProperty("login");
+
+					auto labels = dd->getProperty("labels");
+					auto dl = labels.getArray();
+					String tags;
+					//for (auto& j : *dl) tags += j.toString() + " ";
 
 
-				CKanbanCardComponent::CKanbanCardData c;
+					CKanbanCardComponent::CKanbanCardData c;
 
-				c.values.set("text", title);
-				//c.values.set("notes", dd->getProperty("description"));
-				c.values.set("colour", -1);
-				//c.values.set("colour", 0);
-				c.values.set("url", url);
-				c.values.set("tags", tags);
-				c.values.set("assignee", assingee);
-				if (duedate.isString())
-				{
-					c.values.set("dueDateSet", true);
-					c.values.set("dueDate", Time::fromISO8601(duedate.toString()).toMilliseconds());
+					c.values.set("text", "#" + id.toString() + " " + title);
+					c.values.set("notes", notes);
+					c.values.set("colour", -1);
+					c.values.set("url", url);
+					c.values.set("tags", tags);
+					c.values.set("assignee", user_login);
 
-					Time t0 = Time::getCurrentTime();
-					Time t1 = Time::fromISO8601(duedate.toString());
-					RelativeTime rt = RelativeTime::milliseconds(t1.toMilliseconds() - t0.toMilliseconds());
-					Logger::outputDebugString("rt: " + String(rt.inDays()) + "   " + String(t1.toMilliseconds() - t0.toMilliseconds()));
-					if ((t1.getYear() == t0.getYear() && t1.getMonth() == t0.getMonth() && t1.getDayOfMonth() == t0.getDayOfMonth()) || (t1 < t0))
-					{ // tooday or previos days
-						c.values.set("colour", CConfiguration::getColourPalette().getColor(0).toString());
-					}
-					else if (rt.inDays() > 0 && rt.inDays() < 5 )
-					{
-						c.values.set("colour", CConfiguration::getColourPalette().getColor(((int)rt.inDays())+1).toString());
-					}
-				}
-				else
-				{
 					c.values.set("dueDateSet", false);
+				
+					c.values.set("creationDate", Time::fromISO8601(cr.toString()).toMilliseconds());
+					c.values.set("lastUpdateDate", Time::fromISO8601(up.toString()).toMilliseconds());
+
+					c.customProps.set("id", id.toString());
+					c.customProps.set("removeLastUpdateDate", String(Time::fromISO8601(up.toString()).toMilliseconds()));
+
+					iTempCardList.add(c);
 				}
-				c.values.set("creationDate", Time::fromISO8601(cr.toString()).toMilliseconds());
-				c.values.set("lastUpdateDate", Time::fromISO8601(up.toString()).toMilliseconds());
-
-				c.customProps.set("pid", pid.toString());
-				c.customProps.set("id", id.toString());
-
-				iTempCardList.add(c);
-
-				/*				CKanbanCardComponent* c = new CKanbanCardComponent(nullptr);
-				iTempCardList.add(c);
-				c->setText(title);
-				c->getProperties().set("pid", pid.toString());
-				c->getProperties().set("id", id.toString());
-				c->setUrl(url);
-				c->setTags(tags);
-				c->setAssigne(assingee);
-				// c.setNotes(dd->getProperty("description")); // too large?
-				c->setDates(Time::fromISO8601(cr.toString()), Time::fromISO8601(up.toString()));
-				*/
-				//decodeGitlabNotifier(c);
 			}
 		}
+
 		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return false;
 }
 
-void CKanbanColumnGithub::decodeGitlabStarting_v2()
+void CKanbanColumnGithub::requestGithubStart()
 {
 	iRefreshOngoing = true;
 	iTempCardList.clear();
 
-	String err;
+	String q(iGithubQuery);
+	q = q.replace("{URL}", iGithubUrl);
+	q = q.replace("{OWNER}", iGithubRepoOwner);
+	q = q.replace("{REPO}", iGithubRepo);
+	Logger::outputDebugString("built query: " + q);
 
-	String queries;
-
-	/*for (auto& sd : iGitlabDuedates)
-	{
-		for (auto& s : iGitlabUsers)
-		{
-			String out;
-			int ec = 0;
-
-			String q(iGitlabQuery);
-			q = q.replace("{URL}", iGithubUrl);
-			q = q.replace("{PROJECT_ID}", iGithubRepoOwner);
-			q = q.replace("{DUE_DATE}", sd);
-			q = q.replace("{USER}", s);
-
-			queries += "\"" + q + "\" ";
-		}
-	}
-
-	Logger::outputDebugString("built query: " + queries);
-
-	String out;
+	String out, err;
 	int ec = 0;
-	if (invokeConnection_v2(queries, iGithubToken, out, ec))
+
+	if (invokeConnection(q, iGithubToken, out, ec))
 	{
-		StringArray rsps = StringArray::fromLines(out);
-		rsps.removeEmptyStrings();
-		for (auto& s : rsps)
+		if (!decodeGithubResponse(out))
 		{
-			if (!decodeGitlabRsp(s))
-			{
-				ec = -3;
-			}
+			out = "Decoding json failed.";
+			ec = -4;
 		}
 	}
-	if ( ec != 0 )
+	if (ec != 0)
 	{
-		if (err.isEmpty()) err = "Error occured during refresh action, error code:";
-		err += " " + String(ec) + " ";
+		err = String(ec) + " " + out;
 	}
 
 	const MessageManagerLock mml(Thread::getCurrentThread());
@@ -432,8 +427,9 @@ void CKanbanColumnGithub::decodeGitlabStarting_v2()
 			return;
 		}
 	}
+
 	// ui update
-	decodeGitlabFinished();
+	decodeGithubFinished();
 
 	iProgressBar.setVisible(false);
 	iRefreshOngoing = false;
@@ -445,67 +441,10 @@ void CKanbanColumnGithub::decodeGitlabStarting_v2()
 	else
 	{
 		CConfiguration::showStatusbarMessage("Refresh success");
-	}*/
+	}
 }
 
-void CKanbanColumnGithub::decodeGitlabStarting()
-{
-	iRefreshOngoing = true;
-	iTempCardList.clear();
-
-	String err;
-
-	/*for (auto& sd : iGitlabDuedates)
-	{
-		for (auto& s : iGitlabUsers)
-		{
-			String out;
-			int ec = 0;
-
-			if (invokeConnection(iGithubUrl, iGithubToken, iGithubRepoOwner, s, sd, iGitlabQuery, out, ec))
-			{
-				decodeGitlabRsp(out);
-			}
-			else
-			{
-				if (err.isEmpty()) err = "Error occured during refresh action, error codes:";
-				err += " " + String(ec) + " ";
-			}
-		}
-	}
-
-	const MessageManagerLock mml(Thread::getCurrentThread());
-	if (!mml.lockWasGained())
-	{
-		Thread::getCurrentThread()->wait(1100); // retry
-		if (!mml.lockWasGained())
-		{
-			iRefreshOngoing = false;
-			return;
-		}
-	}
-	// ui update
-	decodeGitlabFinished();
-
-	iProgressBar.setVisible(false);
-	iRefreshOngoing = false;
-
-	if (!err.isEmpty())
-	{
-		CConfiguration::showStatusbarMessage("Refresh error: " + err);
-	}
-	else
-	{
-		CConfiguration::showStatusbarMessage("Refresh success");
-	}*/
-	//AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", err);
-}
-
-void CKanbanColumnGithub::decodeGitlabNotifier(CKanbanCardComponent* aCard)
-{
-}
-
-void CKanbanColumnGithub::decodeGitlabFinished()
+void CKanbanColumnGithub::decodeGithubFinished()
 {
 	auto ar = iOwner.getCardsForColumn(this);
 
@@ -514,8 +453,7 @@ void CKanbanColumnGithub::decodeGitlabFinished()
 		bool foundCard = false;
 		for (int i = ar.size() - 1; i >= 0; --i)
 		{
-			if (ar[i]->getProperties()["pid"] == c.customProps["pid"] &&
-				ar[i]->getProperties()["id"] == c.customProps["id"])
+			if (ar[i]->getProperties()["id"] == c.customProps["id"])
 			{
 				foundCard = true;
 				ar[i]->setDates(Time(c.values["creationDate"]), Time(c.values["lastUpdateDate"]));
@@ -541,8 +479,7 @@ void CKanbanColumnGithub::decodeGitlabFinished()
 		bool foundCard = false;
 		for (auto& c : iTempCardList)
 		{
-			if (ar[i]->getProperties()["pid"] == c.customProps["pid"] &&
-				ar[i]->getProperties()["id"] == c.customProps["id"])
+			if (ar[i]->getProperties()["id"] == c.customProps["id"])
 			{
 				foundCard = true;
 				break;

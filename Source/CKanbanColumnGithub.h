@@ -40,11 +40,9 @@ public:
 
 private:
 
-	bool decodeGitlabRsp(const String & aData);
-	void decodeGitlabStarting_v2();
-	void decodeGitlabStarting();
-	void decodeGitlabNotifier(CKanbanCardComponent* aCard);
-	void decodeGitlabFinished();
+	void requestGithubStart();
+	bool decodeGithubResponse(const String& aData);
+	void decodeGithubFinished();
 
 private:
 

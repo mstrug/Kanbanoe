@@ -340,7 +340,7 @@ void CConfiguration::verifyFile()
 	}
 	if (!iFile->containsKey("KanbanCardFontSize"))
 	{
-		iFile->setValue("KanbanCardFontSize", "12.0");
+		iFile->setValue("KanbanCardFontSize", "15.0");
 	}
 	if (!iFile->containsKey("KanbanCardDataFontSize"))
 	{
