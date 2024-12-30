@@ -197,7 +197,7 @@ static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aProjec
 	}
 }
 
-static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aToken, StringRef aProject, StringRef aUser, StringRef aDueDate, StringRef aQuery)
+static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aToken, StringRef aProject, StringRef aUser, StringRef aDueDate, StringRef aQuery, String& aOutput)
 {
 	class DemoBackgroundThread : public ThreadWithProgressWindow
 	{
@@ -209,6 +209,7 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 		StringRef user;
 		StringRef query;
 		bool invokeResult;
+		String invokeOutput;
 		int curlErrorCode;
 
 		DemoBackgroundThread() : ThreadWithProgressWindow("Verification", true, true)
@@ -221,8 +222,7 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 
 		void run() override
 		{
-			String out;
-			invokeResult = invokeConnection(url, token, project, user, duedate, query, out, curlErrorCode);
+			invokeResult = invokeConnection(url, token, project, user, duedate, query, invokeOutput, curlErrorCode);
 		}
 	} *dw = new DemoBackgroundThread();
 	dw->url = aUrl;
@@ -241,6 +241,7 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 		}
 		else
 		{ // not connected
+			aOutput = dw->invokeOutput;
 			ret = dw->curlErrorCode;
 		}
 		delete dw;
@@ -273,7 +274,8 @@ CKanbanColumnGitlab * CKanbanColumnGitlab::createWithWizard(int aColumnId, const
 			{
 				String duedate1 = duedates.upToFirstOccurrenceOf(",", false, true);
 				String user1 = users.upToFirstOccurrenceOf(",", false, true);
-				int res2 = createAndShowWizardWindowTestConnection(url, token, projId, user1, duedate1, query);
+				String out_msg;
+				int res2 = createAndShowWizardWindowTestConnection(url, token, projId, user1, duedate1, query, out_msg);
 				if (res2 == 0)
 				{ // all ok -> create window
 				}
@@ -283,7 +285,17 @@ CKanbanColumnGitlab * CKanbanColumnGitlab::createWithWizard(int aColumnId, const
 				}
 				else
 				{ // else res2 > 0 -> show error message and then wizard again
-					AlertWindow::showMessageBox(MessageBoxIconType::WarningIcon, "Information", "Test connection failed. You need to verify your Gitlab settings. Curl error code: " + String(res2), "Ok");
+					String msg = "Test connection failed. Please verify your Gitlab settings.\n";
+					if (res2 > 0)
+					{
+						msg += "Curl error code: " + String(res2);
+					}
+					else
+					{
+						msg += "Invoking curl error code: " + String(res2) + "\n" + out_msg;
+					}
+
+					AlertWindow::showMessageBox(MessageBoxIconType::WarningIcon, "Information", msg, "Ok");
 					continue;
 				}
 			}
@@ -445,7 +457,7 @@ void CKanbanColumnGitlab::decodeGitlabStarting_v2()
 		{
 			if (!decodeGitlabRsp(s))
 			{
-				ec = -3;
+				ec = -4;
 			}
 		}
 	}
@@ -614,7 +626,8 @@ void CKanbanColumnGitlab::refreshSetupFunction()
 			{
 				String duedate1 = duedates.upToFirstOccurrenceOf(",", false, true);
 				String user1 = users.upToFirstOccurrenceOf(",", false, true);
-				int res2 = createAndShowWizardWindowTestConnection(url, token, projId, user1, duedate1, query);
+				String out_msg;
+				int res2 = createAndShowWizardWindowTestConnection(url, token, projId, user1, duedate1, query, out_msg);
 				if (res2 == 0)
 				{ // all ok -> create window
 				}
@@ -624,7 +637,17 @@ void CKanbanColumnGitlab::refreshSetupFunction()
 				}
 				else
 				{ // else res2 > 0 -> show error message and then wizard again
-					AlertWindow::showMessageBox(MessageBoxIconType::WarningIcon, "Information", "Test connection failed. You need to verify your Gitlab settings. Curl error code: " + String(res2), "Ok");
+					String msg = "Test connection failed. Please verify your Gitlab settings.\n";
+					if (res2 > 0)
+					{
+						msg += "Curl error code: " + String(res2);
+					}
+					else
+					{
+						msg += "Invoking curl error code: " + String(res2) + "\n" + out_msg;
+					}
+
+					AlertWindow::showMessageBox(MessageBoxIconType::WarningIcon, "Information", msg, "Ok");
 					continue;
 				}
 			}

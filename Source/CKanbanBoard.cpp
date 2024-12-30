@@ -929,7 +929,7 @@ bool CKanbanBoardComponent::saveFile(String& aReturnErrorMessage)
 		f.setPosition(0);
 		f.truncate();
 
-		f << "{\n\"version\":\"0.3\",\n\n\"board\":\n{\n";
+		f << "{\n\"version\":\"" << KKanbanBoardJsonFileVersion << "\",\n\n\"board\":\n{\n";
 
 		f << "\"rows\":" + String(iGrid.templateRows.size()) + ", \"columns\":" + String(iGrid.templateColumns.size()) + ", \n";
 

@@ -36,7 +36,7 @@ void CKanbanColumnGithub::refreshThreadWorkerFunction()
 
 int CKanbanColumnGithub::getColumnTypeId()
 {
-	return 1;
+	return 2;
 }
 
 void CKanbanColumnGithub::outputAdditionalDataToJson(String & aJson)
@@ -155,7 +155,7 @@ static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aOwner,
 	}
 }
 
-static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aToken, StringRef aOwner, StringRef aRepo, StringRef aQuery)
+static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aToken, StringRef aOwner, StringRef aRepo, StringRef aQuery, String& aOutput)
 {
 	class DemoBackgroundThread : public ThreadWithProgressWindow
 	{
@@ -166,6 +166,7 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 		StringRef repo;
 		StringRef query;
 		bool invokeResult;
+		String invokeOutput;
 		int curlErrorCode;
 
 		DemoBackgroundThread() : ThreadWithProgressWindow("Verification", true, true)
@@ -178,8 +179,7 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 
 		void run() override
 		{
-			String out;
-			invokeResult = invokeConnection(url, token, owner, repo, query, out, curlErrorCode);
+			invokeResult = invokeConnection(url, token, owner, repo, query, invokeOutput, curlErrorCode);
 		}
 	} *dw = new DemoBackgroundThread();
 	dw->url = aUrl;
@@ -197,6 +197,7 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 		}
 		else
 		{ // not connected
+			aOutput = dw->invokeOutput;
 			ret = dw->curlErrorCode; // > 0 ? dw->curlErrorCode : 9999;
 		}
 		delete dw;
@@ -226,7 +227,8 @@ CKanbanColumnGithub * CKanbanColumnGithub::createWithWizard(int aColumnId, const
 		{
 			if (testConn)
 			{
-				int res2 = createAndShowWizardWindowTestConnection(url, token, owner, repo, query);
+				String out_msg;
+				int res2 = createAndShowWizardWindowTestConnection(url, token, owner, repo, query, out_msg);
 				if (res2 == 0)
 				{ // all ok -> create window
 				}
@@ -239,14 +241,14 @@ CKanbanColumnGithub * CKanbanColumnGithub::createWithWizard(int aColumnId, const
 				  // res2 = -2 -> bad path
 				  // res2 = -3 -> curl connection failed (sub process start failed)
 
-					String msg = "Test connection failed. You need to verify your Github settings. ";
+					String msg = "Test connection failed. Please verify your Github settings.\n";
 					if (res2 > 0)
 					{
 						msg += "Curl error code: " + String(res2);
 					}
 					else 
 					{
-						msg += "Invoking curl error code: " + String(res2);
+						msg += "Invoking curl error code: " + String(res2) + "\n" + out_msg;
 					}
 
 					AlertWindow::showMessageBox(MessageBoxIconType::WarningIcon, "Information", msg, "Ok");
@@ -576,7 +578,8 @@ void CKanbanColumnGithub::refreshSetupFunction()
 		{
 			if (conn)
 			{
-				int res2 = createAndShowWizardWindowTestConnection(url, token, owner, repo, query);
+				String out_msg;
+				int res2 = createAndShowWizardWindowTestConnection(url, token, owner, repo, query, out_msg);
 				if (res2 == 0)
 				{ // all ok -> create window
 				}
@@ -586,7 +589,17 @@ void CKanbanColumnGithub::refreshSetupFunction()
 				}
 				else
 				{ // else res2 > 0 -> show error message and then wizard again
-					AlertWindow::showMessageBox(MessageBoxIconType::WarningIcon, "Information", "Test connection failed. You need to verify your Gitlab settings. Curl error code: " + String(res2), "Ok");
+					String msg = "Test connection failed. Please verify your Github settings.\n";
+					if (res2 > 0)
+					{
+						msg += "Curl error code: " + String(res2);
+					}
+					else
+					{
+						msg += "Invoking curl error code: " + String(res2) + "\n" + out_msg;
+					}
+
+					AlertWindow::showMessageBox(MessageBoxIconType::WarningIcon, "Information", msg, "Ok");
 					continue;
 				}
 			}

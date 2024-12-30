@@ -649,6 +649,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 	case menuHelpDiagnostic:
 		AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Diagnostic information", 
 			"Made with JUCE v" + String(JUCE_MAJOR_VERSION) + "." + String(JUCE_MINOR_VERSION) + "." + String(JUCE_BUILDNUMBER)
+			+ "\n\nPKB file version: " + KKanbanBoardJsonFileVersion
 			+ "\n\nConfiguration file location:\n" + CConfiguration::getInstance().getConfigurationFileLocation()
 			+ "\n\ncurl location:\n" + CConfiguration::getInstance().getValue("curl"),
 			"OK");

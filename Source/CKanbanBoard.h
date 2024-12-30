@@ -17,6 +17,8 @@
 
 using namespace juce;
 
+const String KKanbanBoardJsonFileVersion = "0.4";
+
 //==============================================================================
 /*http://davidbau.com/colors/
 */
