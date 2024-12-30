@@ -59,7 +59,7 @@ public:
 
 	static ColourPalette& getColourPalette();
 
-	static int WeekOfYear();
+	static std::pair<int, int> WeekOfYear();
 
 	static String YearAndWeekOfYear();
 

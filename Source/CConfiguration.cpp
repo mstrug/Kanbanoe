@@ -179,10 +179,12 @@ ColourPalette& CConfiguration::getColourPalette()
 	return *c.iPalette;
 }
 
-int CConfiguration::WeekOfYear()
+// returns year and week number
+std::pair<int, int> CConfiguration::WeekOfYear()
 {
 	// basing on https://en.wikipedia.org/wiki/ISO_week_date
 	juce::Time t = juce::Time::getCurrentTime();
+	int year = t.getYear();
 	int doy = t.getDayOfYear() + 1;	//d
 	int dow = t.getDayOfWeek(); //e
 	if (dow == 0) dow = 7; // saturday in ISO is day no. 7
@@ -205,17 +207,19 @@ int CConfiguration::WeekOfYear()
 		int p_1 = int(y + floor(y / 4.0f) - floor(y / 100.0f) + floor(y / 400.0f)) % 7;
 		int weeks = 52;
 		if (p == 4 || p_1 == 3) weeks++;
-		if (woy > weeks) woy = 1;
+		if (woy > weeks) {
+			woy = 1;
+			year++;
+		}
 	}
 
-	return woy;
+	return std::make_pair(year, woy);
 }
 
 String CConfiguration::YearAndWeekOfYear()
 {
-	juce::Time t = juce::Time::getCurrentTime();
-	int woy = CConfiguration::WeekOfYear();
-	return String(t.getYear()) + " " + String::formatted("wk%02d", woy);
+	std::pair<int, int> woy = CConfiguration::WeekOfYear();
+	return String(woy.first) + " " + String::formatted("wk%02d", woy.second);
 }
 
 int CConfiguration::getColumnTypesCount()
