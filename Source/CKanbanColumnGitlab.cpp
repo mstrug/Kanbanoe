@@ -170,7 +170,7 @@ static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aProjec
 	if (curls.isEmpty())
 	{
 		aOutput = "curl bad path";
-		aCurlErrorCode = -1;
+		aCurlErrorCode = -2;
 		return false;
 	}
 	Logger::outputDebugString("query: " + q);
@@ -191,7 +191,7 @@ static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aProjec
 	}
 	else
 	{
-		aCurlErrorCode = -2;
+		aCurlErrorCode = -3;
 		aOutput = "Process start failed";
 		return false;
 	}
@@ -241,7 +241,7 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 		}
 		else
 		{ // not connected
-			ret = dw->curlErrorCode > 0 ? dw->curlErrorCode : 1;
+			ret = dw->curlErrorCode;
 		}
 		delete dw;
 		return ret;
@@ -614,7 +614,7 @@ void CKanbanColumnGitlab::refreshSetupFunction()
 			{
 				String duedate1 = duedates.upToFirstOccurrenceOf(",", false, true);
 				String user1 = users.upToFirstOccurrenceOf(",", false, true);
-				int res2 = createAndShowWizardWindowTestConnection(iGitlabUrl, iGitlabToken, iGitlabProjectId, user1, duedate1, iGitlabQuery);
+				int res2 = createAndShowWizardWindowTestConnection(url, token, projId, user1, duedate1, query);
 				if (res2 == 0)
 				{ // all ok -> create window
 				}

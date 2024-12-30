@@ -15,13 +15,8 @@
 
 
 //==============================================================================
-CKanbanColumnGithub::CKanbanColumnGithub(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, StringRef aUrl, StringRef aToken, StringRef aProjectId, StringRef aUsers, StringRef aDueDates, StringRef aQuery) : CKanbanColumnComponent(aColumnId, aTitle, aOwner, true), iGitlabUrl(aUrl), iGitlabToken(aToken), iGitlabProjectId(aProjectId), iGitlabQuery(aQuery)
+CKanbanColumnGithub::CKanbanColumnGithub(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, StringRef aUrl, StringRef aToken, StringRef aRepoOwner, StringRef aRepo, StringRef aQuery) : CKanbanColumnComponent(aColumnId, aTitle, aOwner, true), iGithubUrl(aUrl), iGithubToken(aToken), iGithubRepoOwner(aRepoOwner), iGithubRepo(aRepo), iGithubQuery(aQuery)
 {
-	iGitlabUsers.addTokens(aUsers, ", ", "");
-	iGitlabUsers.removeEmptyStrings();
-
-	iGitlabDuedates.addTokens(aDueDates, ", ", "");
-	iGitlabDuedates.removeEmptyStrings();
 }
 
 CKanbanColumnGithub::~CKanbanColumnGithub()
@@ -46,12 +41,11 @@ int CKanbanColumnGithub::getColumnTypeId()
 
 void CKanbanColumnGithub::outputAdditionalDataToJson(String & aJson)
 {
-	aJson << ", \"gitlabUrl\":\"" + URL::addEscapeChars(iGitlabUrl, false) + "\"";
-	aJson << ", \"gitlabToken\":\"" + URL::addEscapeChars(iGitlabToken, false) + "\"";
-	aJson << ", \"gitlabProjectId\":\"" + URL::addEscapeChars(iGitlabProjectId, false) + "\"";
-	aJson << ", \"gitlabDueDates\":\"" + URL::addEscapeChars(iGitlabDuedates.joinIntoString(","), false) + "\"";
-	aJson << ", \"gitlabUsers\":\"" + URL::addEscapeChars(iGitlabUsers.joinIntoString(","), false) + "\"";
-	aJson << ", \"gitlabQuery\":\"" + URL::addEscapeChars(iGitlabQuery, false) + "\"";
+	aJson << ", \"githubUrl\":\"" + URL::addEscapeChars(iGithubUrl, false) + "\"";
+	aJson << ", \"githubToken\":\"" + URL::addEscapeChars(iGithubToken, false) + "\"";
+	aJson << ", \"githubRepoOwner\":\"" + URL::addEscapeChars(iGithubRepoOwner, false) + "\"";
+	aJson << ", \"githubRepo\":\"" + URL::addEscapeChars(iGithubRepo, false) + "\"";
+	aJson << ", \"githubQuery\":\"" + URL::addEscapeChars(iGithubQuery, false) + "\"";
 }
 
 
@@ -59,16 +53,17 @@ void CKanbanColumnGithub::outputAdditionalDataToJson(String & aJson)
 //		-1 : canceled
 //		0 : ok
 //		1 : wrong data entered, retry by showing the window
-static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aProject, String& aUsers, String& aDueDates, String& aQuery, bool& aTestConn, bool edit = false)
+static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aOwner, String& aRepo, String& aQuery, bool& aTestConn, bool edit = false)
 {
 	AlertWindow aw( edit ? "Edit github integration column" : "Create github integration column", 
 					edit ? "Edit column information" : "Provide new column information", AlertWindow::QuestionIcon);
-	aw.addTextEditor("text_url", aUrl, "Gitlab URL:");
-	aw.addTextEditor("text_token", aToken, "Gitlab API token:");
-	aw.addTextEditor("text_project", aProject, "Project ID:");
-	aw.addTextEditor("text_users", aUsers, "API query user name list:");
-	aw.addTextEditor("text_duedates", aDueDates, "API query due date list:");
-	aw.addTextEditor("text_query", aQuery, "Gitlab API query (evaluated for each user):");
+	aw.addTextEditor("text_url", aUrl, "Github URL:");
+	aw.addTextEditor("text_token", aToken, "Github API token:");
+	aw.addTextEditor("text_owner", aOwner, "Repo owner:");
+	aw.addTextEditor("text_repo", aRepo, "Repo:");
+	//aw.addTextEditor("text_users", aUsers, "API query user name list:");
+	//aw.addTextEditor("text_duedates", aDueDates, "API query due date list:");
+	aw.addTextEditor("text_query", aQuery, "Github API query (evaluated for each user):");
 	
 	ToggleButton tb("Test connection");
 	tb.setComponentID("checkbox");
@@ -84,28 +79,24 @@ static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aProj
 	{
 		auto text_url = aw.getTextEditorContents("text_url");
 		auto text_token = aw.getTextEditorContents("text_token");
-		auto text_project = aw.getTextEditorContents("text_project");
-		auto text_users = aw.getTextEditorContents("text_users");
-		auto text_duedates = aw.getTextEditorContents("text_duedates");
+		auto text_owner = aw.getTextEditorContents("text_owner");
+		auto text_repo = aw.getTextEditorContents("text_repo");
 		auto text_query = aw.getTextEditorContents("text_query");
 
 		String errorStr;  
-		if (text_url.isEmpty()) errorStr = "Gitlab URL cannot be empty.";
-		else if (text_token.isEmpty()) errorStr = "Gitlab API token cannot be empty.";
-		else if (text_project.isEmpty()) errorStr = "Project ID cannot be empty.";
-		else if (text_duedates.isEmpty()) errorStr = "Due date list cannot be empty.";
-		else if (text_users.isEmpty()) errorStr = "Users list cannot be empty.";
-		else if (text_query.isEmpty()) errorStr = "Gitlab API query cannot be empty.";
-		else if (!text_query.contains("{URL}")) errorStr = "Gitlab API query must contain {URL} placeholder.";
-		else if (!text_query.contains("{PROJECT_ID}")) errorStr = "Gitlab API query must contain {PROJECT_ID} placeholder.";
-		else if (!text_query.contains("{DUE_DATE}")) errorStr = "Gitlab API query must contain {DUE_DATE} placeholder.";
-		else if (!text_query.contains("{USER}")) errorStr = "Gitlab API query must contain {USER} placeholder.";
+		if (text_url.isEmpty()) errorStr = "Github URL cannot be empty.";
+		else if (text_token.isEmpty()) errorStr = "Github API token cannot be empty.";
+		else if (text_owner.isEmpty()) errorStr = "Repo owner cannot be empty.";
+		else if (text_repo.isEmpty()) errorStr = "Repo cannot be empty.";
+		else if (text_query.isEmpty()) errorStr = "Github API query cannot be empty.";
+		else if (!text_query.contains("{URL}")) errorStr = "Github API query must contain {URL} placeholder.";
+		else if (!text_query.contains("{OWNER}")) errorStr = "Github API query must contain {OWNER} placeholder.";
+		else if (!text_query.contains("{REPO}")) errorStr = "Github API query must contain {REPO} placeholder.";
 
 		aUrl = text_url;
 		aToken = text_token;
-		aProject = text_project;
-		aUsers = text_users;
-		aDueDates = text_duedates;
+		aOwner = text_owner;
+		aRepo = text_repo;
 		aQuery = text_query;
 		aTestConn = tb.getToggleState();
 
@@ -122,61 +113,28 @@ static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aProj
 	}
 }
 
-static bool invokeConnection_v2(StringRef aQueries, StringRef aToken, String& aOutput, int& aCurlErrorCode)
-{
-	ChildProcess cp;
-	String curls = CConfiguration::getValue("curl");
-	if (curls.isEmpty())
-	{
-		aOutput = "curl bad path";
-		aCurlErrorCode = -1;
-		return false;
-	}
-	String cmd = curls + " -w \"\\r\\n\\r\\n\" -k --header \"PRIVATE-TOKEN: " + aToken + "\" " + aQueries;
-	Logger::outputDebugString("curl cmd: " + cmd);
-	if (cp.start(cmd, ChildProcess::wantStdOut))
-	{
-		String out = cp.readAllProcessOutput();
-		uint32 ec = cp.getExitCode();
-		aCurlErrorCode = ec;
-		if (ec == 0)
-		{
-			aOutput = out;
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-	else
-	{
-		aCurlErrorCode = -2;
-		aOutput = "Process start failed";
-		return false;
-	}
-}
-
-static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aProject, StringRef aUser, StringRef aDueDate, StringRef aQuery, String& aOutput, int& aCurlErrorCode)
+static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aOwner, StringRef aRepo, StringRef aQuery, String& aOutput, int& aCurlErrorCode)
 {
 	String q(aQuery);
 	q = q.replace("{URL}", aUrl);
-	q = q.replace("{PROJECT_ID}", aProject);
-	q = q.replace("{DUE_DATE}", aDueDate);
-	q = q.replace("{USER}", aUser);
+	q = q.replace("{OWNER}", aOwner);
+	q = q.replace("{REPO}", aRepo);
 
 	ChildProcess cp;
 	String curls = CConfiguration::getValue("curl");
 	if (curls.isEmpty())
 	{
 		aOutput = "curl bad path";
-		aCurlErrorCode = -1;
+		aCurlErrorCode = -2;
 		return false;
 	}
 	Logger::outputDebugString("query: " + q);
-	if (cp.start(curls + " -k -v --header \"PRIVATE-TOKEN: " + aToken + "\" \"" + q + "\"", ChildProcess::wantStdOut))
+	String process = curls + " -L --header \"Accept: application/vnd.github+json\" --header \"X-GitHub-Api-Version: 2022-11-28\" --header \"Authorization: Bearer " + aToken + "\" \"" + q + "\"";
+	Logger::outputDebugString("process: " + process);
+	if (cp.start(process, ChildProcess::wantStdOut))
 	{
 		String out = cp.readAllProcessOutput();
+		Logger::outputDebugString("curl output: " + out);
 		uint32 ec = cp.getExitCode();
 		aCurlErrorCode = ec;
 		if (ec == 0)
@@ -191,22 +149,21 @@ static bool invokeConnection(StringRef aUrl, StringRef aToken, StringRef aProjec
 	}
 	else
 	{
-		aCurlErrorCode = -2;
+		aCurlErrorCode = -3;
 		aOutput = "Process start failed";
 		return false;
 	}
 }
 
-static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aToken, StringRef aProject, StringRef aUser, StringRef aDueDate, StringRef aQuery)
+static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aToken, StringRef aOwner, StringRef aRepo, StringRef aQuery)
 {
 	class DemoBackgroundThread : public ThreadWithProgressWindow
 	{
 	public:
 		StringRef url;
 		StringRef token;
-		StringRef project;
-		StringRef duedate;
-		StringRef user;
+		StringRef owner;
+		StringRef repo;
 		StringRef query;
 		bool invokeResult;
 		int curlErrorCode;
@@ -222,14 +179,13 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 		void run() override
 		{
 			String out;
-			invokeResult = invokeConnection(url, token, project, user, duedate, query, out, curlErrorCode);
+			invokeResult = invokeConnection(url, token, owner, repo, query, out, curlErrorCode);
 		}
 	} *dw = new DemoBackgroundThread();
 	dw->url = aUrl;
 	dw->token = aToken;
-	dw->project = aProject;
-	dw->duedate = aDueDate;
-	dw->user = aUser;
+	dw->owner = aOwner;
+	dw->repo = aRepo;
 	dw->query = aQuery;
 
 	if (dw->runThread())
@@ -241,7 +197,7 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 		}
 		else
 		{ // not connected
-			ret = dw->curlErrorCode > 0 ? dw->curlErrorCode : 1;
+			ret = dw->curlErrorCode; // > 0 ? dw->curlErrorCode : 9999;
 		}
 		delete dw;
 		return ret;
@@ -255,25 +211,22 @@ static int createAndShowWizardWindowTestConnection(StringRef aUrl, StringRef aTo
 
 CKanbanColumnGithub * CKanbanColumnGithub::createWithWizard(int aColumnId, const String & aTitle, CKanbanBoardComponent & aOwner)
 {
-	String url = "https://yourdomain.com";
+	String url = "https://api.github.com";
 	String token = "";
-	String projId = "1234";
-	String users = "user1, user2, user3";
-	String duedates = "overdue, week";
-	String query = "{URL}/api/v4/projects/{PROJECT_ID}/issues?due_date={DUE_DATE}&state=opened&order_by=due_date&sort=asc&scope=all&assignee_username={USER}";
+	String owner = "repo-owner";
+	String repo = "repo-name";
+	String query = "{URL}/repos/{OWNER}/{REPO}/pulls?sort=updated&direction=asc";
 	bool testConn = true;
 
 	int res;
-	while ((res = createAndShowWizardWindow(url, token, projId, users, duedates, query, testConn)) >= 0)
+	while ((res = createAndShowWizardWindow(url, token, owner, repo, query, testConn)) >= 0)
 	{
 		if (res == -1) return nullptr; // user clicked cancel
 		if (res == 0)
 		{
 			if (testConn)
 			{
-				String duedate1 = duedates.upToFirstOccurrenceOf(",", false, true);
-				String user1 = users.upToFirstOccurrenceOf(",", false, true);
-				int res2 = createAndShowWizardWindowTestConnection(url, token, projId, user1, duedate1, query);
+				int res2 = createAndShowWizardWindowTestConnection(url, token, owner, repo, query);
 				if (res2 == 0)
 				{ // all ok -> create window
 				}
@@ -283,12 +236,25 @@ CKanbanColumnGithub * CKanbanColumnGithub::createWithWizard(int aColumnId, const
 				}
 				else
 				{ // else res2 > 0 -> show error message and then wizard again
-					AlertWindow::showMessageBox(MessageBoxIconType::WarningIcon, "Information", "Test connection failed. You need to verify your Gitlab settings. Curl error code: " + String(res2), "Ok");
+				  // res2 = -2 -> bad path
+				  // res2 = -3 -> curl connection failed (sub process start failed)
+
+					String msg = "Test connection failed. You need to verify your Github settings. ";
+					if (res2 > 0)
+					{
+						msg += "Curl error code: " + String(res2);
+					}
+					else 
+					{
+						msg += "Invoking curl error code: " + String(res2);
+					}
+
+					AlertWindow::showMessageBox(MessageBoxIconType::WarningIcon, "Information", msg, "Ok");
 					continue;
 				}
 			}
 			
-			return new CKanbanColumnGithub(aColumnId, aTitle, aOwner, url, token, projId, users, duedates, query);
+			return new CKanbanColumnGithub(aColumnId, aTitle, aOwner, url, token, owner, repo, query);
 		}
 	}
 	
@@ -297,16 +263,15 @@ CKanbanColumnGithub * CKanbanColumnGithub::createWithWizard(int aColumnId, const
 
 CKanbanColumnGithub * CKanbanColumnGithub::createFromJson(int aColumnId, const String & aTitle, CKanbanBoardComponent & aOwner, DynamicObject * aJsonItem)
 {
-	var url = aJsonItem->getProperty("gitlabUrl");
-	var token = aJsonItem->getProperty("gitlabToken");
-	var projId = aJsonItem->getProperty("gitlabProjectId");
-	var duedates = aJsonItem->getProperty("gitlabDueDates");
-	var users = aJsonItem->getProperty("gitlabUsers");
-	var query = aJsonItem->getProperty("gitlabQuery");
+	var url = aJsonItem->getProperty("githubUrl");
+	var token = aJsonItem->getProperty("githubToken");
+	var owner = aJsonItem->getProperty("githubRepoOwner");
+	var repo = aJsonItem->getProperty("githubRepo");
+	var query = aJsonItem->getProperty("githubQuery");
 
-	if (url.isString() && token.isString() && projId.isString() && users.isString() && duedates.isString() && query.isString())
+	if (url.isString() && token.isString() && owner.isString() && repo.isString() && query.isString())
 	{
-		CKanbanColumnGithub *col = new CKanbanColumnGithub(aColumnId, aTitle, aOwner, URL::removeEscapeChars(url), URL::removeEscapeChars(token), URL::removeEscapeChars(projId), URL::removeEscapeChars(users), URL::removeEscapeChars(duedates), URL::removeEscapeChars(query));
+		CKanbanColumnGithub *col = new CKanbanColumnGithub(aColumnId, aTitle, aOwner, URL::removeEscapeChars(url), URL::removeEscapeChars(token), URL::removeEscapeChars(owner), URL::removeEscapeChars(repo), URL::removeEscapeChars(query));
 		return col;
 	}
 
@@ -384,6 +349,19 @@ bool CKanbanColumnGithub::decodeGitlabRsp(const String & aData)
 				c.customProps.set("id", id.toString());
 
 				iTempCardList.add(c);
+
+				/*				CKanbanCardComponent* c = new CKanbanCardComponent(nullptr);
+				iTempCardList.add(c);
+				c->setText(title);
+				c->getProperties().set("pid", pid.toString());
+				c->getProperties().set("id", id.toString());
+				c->setUrl(url);
+				c->setTags(tags);
+				c->setAssigne(assingee);
+				// c.setNotes(dd->getProperty("description")); // too large?
+				c->setDates(Time::fromISO8601(cr.toString()), Time::fromISO8601(up.toString()));
+				*/
+				//decodeGitlabNotifier(c);
 			}
 		}
 		return true;
@@ -403,7 +381,7 @@ void CKanbanColumnGithub::decodeGitlabStarting_v2()
 
 	String queries;
 
-	for (auto& sd : iGitlabDuedates)
+	/*for (auto& sd : iGitlabDuedates)
 	{
 		for (auto& s : iGitlabUsers)
 		{
@@ -411,8 +389,8 @@ void CKanbanColumnGithub::decodeGitlabStarting_v2()
 			int ec = 0;
 
 			String q(iGitlabQuery);
-			q = q.replace("{URL}", iGitlabUrl);
-			q = q.replace("{PROJECT_ID}", iGitlabProjectId);
+			q = q.replace("{URL}", iGithubUrl);
+			q = q.replace("{PROJECT_ID}", iGithubRepoOwner);
 			q = q.replace("{DUE_DATE}", sd);
 			q = q.replace("{USER}", s);
 
@@ -424,7 +402,7 @@ void CKanbanColumnGithub::decodeGitlabStarting_v2()
 
 	String out;
 	int ec = 0;
-	if (invokeConnection_v2(queries, iGitlabToken, out, ec))
+	if (invokeConnection_v2(queries, iGithubToken, out, ec))
 	{
 		StringArray rsps = StringArray::fromLines(out);
 		rsps.removeEmptyStrings();
@@ -465,7 +443,7 @@ void CKanbanColumnGithub::decodeGitlabStarting_v2()
 	else
 	{
 		CConfiguration::showStatusbarMessage("Refresh success");
-	}
+	}*/
 }
 
 void CKanbanColumnGithub::decodeGitlabStarting()
@@ -475,14 +453,14 @@ void CKanbanColumnGithub::decodeGitlabStarting()
 
 	String err;
 
-	for (auto& sd : iGitlabDuedates)
+	/*for (auto& sd : iGitlabDuedates)
 	{
 		for (auto& s : iGitlabUsers)
 		{
 			String out;
 			int ec = 0;
 
-			if (invokeConnection(iGitlabUrl, iGitlabToken, iGitlabProjectId, s, sd, iGitlabQuery, out, ec))
+			if (invokeConnection(iGithubUrl, iGithubToken, iGithubRepoOwner, s, sd, iGitlabQuery, out, ec))
 			{
 				decodeGitlabRsp(out);
 			}
@@ -491,23 +469,6 @@ void CKanbanColumnGithub::decodeGitlabStarting()
 				if (err.isEmpty()) err = "Error occured during refresh action, error codes:";
 				err += " " + String(ec) + " ";
 			}
-
-			/*ChildProcess cp;
-			if (cp.start("C:\\Users\\michal.strug\\AppData\\Local\\Apps\\cURL\\bin\\curl.exe -k -v --header \"PRIVATE-TOKEN: Byzy_vSCQzD54kyUvDEa\" \"https://ct-git.krakow.comarch/api/v4/projects/763/issues?assignee_username=" + s + "&due_date=week&state=opened&order_by=due_date&sort=asc&scope=all\"", ChildProcess::wantStdOut))
-			{
-				String out = cp.readAllProcessOutput();
-				uint32 ec = cp.getExitCode();
-				if (ec == 0)
-				{
-					//Logger::outputDebugString(out);
-					decodeGitlabRsp(out);
-				}
-				else
-				{
-					if (err.isEmpty()) err = "Error occured during refresh action, error codes:";
-					err += " " + String(ec) + " ";
-				}
-			}*/
 		}
 	}
 
@@ -534,7 +495,7 @@ void CKanbanColumnGithub::decodeGitlabStarting()
 	else
 	{
 		CConfiguration::showStatusbarMessage("Refresh success");
-	}
+	}*/
 	//AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", err);
 }
 
@@ -600,25 +561,22 @@ void CKanbanColumnGithub::decodeGitlabFinished()
 
 void CKanbanColumnGithub::refreshSetupFunction()
 {
-	String url = iGitlabUrl;
-	String token = iGitlabToken;
-	String projId = iGitlabProjectId;
-	String users = iGitlabUsers.joinIntoString(",");
-	String duedates = iGitlabDuedates.joinIntoString(",");
-	String query = iGitlabQuery;
+	String url = iGithubUrl;
+	String token = iGithubToken;
+	String owner = iGithubRepoOwner;
+	String repo = iGithubRepo;
+	String query = iGithubQuery;
 	bool conn = true;
 
 	int res;
-	while ((res = createAndShowWizardWindow(url, token, projId, users, duedates, query, conn, true)) >= 0)
+	while ((res = createAndShowWizardWindow(url, token, owner, repo, query, conn, true)) >= 0)
 	{
 		if (res == -1) return; // user clicked cancel
 		if (res == 0)
 		{
 			if (conn)
 			{
-				String duedate1 = duedates.upToFirstOccurrenceOf(",", false, true);
-				String user1 = users.upToFirstOccurrenceOf(",", false, true);
-				int res2 = createAndShowWizardWindowTestConnection(iGitlabUrl, iGitlabToken, iGitlabProjectId, user1, duedate1, iGitlabQuery);
+				int res2 = createAndShowWizardWindowTestConnection(url, token, owner, repo, query);
 				if (res2 == 0)
 				{ // all ok -> create window
 				}
@@ -633,16 +591,11 @@ void CKanbanColumnGithub::refreshSetupFunction()
 				}
 			}
 
-			iGitlabUrl = url;
-			iGitlabToken = token;
-			iGitlabProjectId = projId;
-			iGitlabQuery = query;
-			iGitlabDuedates.clearQuick();
-			iGitlabDuedates.addTokens(duedates, ", ", "");
-			iGitlabDuedates.removeEmptyStrings();
-			iGitlabUsers.clearQuick();
-			iGitlabUsers.addTokens(users, ", ", "");
-			iGitlabUsers.removeEmptyStrings();
+			iGithubUrl = url;
+			iGithubToken = token;
+			iGithubRepoOwner = owner;
+			iGithubRepo = repo;
+			iGithubQuery = query;
 			return;
 		}
 	}
