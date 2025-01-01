@@ -15,7 +15,10 @@
 
 
 //==============================================================================
-CKanbanColumnGithub::CKanbanColumnGithub(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, StringRef aUrl, StringRef aToken, StringRef aRepoOwner, StringRef aRepo, StringRef aQuery) : CKanbanColumnComponent(aColumnId, aTitle, aOwner, true), iGithubUrl(aUrl), iGithubToken(aToken), iGithubRepoOwner(aRepoOwner), iGithubRepo(aRepo), iGithubQuery(aQuery)
+CKanbanColumnGithub::CKanbanColumnGithub(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, StringRef aUrl, 
+	StringRef aToken, StringRef aRepoOwner, StringRef aRepo, StringRef aUser, StringRef aQuery, StringRef aQueryReviews) : CKanbanColumnComponent(aColumnId, aTitle, aOwner, true),
+		iGithubUrl(aUrl), iGithubToken(aToken), iGithubRepoOwner(aRepoOwner), iGithubRepo(aRepo), iGithubUser(aUser),
+		iGithubQuery(aQuery), iGithubReviewsQuery(aQueryReviews)
 {
 }
 
@@ -45,7 +48,9 @@ void CKanbanColumnGithub::outputAdditionalDataToJson(String & aJson)
 	aJson << ", \"githubToken\":\"" + URL::addEscapeChars(iGithubToken, false) + "\"";
 	aJson << ", \"githubRepoOwner\":\"" + URL::addEscapeChars(iGithubRepoOwner, false) + "\"";
 	aJson << ", \"githubRepo\":\"" + URL::addEscapeChars(iGithubRepo, false) + "\"";
+	aJson << ", \"githubUser\":\"" + URL::addEscapeChars(iGithubUser, false) + "\"";
 	aJson << ", \"githubQuery\":\"" + URL::addEscapeChars(iGithubQuery, false) + "\"";
+	aJson << ", \"githubReviewsQuery\":\"" + URL::addEscapeChars(iGithubReviewsQuery, false) + "\"";
 }
 
 
@@ -53,7 +58,7 @@ void CKanbanColumnGithub::outputAdditionalDataToJson(String & aJson)
 //		-1 : canceled
 //		0 : ok
 //		1 : wrong data entered, retry by showing the window
-static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aOwner, String& aRepo, String& aQuery, bool& aTestConn, bool edit = false)
+static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aOwner, String& aRepo, String& aUser, String& aQuery, String& aReviewsQuery, bool& aTestConn, bool edit = false)
 {
 	AlertWindow aw( edit ? "Edit github integration column" : "Create github integration column", 
 					edit ? "Edit column information" : "Provide new column information", AlertWindow::QuestionIcon);
@@ -61,8 +66,10 @@ static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aOwne
 	aw.addTextEditor("text_token", aToken, "Github API token:");
 	aw.addTextEditor("text_owner", aOwner, "Repo owner:");
 	aw.addTextEditor("text_repo", aRepo, "Repo:");
-	aw.addTextEditor("text_query", aQuery, "Github API query:");
-	
+	aw.addTextEditor("text_user", aUser, "User:");
+	aw.addTextEditor("text_query", aQuery, "Github API lust PRs query:");
+	aw.addTextEditor("text_query2", aReviewsQuery, "Github API PR reviews query:");
+
 	ToggleButton tb("Test connection");
 	tb.setComponentID("checkbox");
 	tb.setSize(250, 36);
@@ -79,23 +86,30 @@ static int createAndShowWizardWindow(String& aUrl, String& aToken, String& aOwne
 		auto text_token = aw.getTextEditorContents("text_token");
 		auto text_owner = aw.getTextEditorContents("text_owner");
 		auto text_repo = aw.getTextEditorContents("text_repo");
+		auto text_user = aw.getTextEditorContents("text_user");
 		auto text_query = aw.getTextEditorContents("text_query");
+		auto text_query2 = aw.getTextEditorContents("text_query2");
 
 		String errorStr;  
 		if (text_url.isEmpty()) errorStr = "Github URL cannot be empty.";
 		else if (text_token.isEmpty()) errorStr = "Github API token cannot be empty.";
 		else if (text_owner.isEmpty()) errorStr = "Repo owner cannot be empty.";
 		else if (text_repo.isEmpty()) errorStr = "Repo cannot be empty.";
+		else if (text_user.isEmpty()) errorStr = "Github user cannot be empty.";
 		else if (text_query.isEmpty()) errorStr = "Github API query cannot be empty.";
-		else if (!text_query.contains("{URL}")) errorStr = "Github API query must contain {URL} placeholder.";
-		else if (!text_query.contains("{OWNER}")) errorStr = "Github API query must contain {OWNER} placeholder.";
-		else if (!text_query.contains("{REPO}")) errorStr = "Github API query must contain {REPO} placeholder.";
+		else if (text_query2.isEmpty()) errorStr = "Github API query cannot be empty.";
+		else if (!text_query.contains("{URL}") && !text_query2.contains("{URL}")) errorStr = "Github API query must contain {URL} placeholder.";
+		else if (!text_query.contains("{OWNER}") && !text_query2.contains("{OWNER}")) errorStr = "Github API query must contain {OWNER} placeholder.";
+		else if (!text_query.contains("{REPO}") && !text_query2.contains("{REPO}")) errorStr = "Github API query must contain {REPO} placeholder.";
+		else if (!text_query2.contains("{PULLNUMBER}")) errorStr = "Github API PR reviews query must contain {PULLNUMBER} placeholder.";
 
 		aUrl = text_url;
 		aToken = text_token;
 		aOwner = text_owner;
 		aRepo = text_repo;
+		aUser = text_user;
 		aQuery = text_query;
+		aReviewsQuery = text_query2;
 		aTestConn = tb.getToggleState();
 
 		if (!errorStr.isEmpty())
@@ -145,11 +159,11 @@ static bool invokeConnection(StringRef aQuery, StringRef aToken, String& aOutput
 		return false;
 	}
 	String cmd = curls + " -i -L --header \"Accept: application/vnd.github+json\" --header \"X-GitHub-Api-Version: 2022-11-28\" --header \"Authorization: Bearer " + aToken + "\" \"" + aQuery + "\"";
-	Logger::outputDebugString("curl cmd: " + cmd);
+	//Logger::outputDebugString("curl cmd: " + cmd);
 	if (cp.start(cmd, ChildProcess::wantStdOut))
 	{
 		String out = cp.readAllProcessOutput();
-		Logger::outputDebugString("out: " + out);
+		//Logger::outputDebugString("out: " + out);
 
 		String http_code_str;
 		int http_code = decodeHttpStatusCode(out, http_code_str);
@@ -267,11 +281,13 @@ CKanbanColumnGithub * CKanbanColumnGithub::createWithWizard(int aColumnId, const
 	String token = "";
 	String owner = "repo-owner";
 	String repo = "repo-name";
+	String user = "github-login";
 	String query = "{URL}/repos/{OWNER}/{REPO}/pulls?sort=updated&direction=asc";
+	String query2 = "{URL}/repos/{OWNER}/{REPO}/pulls/{PULLNUMBER}/reviews";
 	bool testConn = true;
 
 	int res;
-	while ((res = createAndShowWizardWindow(url, token, owner, repo, query, testConn)) >= 0)
+	while ((res = createAndShowWizardWindow(url, token, owner, repo, user, query, query2, testConn)) >= 0)
 	{
 		if (res == -1) return nullptr; // user clicked cancel
 		if (res == 0)
@@ -307,7 +323,7 @@ CKanbanColumnGithub * CKanbanColumnGithub::createWithWizard(int aColumnId, const
 				}
 			}
 			
-			return new CKanbanColumnGithub(aColumnId, aTitle, aOwner, url, token, owner, repo, query);
+			return new CKanbanColumnGithub(aColumnId, aTitle, aOwner, url, token, owner, repo, user, query, query2);
 		}
 	}
 	
@@ -320,11 +336,15 @@ CKanbanColumnGithub * CKanbanColumnGithub::createFromJson(int aColumnId, const S
 	var token = aJsonItem->getProperty("githubToken");
 	var owner = aJsonItem->getProperty("githubRepoOwner");
 	var repo = aJsonItem->getProperty("githubRepo");
+	var user = aJsonItem->getProperty("githubUser");
 	var query = aJsonItem->getProperty("githubQuery");
+	var query2 = aJsonItem->getProperty("githubReviewsQuery");
 
-	if (url.isString() && token.isString() && owner.isString() && repo.isString() && query.isString())
+	if (url.isString() && token.isString() && owner.isString() && repo.isString() && query.isString() && query2.isString())
 	{
-		CKanbanColumnGithub *col = new CKanbanColumnGithub(aColumnId, aTitle, aOwner, URL::removeEscapeChars(url), URL::removeEscapeChars(token), URL::removeEscapeChars(owner), URL::removeEscapeChars(repo), URL::removeEscapeChars(query));
+		CKanbanColumnGithub *col = new CKanbanColumnGithub(aColumnId, aTitle, aOwner, URL::removeEscapeChars(url), 
+			URL::removeEscapeChars(token), URL::removeEscapeChars(owner), URL::removeEscapeChars(repo), URL::removeEscapeChars(user),
+			URL::removeEscapeChars(query), URL::removeEscapeChars(query2));
 		return col;
 	}
 
@@ -343,44 +363,55 @@ bool CKanbanColumnGithub::decodeGithubResponse(const String& aData)
 			for (auto& i : *ar)
 			{
 				auto dd = i.getDynamicObject();
-				auto draft = dd->getProperty("draft");
+				auto& draft = dd->getProperty("draft");
 
 				if (draft.isBool() && !draft) {
-					auto id = dd->getProperty("number");
-					auto url = dd->getProperty("html_url");
-					auto title = dd->getProperty("title");
-					auto cr = dd->getProperty("created_at");
-					auto up = dd->getProperty("updated_at");
-					auto notes = dd->getProperty("body");
+					auto& id = dd->getProperty("number");
+					auto& url = dd->getProperty("html_url");
+					auto& title = dd->getProperty("title");
+					auto& cr = dd->getProperty("created_at");
+					auto& up = dd->getProperty("updated_at");
+					auto& notes = dd->getProperty("body");
 
-					auto user = dd->getProperty("user");
+					auto& user = dd->getProperty("user");
 					auto du = user.getDynamicObject();
-					auto user_login = du->getProperty("login");
+					auto& user_login = du->getProperty("login");
 
-					auto labels = dd->getProperty("labels");
+					auto& labels = dd->getProperty("labels");
 					auto dl = labels.getArray();
 					String tags;
 					//for (auto& j : *dl) tags += j.toString() + " ";
 
 
-					CKanbanCardComponent::CKanbanCardData c;
+					juce::int64 last_pr_update_time = Time::fromISO8601(up.toString()).toMilliseconds();
 
-					c.values.set("text", "#" + id.toString() + " " + title);
-					c.values.set("notes", notes);
-					c.values.set("colour", -1);
-					c.values.set("url", url);
-					c.values.set("tags", tags);
-					c.values.set("assignee", user_login);
+					// get user review for this PR
+					juce::int64 user_added_review_time = requestGithubPullReviews(id.toString()); // todo: optimize these requests
+					if (user_added_review_time == 0 || user_added_review_time <= last_pr_update_time ) 
+					{
+						// add card only if there is no review added from github user yet
+						// or review was added before PR last update
 
-					c.values.set("dueDateSet", false);
-				
-					c.values.set("creationDate", Time::fromISO8601(cr.toString()).toMilliseconds());
-					c.values.set("lastUpdateDate", Time::fromISO8601(up.toString()).toMilliseconds());
+						CKanbanCardComponent::CKanbanCardData c;
 
-					c.customProps.set("id", id.toString());
-					c.customProps.set("removeLastUpdateDate", String(Time::fromISO8601(up.toString()).toMilliseconds()));
+						c.values.set("text", "#" + id.toString() + " " + title);
+						c.values.set("notes", notes);
+						c.values.set("colour", -1);
+						c.values.set("url", url);
+						c.values.set("tags", tags);
+						c.values.set("assignee", user_login);
 
-					iTempCardList.add(c);
+						c.values.set("dueDateSet", false);
+
+						c.values.set("creationDate", Time::fromISO8601(cr.toString()).toMilliseconds());
+						c.values.set("lastUpdateDate", last_pr_update_time);
+
+						c.customProps.set("id", id.toString());
+						c.customProps.set("removeLastUpdateDate", String(last_pr_update_time));
+						c.customProps.set("userReviewAddedDate", String(user_added_review_time));
+
+						iTempCardList.add(c);
+					}
 				}
 			}
 		}
@@ -388,6 +419,37 @@ bool CKanbanColumnGithub::decodeGithubResponse(const String& aData)
 		return true;
 	}
 	return false;
+}
+
+// returns true when user review has been found
+juce::int64 CKanbanColumnGithub::decodeGithubReviewsResponse(const String& aData)
+{
+	var d = JSON::parse(aData);
+	if (d != var())
+	{
+		String errorMessage;
+		auto ar = d.getArray();
+		if (!ar->isEmpty())
+		{
+			for (auto& i : *ar)
+			{
+				auto dd = i.getDynamicObject();
+				auto& user = dd->getProperty("user");
+
+				if (user.isObject()) {
+					auto du = user.getDynamicObject();
+
+					auto& login = du->getProperty("login");
+					if (login.toString() != iGithubUser) {
+						continue;
+					}
+					auto& sub = dd->getProperty("submitted_at");
+					return Time::fromISO8601(sub.toString()).toMilliseconds();
+				}
+			}
+		}
+	}
+	return 0;
 }
 
 void CKanbanColumnGithub::requestGithubStart()
@@ -442,6 +504,31 @@ void CKanbanColumnGithub::requestGithubStart()
 	{
 		CConfiguration::showStatusbarMessage("Refresh success");
 	}
+}
+
+juce::int64 CKanbanColumnGithub::requestGithubPullReviews(StringRef aPullNumber)
+{
+	jassert(iRefreshOngoing);
+
+	String q(iGithubReviewsQuery);
+	q = q.replace("{URL}", iGithubUrl);
+	q = q.replace("{OWNER}", iGithubRepoOwner);
+	q = q.replace("{REPO}", iGithubRepo);
+	q = q.replace("{PULLNUMBER}", aPullNumber);
+	Logger::outputDebugString("built query reviews: " + q);
+
+	String out, err;
+	int ec = 0;
+
+	if (invokeConnection(q, iGithubToken, out, ec))
+	{
+		return decodeGithubReviewsResponse(out);
+	}
+	if (ec != 0)
+	{
+		err = String(ec) + " " + out;
+	}
+	return 0;
 }
 
 void CKanbanColumnGithub::decodeGithubFinished()
@@ -504,11 +591,13 @@ void CKanbanColumnGithub::refreshSetupFunction()
 	String token = iGithubToken;
 	String owner = iGithubRepoOwner;
 	String repo = iGithubRepo;
+	String user = iGithubUser;
 	String query = iGithubQuery;
+	String query2 = iGithubReviewsQuery;
 	bool conn = true;
 
 	int res;
-	while ((res = createAndShowWizardWindow(url, token, owner, repo, query, conn, true)) >= 0)
+	while ((res = createAndShowWizardWindow(url, token, owner, repo, user, query, query2, conn, true)) >= 0)
 	{
 		if (res == -1) return; // user clicked cancel
 		if (res == 0)
@@ -545,7 +634,9 @@ void CKanbanColumnGithub::refreshSetupFunction()
 			iGithubToken = token;
 			iGithubRepoOwner = owner;
 			iGithubRepo = repo;
+			iGithubUser = user;
 			iGithubQuery = query;
+			iGithubReviewsQuery = query2;
 			return;
 		}
 	}

@@ -17,7 +17,8 @@
 */
 class CKanbanColumnGithub  : public CKanbanColumnComponent
 {
-	CKanbanColumnGithub(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, StringRef aUrl, StringRef aToken, StringRef aRepoOwner, StringRef aRepo, StringRef aQuery);
+	CKanbanColumnGithub(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner, StringRef aUrl, 
+		StringRef aToken, StringRef aRepoOwner, StringRef aRepo, StringRef aUser, StringRef aQuery, StringRef aQueryReviews);
 
 public:
 	static CKanbanColumnGithub* createWithWizard(int aColumnId, const String& aTitle, CKanbanBoardComponent& aOwner);
@@ -41,7 +42,9 @@ public:
 private:
 
 	void requestGithubStart();
+	juce::int64 requestGithubPullReviews(StringRef aPullNumber);
 	bool decodeGithubResponse(const String& aData);
+	juce::int64 decodeGithubReviewsResponse(const String& aData);
 	void decodeGithubFinished();
 
 private:
@@ -50,7 +53,9 @@ private:
 	String iGithubToken;
 	String iGithubRepoOwner;
 	String iGithubRepo;
+	String iGithubUser;
 	String iGithubQuery;
+	String iGithubReviewsQuery;
 
 	Array<CKanbanCardComponent::CKanbanCardData> iTempCardList;
 
