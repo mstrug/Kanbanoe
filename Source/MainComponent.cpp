@@ -478,6 +478,12 @@ bool MainComponent::perform(const InvocationInfo& info)
 					iMdiPanel.closeDocument(iMdiPanel.getActiveDocument(), true);
 				}
 			}
+
+			if (!iMdiPanel.getActiveDocument())
+			{ // workaround for issue when redrawing mdi doc with empty tabs - on current Juce version rectangle is drawn
+				iMdiPanel.useFullscreenWhenOneDocument(true);
+				iMdiPanel.useFullscreenWhenOneDocument(false);
+			}
 		}
 		break;
 	case menuFileSave:
