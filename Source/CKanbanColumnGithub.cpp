@@ -387,8 +387,10 @@ bool CKanbanColumnGithub::decodeGithubResponse(const String& aData)
 
 					// get user review for this PR
 					juce::int64 user_added_review_time = requestGithubPullReviews(id.toString()); // todo: optimize these requests
-					if (user_added_review_time == 0 || user_added_review_time <= last_pr_update_time ) 
+					if (user_added_review_time == 0 || user_added_review_time < last_pr_update_time ) 
 					{
+						// if user_added_review_time == last_pr_update_time that means user review was PR last update
+
 						// add card only if there is no review added from github user yet
 						// or review was added before PR last update
 
