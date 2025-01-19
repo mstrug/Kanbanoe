@@ -69,6 +69,7 @@ private:
 	Label iLabelAssigne;
 
 	Label iLabelCreationDate;
+	Label iLabelCustomDates;
 
 	Slider iSliderDueDate;
 	Label iLabelSlider;

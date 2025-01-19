@@ -282,7 +282,7 @@ CKanbanColumnGithub * CKanbanColumnGithub::createWithWizard(int aColumnId, const
 	String owner = "repo-owner";
 	String repo = "repo-name";
 	String user = "github-login";
-	String query = "{URL}/repos/{OWNER}/{REPO}/pulls?sort=updated&direction=asc";
+	String query = "{URL}/repos/{OWNER}/{REPO}/pulls?sort=updated&direction=desc&state=all&per_page=15";
 	String query2 = "{URL}/repos/{OWNER}/{REPO}/pulls/{PULLNUMBER}/reviews";
 	bool testConn = true;
 
@@ -353,6 +353,11 @@ CKanbanColumnGithub * CKanbanColumnGithub::createFromJson(int aColumnId, const S
 
 bool CKanbanColumnGithub::decodeGithubResponse(const String& aData)
 {
+	/* {
+		File myTargetFile("c:\\tmp\\aa.json");
+		myTargetFile.appendText(aData);
+	}*/
+
 	var d = JSON::parse(aData);
 	if (d != var())
 	{
@@ -365,8 +370,25 @@ bool CKanbanColumnGithub::decodeGithubResponse(const String& aData)
 				auto dd = i.getDynamicObject();
 				auto& draft = dd->getProperty("draft");
 
+				bool merged = false;
+				bool merged_prop_exists = dd->hasProperty("merged");
+				auto& merged_prop = dd->getProperty("draft");
+				if (!merged_prop_exists || (merged_prop_exists && !merged_prop.isBool()))
+				{
+					auto& state = dd->getProperty("state");
+					if (state == "closed") {
+						merged = true;
+					}
+				}
+				else 
+				{
+					merged = (bool)merged_prop;
+				}
+
 				if (draft.isBool() && !draft) {
 					auto& id = dd->getProperty("number");
+					//Logger::outputDebugString("PR number: " + id.toString() + " Merged: " + (merged ? "true" : "false"));
+
 					auto& url = dd->getProperty("html_url");
 					auto& title = dd->getProperty("title");
 					auto& cr = dd->getProperty("created_at");
@@ -384,15 +406,19 @@ bool CKanbanColumnGithub::decodeGithubResponse(const String& aData)
 
 
 					juce::int64 last_pr_update_time = Time::fromISO8601(up.toString()).toMilliseconds();
+					juce::int64 user_added_review_time = 0;
+					if (!merged) {
+						// get user review for this PR
+						user_added_review_time = requestGithubPullReviews(id.toString()); // todo: optimize these requests
+					}
 
-					// get user review for this PR
-					juce::int64 user_added_review_time = requestGithubPullReviews(id.toString()); // todo: optimize these requests
-					if (user_added_review_time == 0 || user_added_review_time < last_pr_update_time ) 
+					if (user_added_review_time == 0 || user_added_review_time < last_pr_update_time)
 					{
 						// if user_added_review_time == last_pr_update_time that means user review was PR last update
 
 						// add card only if there is no review added from github user yet
 						// or review was added before PR last update
+						// or pr is merged (updating only colour)
 
 						CKanbanCardComponent::CKanbanCardData c;
 
@@ -409,11 +435,13 @@ bool CKanbanColumnGithub::decodeGithubResponse(const String& aData)
 						c.values.set("lastUpdateDate", last_pr_update_time);
 
 						c.customProps.set("id", id.toString());
-						c.customProps.set("removeLastUpdateDate", String(last_pr_update_time));
+						c.customProps.set("remoteLastUpdateDate", String(last_pr_update_time));
 						c.customProps.set("userReviewAddedDate", String(user_added_review_time));
+						c.customProps.set("merged", (merged ? "true" : "false"));
 
 						iTempCardList.add(c);
 					}
+					
 				}
 			}
 		}
@@ -426,6 +454,7 @@ bool CKanbanColumnGithub::decodeGithubResponse(const String& aData)
 // returns true when user review has been found
 juce::int64 CKanbanColumnGithub::decodeGithubReviewsResponse(const String& aData)
 {
+	int64 max_time = 0;
 	var d = JSON::parse(aData);
 	if (d != var())
 	{
@@ -446,12 +475,16 @@ juce::int64 CKanbanColumnGithub::decodeGithubReviewsResponse(const String& aData
 						continue;
 					}
 					auto& sub = dd->getProperty("submitted_at");
-					return Time::fromISO8601(sub.toString()).toMilliseconds();
+
+					int64 current_time = Time::fromISO8601(sub.toString()).toMilliseconds();
+					if (current_time > max_time) {
+						max_time = current_time;
+					}
 				}
 			}
 		}
 	}
-	return 0;
+	return max_time;
 }
 
 void CKanbanColumnGithub::requestGithubStart()
@@ -463,7 +496,7 @@ void CKanbanColumnGithub::requestGithubStart()
 	q = q.replace("{URL}", iGithubUrl);
 	q = q.replace("{OWNER}", iGithubRepoOwner);
 	q = q.replace("{REPO}", iGithubRepo);
-	Logger::outputDebugString("built query: " + q);
+	//Logger::outputDebugString("built query: " + q);
 
 	String out, err;
 	int ec = 0;
@@ -517,7 +550,7 @@ juce::int64 CKanbanColumnGithub::requestGithubPullReviews(StringRef aPullNumber)
 	q = q.replace("{OWNER}", iGithubRepoOwner);
 	q = q.replace("{REPO}", iGithubRepo);
 	q = q.replace("{PULLNUMBER}", aPullNumber);
-	Logger::outputDebugString("built query reviews: " + q);
+	//Logger::outputDebugString("built query reviews: " + q);
 
 	String out, err;
 	int ec = 0;
@@ -535,40 +568,81 @@ juce::int64 CKanbanColumnGithub::requestGithubPullReviews(StringRef aPullNumber)
 
 void CKanbanColumnGithub::decodeGithubFinished()
 {
-	auto ar = iOwner.getCardsForColumn(this);
-
 	for (auto& c : iTempCardList)
 	{
+		auto cards = iOwner.getCardsByNameAndUrl( c.values["text"].toString(), c.values["url"].toString());
 		bool foundCard = false;
-		for (int i = ar.size() - 1; i >= 0; --i)
+
+		for (int i = 0; i < cards.size(); i++ )
 		{
-			if (ar[i]->getProperties()["id"] == c.customProps["id"])
-			{
+			if (cards[i]->getProperties()["id"] == c.customProps["id"]) {
 				foundCard = true;
-				ar[i]->setDates(Time(c.values["creationDate"]), Time(c.values["lastUpdateDate"]));
-				ar[i]->setDueDate(c.values["dueDateSet"], Time(c.values["dueDate"]));
-				ar[i]->setAssigne(c.values["assignee"]);
-				if (c.values.contains("colour")) ar[i]->setColour(Colour::fromString(c.values["colour"].toString()));
-				//if (c.values.contains("colour")) ar[i]->setColour(CConfiguration::getColourPalette().getColor(c.values["colour"]));
-				break;
+				if (!cards[i]->getOwner()->getOwner().isColumnDueDateDone()) {
+
+					bool changed = false;
+
+					String date = c.customProps["remoteLastUpdateDate"];
+					if (cards[i]->getCreationDate() != Time(c.values["creationDate"]) || cards[i]->getLastUpdateDate() < Time(date.getLargeIntValue()))
+					{
+						changed = true;
+						cards[i]->setDates(Time(c.values["creationDate"]), Time(c.values["lastUpdateDate"]));
+					}
+					if (cards[i]->isDueDateSet() != (bool)c.values["dueDateSet"] || cards[i]->getDueDate() != Time(c.values["dueDate"]))
+					{
+						changed = true;
+						cards[i]->setDueDate(c.values["dueDateSet"], Time(c.values["dueDate"]));
+					}
+					if (cards[i]->getAssigne() != c.values["assignee"].toString())
+					{
+						changed = true;
+						cards[i]->setAssigne(c.values["assignee"]);
+					}
+
+					if (c.customProps["merged"] == "true") 
+					{
+						cards[i]->setColour(CConfiguration::getColourPalette().getColor(2)); // green
+					}
+					else if (changed)
+					{
+						cards[i]->setColour(CConfiguration::getColourPalette().getColor(1)); // yellow
+					}
+
+					//if (c.values.contains("colour")) cards[i]->setColour(Colour::fromString(c.values["colour"].toString()));
+					//if (c.values.contains("colour")) cards[i]->setColour(CConfiguration::getColourPalette().getColor(c.values["colour"]));
+					break;
+				}
+				else if (c.customProps["merged"] == "true") {
+					cards[i]->setColour(CConfiguration::getColourPalette().getColor(2)); // green
+					break;
+				}
 			}
+			
 		}
+
+		if (!foundCard && c.customProps["merged"] == "true") 
+		{
+			// mark that the card was found, so it will not be created
+			foundCard = true;
+		}
+
 		if (!foundCard)
 		{
 			CKanbanCardComponent* card = new CKanbanCardComponent(nullptr);
 			card->setupFromJson(c.values, c.customProps);
 			iViewportLayout.createNewCard(card, true, false);
 			delete card;
-			ar = iOwner.getCardsForColumn(this);
 		}
 	}
 
+	auto ar = iOwner.getCardsForColumn(this);
 	for (int i = ar.size() - 1; i >= 0; --i)
 	{
 		bool foundCard = false;
 		for (auto& c : iTempCardList)
 		{
-			if (ar[i]->getProperties()["id"] == c.customProps["id"])
+			if (ar[i]->getText() == c.values["text"].toString() &&
+				ar[i]->getUrl() == c.values["url"].toString() &&				
+				ar[i]->getProperties()["id"] == c.customProps["id"])
 			{
 				foundCard = true;
 				break;

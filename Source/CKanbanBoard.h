@@ -71,8 +71,12 @@ public:
 	void removeColumn(CKanbanColumnComponent* aColumn);
 
 	const Array< CKanbanCardComponent* > getCardsForColumn(CKanbanColumnComponent* aColumn);
+	const Array<CKanbanCardComponent*> getCardsByNameAndUrl(StringRef aName, StringRef aUrl = "");
+	const Array< CKanbanCardComponent* > getCardsForDueDoneColumns();
 
 	const OwnedArray< CKanbanColumnComponent >& getColumns();
+
+	const CKanbanColumnComponent* getColumnById(int aId);
 
 	const OwnedArray< CKanbanBoardComponent::SArchive >& getArchives();
 

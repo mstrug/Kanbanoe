@@ -1224,10 +1224,63 @@ const Array<CKanbanCardComponent*> CKanbanBoardComponent::getCardsForColumn(CKan
 	return ret;
 }
 
+const Array<CKanbanCardComponent*> CKanbanBoardComponent::getCardsByNameAndUrl(StringRef aName, StringRef aUrl)
+{
+	Array<CKanbanCardComponent*> ret;
+
+	for (int i = 0; i < iKanbanCards.size(); i++)
+	{
+		if (iKanbanCards[i]->getText() == aName && (aUrl.isEmpty() || iKanbanCards[i]->getUrl() == aUrl))
+		{
+			ret.add(iKanbanCards[i]);
+		}
+	}
+	return ret;
+}
+
+const Array< CKanbanCardComponent* > CKanbanBoardComponent::getCardsForDueDoneColumns()
+{
+	Array<CKanbanCardComponent*> ret;
+	Array<int> cids;
+
+	for (int i = 0; i < iKanbanColumns.size(); i++)
+	{
+		if (iKanbanColumns[i]->isColumnDueDateDone() )
+		{
+			cids.add(iKanbanColumns[i]->getColumnId());
+		}
+	}
+
+	for (int i = 0; i < iKanbanCards.size(); i++)
+	{
+		int owner_col_id = iKanbanCards[i]->getOwnerColumnId();
+		if (cids.indexOf(owner_col_id) >= 0)
+		{
+			ret.add(iKanbanCards[i]);
+		}
+	}
+	return ret;
+}
+
 const OwnedArray<CKanbanColumnComponent>& CKanbanBoardComponent::getColumns()
 {
 	return iKanbanColumns;
 }
+
+const CKanbanColumnComponent* CKanbanBoardComponent::getColumnById(int aId)
+{
+	Array<CKanbanColumnComponent*> ret;
+
+	for (int i = 0; i < iKanbanColumns.size(); i++)
+	{
+		if (iKanbanColumns[i]->getColumnId() == aId)
+		{
+			return iKanbanColumns[i];
+		}
+	}
+	return nullptr;
+}
+
 
 const OwnedArray<CKanbanBoardComponent::SArchive>& CKanbanBoardComponent::getArchives()
 {

@@ -133,6 +133,21 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	iLabelCreationDate.setColour(Label::textColourId, getLookAndFeel().findColour(Label::textColourId).darker());
 	addAndMakeVisible(iLabelCreationDate);
 
+	String customDatesText;
+	int64 remoteLastUpdateDate = aOwner.getProperties()["remoteLastUpdateDate"].toString().getLargeIntValue();
+	if (remoteLastUpdateDate > 0) 
+	{
+		customDatesText += Time(remoteLastUpdateDate).formatted("Remote update: %d.%m.%Y %H:%M    ");
+	}
+	int64 userReviewAddedDate = aOwner.getProperties()["userReviewAddedDate"].toString().getLargeIntValue();
+	if (userReviewAddedDate > 0)
+	{
+		customDatesText += Time(userReviewAddedDate).formatted("Review: %d.%m.%Y %H:%M");
+	}	
+	iLabelCustomDates.setText(customDatesText, dontSendNotification);
+	iLabelCustomDates.setColour(Label::textColourId, getLookAndFeel().findColour(Label::textColourId).darker());
+	addChildComponent(iLabelCustomDates);
+
 	iButtonMaximize.setButtonText("=");
 	iButtonMaximize.setWantsKeyboardFocus(false);
 	iButtonMaximize.onClick = [this]
@@ -141,11 +156,13 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 		{
 			this->iButtonMaximize.setButtonText("=");
 			this->iMaximized = false;
+			this->iLabelCustomDates.setVisible(false);
 		}
 		else
 		{
 			this->iButtonMaximize.setButtonText("-");
 			this->iMaximized = true;
+			this->iLabelCustomDates.setVisible(true);
 		}
 		this->layout();
 	};
@@ -213,7 +230,16 @@ void CKanbanCardPropertiesComponent::layout()
 
 	yofs = iColours->getBottom() + 12;
 
-	iLabelCreationDate.setBounds(10, yofs, w - 10, 20);
+	if (iMaximized)
+	{
+		iLabelCreationDate.setBounds(10, yofs, w / 2 - 10, 20);
+		iLabelCustomDates.setBounds(w / 2, yofs, w - 10, 20);
+	} 
+	else
+	{
+		iLabelCreationDate.setBounds(10, yofs, w - 10, 20);
+
+	}
 
 	yofs = iLabelCreationDate.getBottom() + 12;
 

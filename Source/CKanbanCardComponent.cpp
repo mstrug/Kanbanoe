@@ -444,6 +444,11 @@ void CKanbanCardComponent::setUrl(const String& aString)
 	resized();*/
 }
 
+String CKanbanCardComponent::getUrl()
+{
+	return getProperties()["url"].toString();
+}
+
 void CKanbanCardComponent::setTags(const String& aString)
 {
 	updateLastUpdateDate();

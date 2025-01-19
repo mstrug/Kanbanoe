@@ -50,6 +50,7 @@ public:
 	String getText();
 
 	void setUrl(const String& aString);
+	String getUrl();
 	void setTags(const String& aString);
 	
 	bool isDueDateSet();
