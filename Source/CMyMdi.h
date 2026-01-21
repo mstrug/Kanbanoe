@@ -53,10 +53,15 @@ public:
 	bool save();
 	const String& getFilePath();
 	void updateCardsView();
+	void setName(String name);
+	String getName();
 
 public: // from CKanbanBoardComponent::Listener
 	void KanbanBoardChanged();
 	void KanbanBoardStored();
+
+private:
+	String name;
 };
 
 

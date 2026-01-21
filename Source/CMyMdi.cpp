@@ -141,6 +141,19 @@ void CMyMdiDoc::updateCardsView()
 	getKanbanBoard()->updateCardsView();
 }
 
+void CMyMdiDoc::setName(String name)
+{
+	this->name = name;
+
+	// adding padding
+	CMyMdiDocBase::setName(" " + name + " ");
+}
+
+String CMyMdiDoc::getName()
+{
+	return this->name;
+}
+
 void CMyMdiDoc::KanbanBoardChanged()
 {
 	if (CConfiguration::getBoolValue(KConfigAutosave))
