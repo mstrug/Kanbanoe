@@ -23,6 +23,7 @@ CConfiguration::CConfiguration()
 	opt.commonToAllUsers = false;
 	opt.ignoreCaseOfKeyNames = true;
 	opt.millisecondsBeforeSaving = 0;
+	opt.osxLibrarySubFolder = "Application Support";
 
 	iFile = new PropertiesFile(opt);
 	verifyFile();
