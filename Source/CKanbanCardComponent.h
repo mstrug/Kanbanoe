@@ -119,6 +119,9 @@ private:
 
 	bool iIsPopupMenuVisible;
 
+	bool iIsPropertiesPopupVisible;
+	uint32 iPropertiesPopupCloseTimeMs;
+
 	bool iMouseActive;
 
 	Label iLabel;

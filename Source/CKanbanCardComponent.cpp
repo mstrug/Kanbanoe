@@ -23,7 +23,7 @@ const int KAssigneeLength = 3;
 
 
 //==============================================================================
-CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iIsPopupMenuVisible(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iIsDone(false), iIsDueDateVisible(false), iCreationDate(juce::Time::getCurrentTime()), iReadOnly(false)
+CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iIsPopupMenuVisible(false), iIsPropertiesPopupVisible(false), iPropertiesPopupCloseTimeMs(0), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iIsDone(false), iIsDueDateVisible(false), iCreationDate(juce::Time::getCurrentTime()), iReadOnly(false)
 {
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -236,8 +236,12 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 		}
 		else
 		{
-			Logger::outputDebugString("entered showProperties");
-			showProperties();
+			uint32 now = Time::getMillisecondCounter();
+			if (now >= iPropertiesPopupCloseTimeMs + 250)
+			{ // ensure that clicking on card for closing properties popup will not show that popup again
+				Logger::outputDebugString("entered showProperties");
+				showProperties();
+			}
 		}
 
 		/*PopupMenu menu;
@@ -342,7 +346,7 @@ void CKanbanCardComponent::mouseMove(const MouseEvent & event)
 
 void CKanbanCardComponent::mouseExit(const MouseEvent& event)
 {
-	if (!iIsPopupMenuVisible) {
+	if (!iIsPopupMenuVisible && !iIsPropertiesPopupVisible) {
 		iMouseActive = false;
 	}
 
@@ -780,7 +784,11 @@ void CKanbanCardComponent::showProperties()
 	CallOutBox* box = new CallOutBox(*(static_cast<juce::Component*>(comp)), this->getScreenBounds(), nullptr);
 	box->setDismissalMouseClicksAreAlwaysConsumed(true);
 	box->setEnabled(!iReadOnly);
+	
+	iIsPropertiesPopupVisible = true;
 	box->runModalLoop();
+	iPropertiesPopupCloseTimeMs = Time::getMillisecondCounter();
+	iIsPropertiesPopupVisible = false;
 
 	if (comp->wasContentUpdated())
 	{
