@@ -271,7 +271,7 @@ void CKanbanBoardComponent::search(const String & aString)
 			stag = s.substring(2);
 			colormode = true;
 		}
-		else if (s.startsWith("assignee:"))
+		else if (s.startsWith("assigned:"))
 		{
 			stag = s.substring(9);
 			assignemode = true;

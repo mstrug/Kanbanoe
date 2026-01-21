@@ -22,6 +22,7 @@ MainComponent::MainComponent() : iMdiPanel(*this), iTimer24h(*this)
 	addAndMakeVisible(iLabelSearch);
 
 	addAndMakeVisible(iTextSearch);
+	iTextSearch.setTooltip("Search options: 'tag|assigned: TEXT' or 'color|colour: ID|NAME', shortcuts: 't|c|a: VALUE'");
 	iTextSearch.setSelectAllWhenFocused(true);
 	iTextSearch.onEscapeKey = [this]
 	{
