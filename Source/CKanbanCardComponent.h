@@ -116,7 +116,9 @@ private:
 	ComponentDragger iDragger;
 
 	bool iIsDragging;
-	
+
+	bool iIsPopupMenuVisible;
+
 	bool iMouseActive;
 
 	Label iLabel;

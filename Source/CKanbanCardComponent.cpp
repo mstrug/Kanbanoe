@@ -23,7 +23,7 @@ const int KAssigneeLength = 3;
 
 
 //==============================================================================
-CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iIsDone(false), iIsDueDateVisible(false), iCreationDate(juce::Time::getCurrentTime()), iReadOnly(false)
+CKanbanCardComponent::CKanbanCardComponent(CKanbanColumnContentComponent* aOwner) : iIsDragging(false), iIsPopupMenuVisible(false), iOwner(aOwner), iMouseActive(false), iIsUrlSet(false), iIsUrlMouseActive(false), iIsDueDateSet(false), iIsDone(false), iIsDueDateVisible(false), iCreationDate(juce::Time::getCurrentTime()), iReadOnly(false)
 {
 	int w = CConfiguration::getIntValue("KanbanCardWidth");
 	int h = CConfiguration::getIntValue("KanbanCardHeight");
@@ -301,7 +301,9 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 			this->getOwner()->moveCardBottom(this);
 			this->repaint();
 		});
-		menu.show();
+		this->iIsPopupMenuVisible = true;
+		menu.show(); // modal call
+		this->iIsPopupMenuVisible = false;
 	}
 }
 
@@ -340,7 +342,10 @@ void CKanbanCardComponent::mouseMove(const MouseEvent & event)
 
 void CKanbanCardComponent::mouseExit(const MouseEvent& event)
 {
-	iMouseActive = false;
+	if (!iIsPopupMenuVisible) {
+		iMouseActive = false;
+	}
+
 	iIsUrlMouseActive = false;
 	repaint();
 }
