@@ -422,7 +422,7 @@ bool CKanbanColumnGithub::decodeGithubResponse(const String& aData)
 
 						CKanbanCardComponent::CKanbanCardData c;
 
-						c.values.set("text", "#" + id.toString() + " " + title);
+						c.values.set("text", "#" + id.toString() + " " + title.toString());
 						c.values.set("notes", notes);
 						c.values.set("colour", -1);
 						c.values.set("url", url);
