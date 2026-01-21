@@ -394,6 +394,8 @@ void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 
 void CKanbanColumnComponent::mouseDoubleClick(const MouseEvent& event)
 {
+	if (event.eventComponent == &iScrollBar || event.originalComponent == &iScrollBar) return;
+
 	if (iMinimizedState)
 	{
 		this->setMinimized(false, true);
