@@ -32,6 +32,7 @@ public:
 	void paintOverChildren(Graphics & g) override;
 	void resized() override;
 	void mouseUp(const MouseEvent& event) override;
+	void mouseDoubleClick(const MouseEvent& event) override;
 	void mouseWheelMove(const MouseEvent & event, const MouseWheelDetails & details) override;
 	void mouseMove(const MouseEvent& event)  override;
 	void mouseExit(const MouseEvent& event) override;

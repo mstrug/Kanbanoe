@@ -392,6 +392,15 @@ void CKanbanColumnComponent::mouseUp(const MouseEvent& event)
 	}
 }
 
+void CKanbanColumnComponent::mouseDoubleClick(const MouseEvent& event)
+{
+	if (iMinimizedState)
+	{
+		this->setMinimized(false, true);
+	}
+	this->iViewportLayout.createNewCard();
+}
+
 void CKanbanColumnComponent::mouseWheelMove(const MouseEvent & event, const MouseWheelDetails & details)
 {
 	static juce::int64 ms = 0;
