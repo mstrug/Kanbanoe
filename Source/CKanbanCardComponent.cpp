@@ -264,6 +264,8 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 			}
 			if (ret == 1)
 			{
+				deselect();
+
 				MessageManager::callAsync([&]()
 				{
 					this->getOwner()->getOwner().removeCard(this);
@@ -300,7 +302,6 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 			this->repaint();
 		});
 		menu.show();
-		deselect();
 	}
 }
 
