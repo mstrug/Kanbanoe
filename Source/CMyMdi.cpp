@@ -204,6 +204,25 @@ CMdiDocArchives::~CMdiDocArchives()
 
 
 
+
+/**********************************************************************************************************/
+//
+//		CMdiDocCard
+//
+/**********************************************************************************************************/
+
+
+CMdiDocCard::CMdiDocCard(CKanbanCardPropertiesComponent* card)
+{
+	iViewport.setViewedComponent((juce::Component*)card, true);
+}
+
+CMdiDocCard::~CMdiDocCard()
+{
+}
+
+
+
 /**********************************************************************************************************/
 //
 //		CMyMdi

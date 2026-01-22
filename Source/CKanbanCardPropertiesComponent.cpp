@@ -13,6 +13,7 @@
 #include "CKanbanCardComponent.h"
 #include "CConfiguration.h"
 #include "ColourPalette.h"
+#include "CMyMdi.h"
 
 
 //==============================================================================
@@ -168,7 +169,32 @@ CKanbanCardPropertiesComponent::CKanbanCardPropertiesComponent(CKanbanCardCompon
 	};
 	addAndMakeVisible(iButtonMaximize);
 
-	layout();
+	//char square[] = { 0xE2,0x86,0x97 };
+	//iButtonOpenInTab.setButtonText(String::fromUTF8(square, 3));
+	iButtonOpenInTab.setButtonText("..");
+	iButtonOpenInTab.setWantsKeyboardFocus(false);
+	iButtonOpenInTab.onClick = [this]
+	{
+		getParentComponent()->exitModalState(0);
+
+		auto comp = new CKanbanCardPropertiesComponent(this->iOwner);
+		comp->iMaximized = true;
+		//comp->setEnabled(false);
+
+		CMdiDocCard* cmp = new CMdiDocCard(comp);
+		String name = this->iOwner.getText();
+		cmp->setName("card/" + name);
+		auto card = &this->iOwner;
+		auto column_content = card->getOwner();
+		auto column = &column_content->getOwner();
+		auto board = &column->kanbanBoard();
+		auto mdiPanel = board->getMdiPanel();
+		mdiPanel->addDocument(cmp, nullptr);
+		comp->layout();
+	};
+	addAndMakeVisible(iButtonOpenInTab);
+
+	this->layout();
 }
 
 
@@ -183,8 +209,9 @@ void CKanbanCardPropertiesComponent::layout()
 		w = 800;
 	}
 
-	iTextName.setBounds(10, 10, w - 30, 24);
-	iButtonMaximize.setBounds(iTextName.getRight() + 10, 12, 20, 20);
+	iTextName.setBounds(10, 10, w - 60, 24);
+	iButtonOpenInTab.setBounds(iTextName.getRight() + 10, 12, 20, 20);
+	iButtonMaximize.setBounds(iButtonOpenInTab.getRight() + 10, 12, 20, 20);
 
 	int yofs = iTextName.getBottom() + 12;
 

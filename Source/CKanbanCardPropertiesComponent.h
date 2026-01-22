@@ -78,6 +78,8 @@ private:
 
 	TextButton iButtonMaximize;
 
+	TextButton iButtonOpenInTab;
+
 	bool iMaximized;
 
 	bool iUpdated;

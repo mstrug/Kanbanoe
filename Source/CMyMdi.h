@@ -19,6 +19,7 @@ using namespace juce;
 
 class MainComponent;
 class CKanbanBoardArchive;
+class CKanbanCardPropertiesComponent;
 
 
 class CMyMdiDocBase : public Component
@@ -71,6 +72,13 @@ class CMdiDocArchives : public CMyMdiDocBase
 public:
 	CMdiDocArchives(CKanbanBoardArchive* archive);
 	~CMdiDocArchives();
+};
+
+class CMdiDocCard : public CMyMdiDocBase
+{
+public:
+	CMdiDocCard(CKanbanCardPropertiesComponent* card);
+	~CMdiDocCard();
 };
 
 

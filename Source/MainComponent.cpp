@@ -424,6 +424,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 			auto kb = new CKanbanBoardComponent();
 			kb->setName("board " + String(iKanbanBoards.size()));
 			kb->createDefaultBoard();
+			kb->setMdiPanel(&iMdiPanel);
 			//addAndMakeVisible(iKanbanBoard);			
 			iKanbanBoards.add(kb);
 			//iMdiPanel.addDocument(iKanbanBoards.getLast(), getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
@@ -746,6 +747,7 @@ bool MainComponent::openFile(File& aFn)
 			iKanbanBoards.add(newboard);
 			newboard->setName(aFn.getFileName());
 			newboard->setFile(aFn);
+			newboard->setMdiPanel(&iMdiPanel);
 			//iMdiPanel.addDocument(newboard, getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), false);
 			iMdiPanel.addDocument(newboard);
 

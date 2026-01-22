@@ -17,6 +17,8 @@
 
 using namespace juce;
 
+class CMyMdi;
+
 const String KKanbanBoardJsonFileVersion = "0.4";
 
 //==============================================================================
@@ -95,6 +97,9 @@ public:
 	void setParentViewport(Viewport* aParentViewport);
 	Viewport* getParentViewport();
 
+	void setMdiPanel(CMyMdi* aMdi);
+	CMyMdi* getMdiPanel();
+
 public: // from CKanbanCardComponent::Listener
 
 	void KanbanCardChanged();
@@ -132,6 +137,8 @@ private:
 	Listener* iListener; // not owned
 
 	Viewport* iParentViewport; // not owned
+
+	CMyMdi* iMdiPanel; // not owned
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CKanbanBoardComponent)
 };
