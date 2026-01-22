@@ -146,7 +146,7 @@ void CMyMdiDoc::setName(String name)
 	this->name = name;
 
 	// adding padding
-	CMyMdiDocBase::setName(" " + name + " ");
+	CMyMdiDocBase::setName("  " + name + "  ");
 }
 
 String CMyMdiDoc::getName()

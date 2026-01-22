@@ -592,7 +592,7 @@ bool MainComponent::perform(const InvocationInfo& info)
 			CMyMdiDoc* mdoc = dynamic_cast<CMyMdiDoc*>(doc);
 			if (!mdoc) break;
 			auto kb = mdoc->getKanbanBoard();
-			String tabName = mdoc->getName() + "\\archives";
+			String tabName = mdoc->getTabName() + "\\archives";
 			if (iMdiPanel.isAlreadyOpened(tabName))
 			{
 				iMdiPanel.activateDocumentByTabName(tabName);
