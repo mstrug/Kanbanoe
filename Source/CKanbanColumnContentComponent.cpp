@@ -153,6 +153,12 @@ void CKanbanColumnContentComponent::unhideAllCards()
 
 void CKanbanColumnContentComponent::createNewCard(const CKanbanCardComponent* aCardToCopyDataFrom, bool aDuplicateDates, bool aOpenPropertyWindow)
 {
+	if (this->isMaxWipSet() && this->getCardsCount() >= this->getCardsMaxWip())
+	{
+		AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Warning", "Achieved max WIP cards count for this column.", "OK");
+		return;
+	}
+
 	CKanbanCardComponent* c = iOwner.kanbanBoard().createCard();
 
 	if (aCardToCopyDataFrom)
