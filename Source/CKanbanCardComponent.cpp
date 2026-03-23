@@ -278,9 +278,9 @@ void CKanbanCardComponent::mouseUp(const MouseEvent& event)
 		});
 		menu.addItem("Duplicate", [&]()
 		{
-			//deselect();
 			iMouseActive = false;
 			this->getOwner()->getOwner().duplicateCard(this);
+			deselect();
 		});
 		menu.addItem("Copy", [&]()
 		{
