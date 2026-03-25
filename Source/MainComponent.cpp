@@ -286,15 +286,15 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 	{
 	case mdiNextDoc:
 			result.setInfo("Next Tab", "", "Mdi", 0);
-			result.addDefaultKeypress(KeyPress::tabKey, ModifierKeys::ctrlModifier);
+			result.addDefaultKeypress(KeyPress::tabKey, ModifierKeys::commandModifier);
 		break;
 	case mdiPrevDoc:
 			result.setInfo("Previous Tab", "", "Mdi", 0);
-			result.addDefaultKeypress(KeyPress::tabKey, ModifierKeys::ctrlModifier | ModifierKeys::shiftModifier);
+			result.addDefaultKeypress(KeyPress::tabKey, ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
 		break;
 	case menubarSearch:
 			result.setInfo("Search", "", "Menubar", 0);
-			result.addDefaultKeypress('F', ModifierKeys::ctrlModifier);
+			result.addDefaultKeypress('F', ModifierKeys::commandModifier);
 		break;
 	case menubarSearchClear:
 			result.setInfo("Search Clear", "", "Menubar", 0);
@@ -306,15 +306,15 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		break;
 	case menuFileNew:
 			result.setInfo("New", "", "Menu", 0);
-			result.addDefaultKeypress('N', ModifierKeys::ctrlModifier);
+			result.addDefaultKeypress('N', ModifierKeys::commandModifier);
 		break;
 	case menuFileOpen:
 			result.setInfo("Open", "", "Menu", 0);
-			result.addDefaultKeypress('O', ModifierKeys::ctrlModifier);
+			result.addDefaultKeypress('O', ModifierKeys::commandModifier);
 		break;
 	case menuFileClose:
 			result.setInfo("Close", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));
-			result.addDefaultKeypress('W', ModifierKeys::ctrlModifier);
+			result.addDefaultKeypress('W', ModifierKeys::commandModifier);
 		break;
 	case menuFileSave:
 		{
@@ -325,7 +325,7 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 				enabled = (d ? d->getKanbanBoard()->isFileSet() : false);
 			}
 			result.setInfo("Save", "", "Menu", (!enabled ? ApplicationCommandInfo::isDisabled : 0));
-			result.addDefaultKeypress('S', ModifierKeys::ctrlModifier);
+			result.addDefaultKeypress('S', ModifierKeys::commandModifier);
 		}
 		break;
 	case menuFileSaveAs:
@@ -341,7 +341,7 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		break;
 	case menuFileSaveAll:
 			result.setInfo("Save All", "", "Menu", (!isDocOpened ? ApplicationCommandInfo::isDisabled : 0));
-			result.addDefaultKeypress('S', ModifierKeys::ctrlModifier | ModifierKeys::shiftModifier);
+			result.addDefaultKeypress('S', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
 		break;
 	case menuFileSaveGroup:
 			result.setInfo("Save Group", "", "Menu", (!isDocOpened || !iMdiPanel.isFileSet() ? ApplicationCommandInfo::isDisabled : 0 ) );
